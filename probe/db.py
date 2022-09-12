@@ -50,20 +50,27 @@ class DB:
     ) -> Tuple[List[Block]]:
         int_blocks, str_blocks = self._resolve_blocks_args(blocks)
         cursor = self._conn.cursor()
-        cursor.execute(
-            "SELECT * FROM blocks WHERE block_number IN ? AND chainId = ?",
-            (int_blocks, chain_id),
-        )
-        int_blocks = cursor.fetchall()
-        cursor.execute(
-            "SELECT * FROM blocks WHERE block_hash IN ? AND chainId = ?",
-            (str_blocks, chain_id),
-        )
-        str_blocks = cursor.fetchall()
-        return [
-            Block.from_tuple(b)
-            for b in sorted(int_blocks + str_blocks, key=lambda x: x[1])
-        ]
+        int_blocks_res = []
+        str_blocks_res = []
+        if len(int_blocks) > 0:
+            statement = f"SELECT * FROM blocks WHERE block_number IN ({','.join('?' * len(int_blocks))}) AND chain_id = ?"
+            cursor.execute(
+                statement,
+                int_blocks + [chain_id],
+            )
+            int_blocks_res = cursor.fetchall()
+        if len(str_blocks) > 0:
+            statement = f"SELECT * FROM blocks WHERE block_hash IN ({','.join('?' * len(str_blocks))}) AND chain_id = ?"
+            cursor.execute(
+                statement,
+                str_blocks + [chain_id],
+            )
+            str_blocks_res = cursor.fetchall()
+        blocks_res = int_blocks_res + str_blocks_res
+        blocks_res = [Block.from_tuple(b) for b in blocks_res]
+        # unique
+        blocks_res = list({(b.number): b for b in blocks_res}.values())
+        return sorted(blocks_res, key=lambda x: x.number)
 
     def write_blocks(self, blocks: List[Block]):
         cursor = self._conn.cursor()
@@ -90,8 +97,12 @@ class DB:
             if type(b) == int:
                 int_res.append(b)
                 continue
-            if type(blocks) == str:
+            if type(b) == str:
                 str_res.append(b)
                 continue
             raise Exception(f"Unsupported block type {type(b)} for block {b}")
         return [int_res, str_res]
+
+
+def unique(elements, key):
+    return
