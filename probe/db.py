@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sqlite3
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from os.path import exists
 from probe.model import Block
 
@@ -49,6 +49,9 @@ class DB:
         )
         self._conn.commit()
 
+    def cursor(self) -> sqlite3.Cursor:
+        return self._conn.cursor()
+
     def commit(self):
         self._conn.commit()
 
@@ -62,11 +65,37 @@ class BlocksDB:
     def __init__(self, db: DB):
         self._db = db
 
+    def get_block_after_timestamp(
+        self, timestamp: int, chain_id: int
+    ) -> Optional[Block]:
+        cursor = self._db.cursor()
+        cursor.execute(
+            "SELECT * FROM blocks WHERE timestamp >= ? AND chain_id = ? ORDER BY block_number LIMIT 1",
+            (timestamp, chain_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return Block.from_tuple(row)
+
+    def get_block_before_timestamp(
+        self, timestamp: int, chain_id: int
+    ) -> Optional[Block]:
+        cursor = self._db.cursor()
+        cursor.execute(
+            "SELECT * FROM blocks WHERE timestamp <= ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
+            (timestamp, chain_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return Block.from_tuple(row)
+
     def read_blocks(
         self, blocks: int | str | List[int | str], chain_id: int
     ) -> Tuple[List[Block]]:
         int_blocks, str_blocks = self._resolve_blocks_args(blocks)
-        cursor = self._db._conn.cursor()
+        cursor = self._db.cursor()
         int_blocks_res = []
         str_blocks_res = []
         if len(int_blocks) > 0:
@@ -90,7 +119,7 @@ class BlocksDB:
         return sorted(blocks_res, key=lambda x: x.number)
 
     def write_blocks(self, blocks: List[Block]):
-        cursor = self._db._conn.cursor()
+        cursor = self._db.cursor()
         rows = [b.to_tuple() for b in blocks]
         cursor.executemany(
             "INSERT INTO blocks VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
