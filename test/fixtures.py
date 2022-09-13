@@ -9,5 +9,4 @@ def db(tmp_path_factory: pytest.TempPathFactory) -> DB:
     Instance of DB per session
     """
     tmp = tmp_path_factory.mktemp("probe")
-    conn = sqlite3.connect(f"{tmp}/test.db")
-    return DB(conn)
+    return DB.from_path(f"{tmp}/test.db")
