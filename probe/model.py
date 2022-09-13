@@ -8,11 +8,11 @@ class Block:
     number: int
     timestamp: int
 
-    def __init__(self, *args):
-        self.chain_id = args[0]
-        self.hash = args[1]
-        self.number = args[2]
-        self.timestamp = args[3]
+    def __init__(self, chain_id: int, hash: str, number: int, timestamp: int):
+        self.chain_id = chain_id
+        self.hash = hash
+        self.number = number
+        self.timestamp = timestamp
 
     def from_tuple(tuple: Tuple[int, str, int, int]) -> Block:
         return Block(*tuple)

@@ -83,7 +83,7 @@ class BlocksDB:
     ) -> Optional[Block]:
         cursor = self._db.cursor()
         cursor.execute(
-            "SELECT * FROM blocks WHERE timestamp <= ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
+            "SELECT * FROM blocks WHERE timestamp < ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
             (timestamp, chain_id),
         )
         row = cursor.fetchone()

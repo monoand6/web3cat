@@ -4,6 +4,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 import pytest
+
 from fixtures import db
 from probe.db import DB, BlocksDB
 from probe.model import Block
@@ -56,11 +57,11 @@ def test_get_block_before_timestamp(blocks_db: BlocksDB):
         Block(1, "0x92a", 30, 10705),
     ]
     blocks_db.write_blocks(blocks)
-    assert blocks_db.get_block_before_timestamp(10701, 1) == blocks[2]
-    assert blocks_db.get_block_before_timestamp(10703, 1) == blocks[4]
-    assert blocks_db.get_block_before_timestamp(10705, 1) == blocks[-1]
+    assert blocks_db.get_block_before_timestamp(10701, 1) == blocks[1]
+    assert blocks_db.get_block_before_timestamp(10703, 1) == blocks[3]
+    assert blocks_db.get_block_before_timestamp(10705, 1) == blocks[-2]
     assert blocks_db.get_block_before_timestamp(10706, 1) == blocks[-1]
-    assert blocks_db.get_block_before_timestamp(10800, 1) == blocks[0]
+    assert blocks_db.get_block_before_timestamp(10800, 1) == blocks[-1]
     assert blocks_db.get_block_before_timestamp(10801, 1) == blocks[0]
     assert blocks_db.get_block_before_timestamp(10000, 1) == None
 
