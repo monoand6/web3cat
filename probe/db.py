@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sqlite3
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from os.path import exists
 from probe.model import Block
 
@@ -65,9 +65,7 @@ class BlocksDB:
     def __init__(self, db: DB):
         self._db = db
 
-    def get_block_after_timestamp(
-        self, timestamp: int, chain_id: int
-    ) -> Optional[Block]:
+    def get_block_after_timestamp(self, timestamp: int, chain_id: int) -> Block | None:
         cursor = self._db.cursor()
         cursor.execute(
             "SELECT * FROM blocks WHERE timestamp >= ? AND chain_id = ? ORDER BY block_number LIMIT 1",
@@ -78,9 +76,7 @@ class BlocksDB:
             return None
         return Block.from_tuple(row)
 
-    def get_block_before_timestamp(
-        self, timestamp: int, chain_id: int
-    ) -> Optional[Block]:
+    def get_block_before_timestamp(self, timestamp: int, chain_id: int) -> Block | None:
         cursor = self._db.cursor()
         cursor.execute(
             "SELECT * FROM blocks WHERE timestamp < ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
