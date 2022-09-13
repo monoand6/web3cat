@@ -1,8 +1,6 @@
-from typing import Optional
 from db import BlocksDB
 from web3 import Web3
 from web3.exceptions import BlockNotFound
-import time
 
 from probe.model import Block
 
@@ -53,7 +51,7 @@ class Blocks:
                 left_block = block
         return right_block
 
-    def _get_block(self, number: Optional[int]) -> Block | None:
+    def _get_block(self, number: int | None) -> Block | None:
         """
         number = None => fetch latest
         """
