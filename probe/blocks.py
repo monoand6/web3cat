@@ -1,8 +1,10 @@
-from db import BlocksDB
+import json
+from probe.db import BlocksDB
 from web3 import Web3
 from web3.exceptions import BlockNotFound
 
 from probe.model import Block
+from probe.w3_utils import json_response
 
 
 class Blocks:
@@ -51,7 +53,7 @@ class Blocks:
                 left_block = block
         return right_block
 
-    def _get_block(self, number: int | None) -> Block | None:
+    def _get_block(self, number: int | None = None) -> Block | None:
         """
         number = None => fetch latest
         """
@@ -62,7 +64,8 @@ class Blocks:
             return block
         raw_block = None
         try:
-            raw_block = self._w3.eth.get_block(number | "latest")
+            raw_block = self._w3.eth.get_block(number or "latest")
+            raw_block = json.loads(json_response(raw_block))
         except BlockNotFound:
             return None
 

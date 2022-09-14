@@ -3,27 +3,10 @@ import os
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
-import pytest
 
-from fixtures import db
+from conftest import blocks_db, db
 from probe.db import DB, BlocksDB
 from probe.model import Block
-
-
-@pytest.fixture
-def blocks_db(db: DB) -> BlocksDB:
-    """
-    Instance of BlocksDB
-    """
-    return BlocksDB(db)
-
-
-@pytest.fixture(autouse=True)
-def run_around_tests(db: DB):
-    try:
-        yield
-    finally:
-        db.rollback()
 
 
 def test_get_block_after_timestamp(blocks_db: BlocksDB):
