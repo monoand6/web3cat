@@ -10,6 +10,12 @@ from probe.blocks import Blocks
 from web3 import Web3
 
 
+rpc = pytest.mark.skipif(
+    "TEST_WEB3_PROVIDER_URI" not in os.environ,
+    reason="Rpc url is not set. Use `TEST_WEB3_PROVIDER_URI` env variable.",
+)
+
+
 @pytest.fixture(scope="session")
 def db(tmp_path_factory: pytest.TempPathFactory) -> DB:
     """
