@@ -14,10 +14,6 @@ class EventsIndex:
         self._update_timestamp(start_timestamp)
 
     def set_range(self, start_timestamp: int, end_timestamp: int, value: bool):
-        if start_timestamp < FIRST_EVM_TIMESTAMP:
-            raise IndexError(
-                f"EventsIndex start_timestamp if before any EVM chain `{start_timestamp}` "
-            )
         if start_timestamp % SECONDS_IN_BIT != 0 or end_timestamp % SECONDS_IN_BIT != 0:
             raise IndexError(
                 f"EventsIndex only multiples of {SECONDS_IN_BIT} are allowed for start_timestamp and end_timestamp. Got {start_timestamp} and {end_timestamp}"
@@ -27,8 +23,11 @@ class EventsIndex:
         end_idx = self._timestamp_to_idx(end_timestamp)
         self._mask.set_range(start_idx, end_idx, value)
 
+    def snap_to_grid(self, timestamp: int) -> int:
+        return timestamp - timestamp % SECONDS_IN_BIT
+
     def __getitem__(self, timestamp: int) -> bool:
-        if not self._start_timestamp:
+        if self._start_timestamp is None:
             return False
         idx = self._timestamp_to_idx(timestamp)
         if idx < 0 or idx >= len(self._mask):
@@ -36,12 +35,12 @@ class EventsIndex:
         return self._mask[idx]
 
     def _update_timestamp(self, timestamp: int | None):
-        if not timestamp:
+        if timestamp is None:
             return
 
         timestamp -= timestamp % SECONDS_IN_BIT
 
-        if not self._start_timestamp:
+        if self._start_timestamp is None:
             self._start_timestamp = timestamp
             return
 

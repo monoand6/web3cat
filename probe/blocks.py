@@ -29,14 +29,14 @@ class Blocks:
 
         # right_block is guaranteed to be after the timestamp
         right_block = self._blocks_db.get_block_after_timestamp(ts, self._chain_id)
-        if not right_block:
+        if right_block is None:
             right_block = self.get_block()
 
         if right_block.timestamp < timestamp:  # no blocks exist after the timestamp
             return None
 
         left_block = self._blocks_db.get_block_before_timestamp(ts, self._chain_id)
-        if not left_block:
+        if left_block is None:
             # harsh approximation but once it's run a single time
             # a better approximation from db will come on each
             # subsequent call

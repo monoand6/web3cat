@@ -7,6 +7,20 @@ from hypothesis.strategies import lists, integers, tuples
 START = 1538269000 - 1538269000 % 86400
 
 
+@given(lists(integers(0, 100)), lists(integers(0, 100)))
+def test_set_range(begins: list[int], ends: list[int]):
+    index = EventsIndex()
+    test_index = {}
+    N = min(len(begins), len(ends))
+    for i in range(N):
+        begin, end = min(begins[i], ends[i]), max(begins[i], ends[i])
+        for x in range(begin, end):
+            test_index[x] = True
+        index.set_range(begin * 86400, end * 86400, True)
+    for i in range(0, 100):
+        assert index[i * 86400] == (i in test_index)
+
+
 def test_set_range_1():
     index = EventsIndex(START)
     index.set_range(START, START, True)
@@ -43,23 +57,3 @@ def test_set_range_4():
     assert index[START + 2 * SECONDS_IN_BIT - 1]
     assert not index[START + 2 * SECONDS_IN_BIT]
     assert not index[START + 2 * SECONDS_IN_BIT + 1]
-
-
-@given(
-    integers(START - 10_000_000, START + 10_000_000),
-    integers(START - 10_000_000, START + 10_000_000),
-)
-def test_set_range_5(start, end):
-    if end < start:
-        start, end = end, start
-    start -= start % SECONDS_IN_BIT
-    end -= end % SECONDS_IN_BIT
-    index = EventsIndex(START)
-    index.set_range(START, START + 2 * SECONDS_IN_BIT, True)
-    index.set_range(start, end, True)
-    for i in range(START - 10_000_000, START + 10_000_000, SECONDS_IN_BIT):
-
-        val = (i >= start and i < end) or (
-            i >= START and i < START + 2 * SECONDS_IN_BIT
-        )
-        assert index[i] == val
