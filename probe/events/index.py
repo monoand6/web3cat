@@ -1,3 +1,4 @@
+from __future__ import annotations
 from probe.events.bitarray import BitArray
 
 SECONDS_IN_BIT = 86400
@@ -5,6 +6,10 @@ FIRST_EVM_TIMESTAMP = 1438269000
 
 
 class EventsIndex:
+    """
+    Doesn't work for timestamps < 8 * 86400
+    """
+
     _start_timestamp: int | None
     _mask: BitArray
 
@@ -23,6 +28,20 @@ class EventsIndex:
         end_idx = self._timestamp_to_idx(end_timestamp)
         self._mask.set_range(start_idx, end_idx, value)
 
+    def dump(self) -> bytes:
+        if self._start_timestamp is None:
+            return bytes()
+        print(self._start_timestamp)
+        bytes4 = self._start_timestamp.to_bytes(4, "big")
+        return bytes4 + self._mask._data
+
+    def load(data: bytes) -> EventsIndex:
+        if len(data) < 4:
+            return EventsIndex()
+        ts = int.from_bytes(data[0:4], "big")
+        mask = data[4:]
+        return EventsIndex(ts, mask)
+
     def snap_to_grid(self, timestamp: int) -> int:
         return timestamp - timestamp % SECONDS_IN_BIT
 
@@ -33,6 +52,9 @@ class EventsIndex:
         if idx < 0 or idx >= len(self._mask):
             return False
         return self._mask[idx]
+
+    def __repr__(self) -> str:
+        return f"EventsIndex(start: {self._start_timestamp}, mask: {self._mask})"
 
     def _update_timestamp(self, timestamp: int | None):
         if timestamp is None:

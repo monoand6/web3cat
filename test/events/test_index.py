@@ -7,7 +7,7 @@ from hypothesis.strategies import lists, integers, tuples
 START = 1538269000 - 1538269000 % 86400
 
 
-@given(lists(integers(0, 100)), lists(integers(0, 100)))
+@given(lists(integers(8, 100)), lists(integers(8, 100)))
 def test_set_range(begins: list[int], ends: list[int]):
     index = EventsIndex()
     test_index = {}
@@ -19,6 +19,18 @@ def test_set_range(begins: list[int], ends: list[int]):
         index.set_range(begin * 86400, end * 86400, True)
     for i in range(0, 100):
         assert index[i * 86400] == (i in test_index)
+
+
+@given(lists(integers(8, 100)), lists(integers(8, 100)))
+def test_dump_load(begins: list[int], ends: list[int]):
+    index = EventsIndex()
+    N = min(len(begins), len(ends))
+    for i in range(N):
+        begin, end = min(begins[i], ends[i]), max(begins[i], ends[i])
+        index.set_range(begin * 86400, end * 86400, True)
+    restored = EventsIndex.load(index.dump())
+    for i in range(0, 100):
+        assert index[i * 86400] == restored[i * 86400]
 
 
 def test_set_range_1():
