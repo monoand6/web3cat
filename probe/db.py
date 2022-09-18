@@ -53,11 +53,11 @@ class DB:
 
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS events_index
-                    (chain_id integer, address text, args text, mask blob)"""
+                    (chain_id integer, address text, event text, args text, mask blob)"""
         )
         cursor.execute(
             """CREATE UNIQUE INDEX IF NOT EXISTS idx_events_index_id
-                ON events_index(chain_id,address,args)"""
+                ON events_index(chain_id,address,event,args)"""
         )
 
     def cursor(self) -> sqlite3.Cursor:
