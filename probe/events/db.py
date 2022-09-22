@@ -1,10 +1,11 @@
 from calendar import leapdays
 import json
+from operator import sub
 from typing import Any, Dict, List
 from web3.contract import ContractEvent
 from probe.db import DB
 from probe.events.index import EventsIndex, SECONDS_IN_BIT
-from probe.model import Event
+from probe.events.model import Event
 
 
 class EventsDB:
@@ -91,6 +92,31 @@ class EventsDB:
         args = dump_args(argument_filters)
         rows = [r for r in rows if args_match(r, args)]
         return [EventsIndex.load(r) for r in rows]
+
+
+def is_subset(subset: Any | None, superset: Any | None) -> bool:
+    if subset is None:
+        return True
+    if superset is None:
+        if isinstance(subset, dict) and len(subset.keys()) == 0:
+            return True
+        return False
+    if isinstance(subset, dict):
+        if not isinstance(superset, dict):
+            return False
+        for key in subset.keys():
+            if not key in superset:
+                return False
+            if not is_subset(subset[key], superset[key]):
+                return False
+        return True
+    if isinstance(subset, list):
+        if not isinstance(superset, list):
+            return False
+        sb = set(subset)
+        sp = set(superset)
+        return sb.issubset(sp)
+    return subset == superset
 
 
 def args_match(db_entry: str | None, args: str | None) -> bool:
