@@ -94,7 +94,7 @@ class EventsDB:
         return [EventsIndex.load(r) for r in rows]
 
 
-def is_subset(subset: Any | None, superset: Any | None) -> bool:
+def args_is_subset(subset: Any | None, superset: Any | None) -> bool:
     if subset is None:
         return True
     if superset is None:
@@ -107,7 +107,7 @@ def is_subset(subset: Any | None, superset: Any | None) -> bool:
         for key in subset.keys():
             if not key in superset:
                 return False
-            if not is_subset(subset[key], superset[key]):
+            if not args_is_subset(subset[key], superset[key]):
                 return False
         return True
     if isinstance(subset, list):
@@ -117,18 +117,6 @@ def is_subset(subset: Any | None, superset: Any | None) -> bool:
         sp = set(superset)
         return sb.issubset(sp)
     return subset == superset
-
-
-def args_match(db_entry: str | None, args: str | None) -> bool:
-    # None is a catch-all index
-    if db_entry is None:
-        return True
-
-    if args is None:
-        return False
-
-    # works because keys and values in json are sorted
-    return db_entry[1:-1] in args
 
 
 def args_len(j: str | None) -> int:

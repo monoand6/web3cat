@@ -2,11 +2,11 @@ from string import printable
 from typing import Any, Dict, Tuple
 from hypothesis import given
 from hypothesis.strategies import composite, integers, text, lists, one_of
-from probe.events.db import is_subset
+from probe.events.db import args_is_subset
 
 
 @composite
-def subset_and_superset(draw):
+def args_subset_and_superset(draw):
     res1 = {}
     res2 = {}
     for k in draw(lists(text(printable))):
@@ -30,17 +30,17 @@ def subset_and_superset(draw):
     return (res1, res2)
 
 
-@given(subset_and_superset())
-def test_is_subset(sub_and_sup: Tuple[Dict[str, Any], Dict[str, Any]]):
+@given(args_subset_and_superset())
+def test_args_is_subset(sub_and_sup: Tuple[Dict[str, Any], Dict[str, Any]]):
     sub, sup = sub_and_sup
-    assert is_subset(sub, sup)
+    assert args_is_subset(sub, sup)
 
 
-def test_is_subset_edge():
-    assert is_subset(None, None)
-    assert is_subset(None, {})
-    assert is_subset({}, {})
-    assert is_subset({}, None)
-    assert not is_subset({"x": 1}, None)
-    assert is_subset(None, {"x": 1})
-    assert is_subset({}, {"x": 1})
+def test_args_is_subset_edge():
+    assert args_is_subset(None, None)
+    assert args_is_subset(None, {})
+    assert args_is_subset({}, {})
+    assert args_is_subset({}, None)
+    assert not args_is_subset({"x": 1}, None)
+    assert args_is_subset(None, {"x": 1})
+    assert args_is_subset({}, {"x": 1})
