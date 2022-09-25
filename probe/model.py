@@ -18,7 +18,7 @@ class Block:
         return Block(*tuple)
 
     def to_tuple(self) -> Tuple[int, str, int, int]:
-        return [self.chain_id, self.hash, self.number, self.timestamp]
+        return (self.chain_id, self.hash, self.number, self.timestamp)
 
     def __eq__(self, other):
         if type(other) is type(self):

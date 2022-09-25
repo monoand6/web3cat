@@ -4,7 +4,7 @@ from operator import sub
 from typing import Any, Dict, List
 from web3.contract import ContractEvent
 from probe.db import DB
-from probe.events.index import EventsIndex, SECONDS_IN_BIT
+from probe.events.index import EventsIndexData, SECONDS_IN_BIT
 from probe.events.model import Event
 
 
@@ -65,7 +65,7 @@ class EventsDB:
         return events
 
     def _is_fetched(
-        self, index: EventsIndex, start_timestamp: int, end_timestamp: int
+        self, index: EventsIndexData, start_timestamp: int, end_timestamp: int
     ) -> bool:
         if not index[end_timestamp]:
             return False
@@ -79,11 +79,11 @@ class EventsDB:
         chain_id: int,
         event: ContractEvent,
         argument_filters: Dict[str, Any] | None,
-    ) -> List[EventsIndex]:
+    ) -> List[EventsIndexData]:
         cur = self._db.cursor()
 
         cur.execute(
-            "SELECT * FROM events_index WHERE chain_id = ? AND address = ? AND name = ?",
+            "SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND name = ?",
             (chain_id, event.address, event.name),
         )
         rows = cur.fetchall()
@@ -91,7 +91,7 @@ class EventsDB:
         rows = sorted(rows, key=lambda r: args_len(r[3]), reverse=True)
         args = dump_args(argument_filters)
         rows = [r for r in rows if args_match(r, args)]
-        return [EventsIndex.load(r) for r in rows]
+        return [EventsIndexData.load(r) for r in rows]
 
 
 def args_is_subset(subset: Any | None, superset: Any | None) -> bool:
@@ -119,23 +119,23 @@ def args_is_subset(subset: Any | None, superset: Any | None) -> bool:
     return subset == superset
 
 
-def args_len(j: str | None) -> int:
-    if j is None:
-        return 0
-    return len(json.loads(j).keys())
+# def args_len(j: str | None) -> int:
+#     if j is None:
+#         return 0
+#     return len(json.loads(j).keys())
 
 
-def dump_args(argument_filters: Dict[str, Any] | None) -> str | None:
-    if argument_filters is None or len(argument_filters.keys()) == 0:
-        return None
-    res = {}
-    for k in sorted(argument_filters.keys()):
-        v = argument_filters[k]
-        if not isinstance(v, list):
-            v = [v]
-        v = [val.lower() if isinstance(val, str) else val for val in sorted(v)]
-        res[k] = v
-    return json.dumps(res)
+# def dump_args(argument_filters: Dict[str, Any] | None) -> str | None:
+#     if argument_filters is None or len(argument_filters.keys()) == 0:
+#         return None
+#     res = {}
+#     for k in sorted(argument_filters.keys()):
+#         v = argument_filters[k]
+#         if not isinstance(v, list):
+#             v = [v]
+#         v = [val.lower() if isinstance(val, str) else val for val in sorted(v)]
+#         res[k] = v
+#     return json.dumps(res)
 
 
 # def _event_index_key(

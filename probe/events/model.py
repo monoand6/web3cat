@@ -33,7 +33,7 @@ class Event:
         return Event(*tuple)
 
     def to_tuple(self) -> Tuple[int, int, str, int, str, str, str]:
-        return [
+        return (
             self.chain_id,
             self.block_number,
             self.transaction_hash,
@@ -41,7 +41,7 @@ class Event:
             self.address,
             self.event,
             self.args,
-        ]
+        )
 
     def __eq__(self, other):
         if type(other) is type(self):

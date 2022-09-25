@@ -1,5 +1,5 @@
 import pytest
-from probe.events.index import EventsIndex, SECONDS_IN_BIT
+from probe.events.index import EventsIndexData, SECONDS_IN_BIT
 from hypothesis import given
 from hypothesis.strategies import lists, integers, tuples
 
@@ -9,7 +9,7 @@ START = 1538269000 - 1538269000 % 86400
 
 @given(lists(integers(8, 100)), lists(integers(8, 100)))
 def test_set_range(begins: list[int], ends: list[int]):
-    index = EventsIndex()
+    index = EventsIndexData()
     test_index = {}
     N = min(len(begins), len(ends))
     for i in range(N):
@@ -23,18 +23,18 @@ def test_set_range(begins: list[int], ends: list[int]):
 
 @given(lists(integers(8, 100)), lists(integers(8, 100)))
 def test_dump_load(begins: list[int], ends: list[int]):
-    index = EventsIndex()
+    index = EventsIndexData()
     N = min(len(begins), len(ends))
     for i in range(N):
         begin, end = min(begins[i], ends[i]), max(begins[i], ends[i])
         index.set_range(begin * 86400, end * 86400, True)
-    restored = EventsIndex.load(index.dump())
+    restored = EventsIndexData.load(index.dump())
     for i in range(0, 100):
         assert index[i * 86400] == restored[i * 86400]
 
 
 def test_set_range_1():
-    index = EventsIndex(START)
+    index = EventsIndexData(START)
     index.set_range(START, START, True)
     assert not index[START]
     assert not index[START + 100]
@@ -43,13 +43,13 @@ def test_set_range_1():
 
 
 def test_set_range_2():
-    index = EventsIndex(START)
+    index = EventsIndexData(START)
     with pytest.raises(IndexError):
         index.set_range(START + 100, START + SECONDS_IN_BIT + 101, True)
 
 
 def test_set_range_3():
-    index = EventsIndex(START)
+    index = EventsIndexData(START)
     index.set_range(START, START + SECONDS_IN_BIT, True)
     assert index[START]
     assert index[START + 101]
@@ -58,7 +58,7 @@ def test_set_range_3():
 
 
 def test_set_range_4():
-    index = EventsIndex(START)
+    index = EventsIndexData(START)
     index.set_range(START, START + 2 * SECONDS_IN_BIT, True)
     assert index[START]
     assert index[START + 101]
