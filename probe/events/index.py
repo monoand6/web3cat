@@ -46,6 +46,11 @@ class EventsIndex:
     def __repr__(self) -> str:
         return f"EventsIndex(chain_id: {self.chain_id}, address: {self.address}, event: {self.event}, args: {self.args}, data: {self.data})"
 
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
 
 class EventsIndexData:
     """
@@ -73,7 +78,6 @@ class EventsIndexData:
     def dump(self) -> bytes:
         if self._start_timestamp is None:
             return bytes()
-        print(self._start_timestamp)
         bytes4 = self._start_timestamp.to_bytes(4, "big")
         return bytes4 + self._mask._data
 
@@ -121,3 +125,8 @@ class EventsIndexData:
 
     def _timestamp_to_idx(self, timestamp: int) -> int:
         return (timestamp - self._start_timestamp) // SECONDS_IN_BIT
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False

@@ -61,3 +61,8 @@ class BitArray:
                 else:
                     res += "0"
         return f"BitArray({res})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._data == other._data
+        return False
