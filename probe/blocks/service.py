@@ -1,19 +1,19 @@
 import json
-from probe.db import BlocksDB
+from probe.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
 
-from probe.model import Block
+from probe.blocks.block import Block
 from probe.w3_utils import json_response
 
 
-class Blocks:
-    _blocksDB: BlocksDB
+class BlocksService:
+    _blocksRepo: BlocksRepo
     _w3: Web3
     _chain_id: int
     _block_time_est: float
 
-    def __init__(self, blocks_db: BlocksDB, w3: Web3):
+    def __init__(self, blocks_db: BlocksRepo, w3: Web3):
         self._blocks_db = blocks_db
         self._w3 = w3
         self._chain_id = w3.eth.chain_id
