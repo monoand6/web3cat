@@ -1,8 +1,8 @@
 from typing import Any, Dict, Tuple
 from hypothesis import given
 
-from probe.events.db import args_is_subset
-from events.strategies import args_subset_and_superset
+from probe.event_indices.repo import args_is_subset
+from event_indices.strategies import args_subset_and_superset
 
 
 @given(args_subset_and_superset())

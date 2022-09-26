@@ -1,55 +1,10 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
-from probe.events.bitarray import BitArray
+from probe.event_indices.bitarray import BitArray
 
 SECONDS_IN_BIT = 86400
 FIRST_EVM_TIMESTAMP = 1438269000
-
-
-class EventsIndex:
-    chain_id: int
-    address: str
-    event: str
-    args: Dict[str, Any]
-    data: EventsIndexData
-
-    def __init__(
-        self,
-        chain_id: int,
-        address: str,
-        event: str,
-        args: Dict[str, Any],
-        data: EventsIndexData,
-    ):
-        self.chain_id = chain_id
-        self.address = address
-        self.event = event
-        self.args = args
-        self.data = data
-
-    def from_tuple(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
-        chain_id, address, event, args_json, raw_data = tuple
-        args = json.loads(args_json)
-        data = EventsIndexData.load(raw_data)
-        return EventsIndex(chain_id, address, event, args, data)
-
-    def to_tuple(self) -> Tuple[int, str, str, str, bytes]:
-        return (
-            self.chain_id,
-            self.address,
-            self.event,
-            json.dumps(self.args),
-            self.data.dump(),
-        )
-
-    def __repr__(self) -> str:
-        return f"EventsIndex(chain_id: {self.chain_id}, address: {self.address}, event: {self.event}, args: {self.args}, data: {self.data})"
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
 
 
 class EventsIndexData:

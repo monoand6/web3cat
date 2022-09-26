@@ -1,122 +1,97 @@
-from calendar import leapdays
-import json
-from operator import sub
-from typing import Any, Dict, List
-from web3.contract import ContractEvent
-from probe.db import DB
-from probe.events.index import EventsIndexData, SECONDS_IN_BIT
-from probe.events.model import Event
+# from calendar import leapdays
+# import json
+# from operator import sub
+# from typing import Any, Dict, List
+# from web3.contract import ContractEvent
+# from probe.db import DB
+# from probe.event_indices.index import EventsIndexData, SECONDS_IN_BIT
+# from probe.event_indices.model import Event
 
 
-class EventsDB:
-    _db: DB
+# class EventsDB:
+#     _db: DB
 
-    def __init__(self, db: DB):
-        self._db = db
+#     def __init__(self, db: DB):
+#         self._db = db
 
-    def fetch_events(
-        self,
-        chain_id: int,
-        event: ContractEvent,
-        argument_filters: Dict[str, Any] | None,
-        start_timestamp: int,
-        end_timestamp: int,
-    ) -> List[Event] | None:
-        indexes = self._find_index_matches(chain_id, event, argument_filters)
-        is_indexed = False
-        for ind in indexes:
-            if self._is_fetched(ind, start_timestamp, end_timestamp):
-                is_indexed = True
-                break
-        if not is_indexed:
-            return None
+#     def fetch_events(
+#         self,
+#         chain_id: int,
+#         event: ContractEvent,
+#         argument_filters: Dict[str, Any] | None,
+#         start_timestamp: int,
+#         end_timestamp: int,
+#     ) -> List[Event] | None:
+#         indexes = self._find_index_matches(chain_id, event, argument_filters)
+#         is_indexed = False
+#         for ind in indexes:
+#             if self._is_fetched(ind, start_timestamp, end_timestamp):
+#                 is_indexed = True
+#                 break
+#         if not is_indexed:
+#             return None
 
-        cur = self._db.cursor()
+#         cur = self._db.cursor()
 
-        # to be updated
-        cur.execute(
-            "SELECT * FROM events WHERE event = ? AND address = ? AND blockNumber >= ? AND blockNumber < ? AND chainId = ?",
-            (event, address.lower(), from_block, to_block, chain_id),
-        )
-        rows = cur.fetchall()
-        events = []
-        filters = argument_filters or dict()
-        for x in rows:
-            e = _parse_event(x)
-            skip = False
-            for k, v in filters.items():
-                if skip:
-                    break
-                val = e["args"][k]
-                if isinstance(val, str):
-                    val = val.lower()
-                filter_vals = v if isinstance(v, list) else [v]
-                skip = True
-                for filter_val in filter_vals:
-                    if isinstance(filter_val, str):
-                        filter_val = filter_val.lower()
-                    if val == filter_val:
-                        skip = False
-                        break
-            if skip:
-                continue
-            events.append(e)
+#         # to be updated
+#         cur.execute(
+#             "SELECT * FROM events WHERE event = ? AND address = ? AND blockNumber >= ? AND blockNumber < ? AND chainId = ?",
+#             (event, address.lower(), from_block, to_block, chain_id),
+#         )
+#         rows = cur.fetchall()
+#         events = []
+#         filters = argument_filters or dict()
+#         for x in rows:
+#             e = _parse_event(x)
+#             skip = False
+#             for k, v in filters.items():
+#                 if skip:
+#                     break
+#                 val = e["args"][k]
+#                 if isinstance(val, str):
+#                     val = val.lower()
+#                 filter_vals = v if isinstance(v, list) else [v]
+#                 skip = True
+#                 for filter_val in filter_vals:
+#                     if isinstance(filter_val, str):
+#                         filter_val = filter_val.lower()
+#                     if val == filter_val:
+#                         skip = False
+#                         break
+#             if skip:
+#                 continue
+#             events.append(e)
 
-        return events
+#         return events
 
-    def _is_fetched(
-        self, index: EventsIndexData, start_timestamp: int, end_timestamp: int
-    ) -> bool:
-        if not index[end_timestamp]:
-            return False
-        for ts in range(start_timestamp, end_timestamp, SECONDS_IN_BIT):
-            if not index[ts]:
-                return False
-        return True
+#     def _is_fetched(
+#         self, index: EventsIndexData, start_timestamp: int, end_timestamp: int
+#     ) -> bool:
+#         if not index[end_timestamp]:
+#             return False
+#         for ts in range(start_timestamp, end_timestamp, SECONDS_IN_BIT):
+#             if not index[ts]:
+#                 return False
+#         return True
 
-    def _find_index_matches(
-        self,
-        chain_id: int,
-        event: ContractEvent,
-        argument_filters: Dict[str, Any] | None,
-    ) -> List[EventsIndexData]:
-        cur = self._db.cursor()
+#     def _find_index_matches(
+#         self,
+#         chain_id: int,
+#         event: ContractEvent,
+#         argument_filters: Dict[str, Any] | None,
+#     ) -> List[EventsIndexData]:
+#         cur = self._db.cursor()
 
-        cur.execute(
-            "SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND name = ?",
-            (chain_id, event.address, event.name),
-        )
-        rows = cur.fetchall()
-        # sort by length of the args
-        rows = sorted(rows, key=lambda r: args_len(r[3]), reverse=True)
-        args = dump_args(argument_filters)
-        rows = [r for r in rows if args_match(r, args)]
-        return [EventsIndexData.load(r) for r in rows]
-
-
-def args_is_subset(subset: Any | None, superset: Any | None) -> bool:
-    if subset is None:
-        return True
-    if superset is None:
-        if isinstance(subset, dict) and len(subset.keys()) == 0:
-            return True
-        return False
-    if isinstance(subset, dict):
-        if not isinstance(superset, dict):
-            return False
-        for key in subset.keys():
-            if not key in superset:
-                return False
-            if not args_is_subset(subset[key], superset[key]):
-                return False
-        return True
-    if isinstance(subset, list):
-        if not isinstance(superset, list):
-            return False
-        sb = set(subset)
-        sp = set(superset)
-        return sb.issubset(sp)
-    return subset == superset
+#         cur.execute(
+#             "SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND name = ?",
+#             (chain_id, event.address, event.name),
+#         )
+#         rows = cur.fetchall()
+#         # sort by length of the args
+#         rows = sorted(rows, key=lambda r: args_len(r[3]), reverse=True)
+#         args = dump_args(argument_filters)
+#         rows = [r for r in rows if args_match(r, args)]
+#         return [EventsIndexData.load(r) for r in rows]
 
 
 # def args_len(j: str | None) -> int:

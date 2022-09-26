@@ -2,7 +2,7 @@ from typing import List
 import pytest
 from hypothesis import given
 from hypothesis.strategies import lists, integers, tuples
-from probe.events.bitarray import BitArray
+from probe.event_indices.bitarray import BitArray
 
 
 @given(lists(integers(0, 1000), min_size=1, max_size=100))
