@@ -17,4 +17,4 @@ def test_read_write(event: Event, events_repo: EventsRepo):
     assert sorted(events, key=lambda x: x.block_number) == sorted(
         [e1, e2], key=lambda x: x.block_number
     )
-    events_repo._db.rollback()
+    events_repo.rollback()

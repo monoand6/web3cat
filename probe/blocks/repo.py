@@ -1,14 +1,10 @@
 from typing import List, Tuple
 from probe.db import DB
 from probe.blocks.block import Block
+from probe.repo import Repo
 
 
-class BlocksRepo:
-    _db: DB
-
-    def __init__(self, db: DB):
-        self._db = db
-
+class BlocksRepo(Repo):
     def get_block_after_timestamp(self, timestamp: int, chain_id: int) -> Block | None:
         cursor = self._db.cursor()
         cursor.execute(

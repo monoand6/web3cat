@@ -1,14 +1,10 @@
 from typing import List
 from probe.db import DB
 from probe.events.event import Event
+from probe.repo import Repo
 
 
-class EventsRepo:
-    _db: DB
-
-    def __init__(self, db: DB):
-        self._db = db
-
+class EventsRepo(Repo):
     def find(
         self, event: str, address: str, from_block: int = 0, to_block: int = 2**32 - 1
     ) -> List[Event]:
