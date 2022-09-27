@@ -4,14 +4,14 @@ from probe.db import DB
 from probe.events_indices.index import EventsIndex
 
 
-class EventIndicesRepo:
+class EventsIndicesRepo:
     _db: DB
 
     def __init__(self, db: DB):
         self._db = db
 
     def find_indices(
-        self, address: str, event: str, args: Dict[str, Any] | None
+        self, address: str, event: str, args: Dict[str, Any] | None = None
     ) -> List[EventsIndex]:
         cursor = self._db.cursor()
         cursor.execute(
@@ -20,12 +20,12 @@ class EventIndicesRepo:
         )
         rows = cursor.fetchall()
         indices = [EventsIndex.from_tuple(r) for r in rows]
-        return [i for i in indices if args_is_subset(i.args, args)]
+        return [i for i in indices if args_is_subset(args, i.args)]
 
     def save(self, index: EventsIndex):
         cursor = self._db.cursor()
         cursor.execute(
-            "INSERT INTO events_indices (chain_id,address,event,args) VALUES (?,?,?,?)",
+            "INSERT INTO events_indices (chain_id,address,event,args,mask) VALUES (?,?,?,?,?)",
             index.to_tuple(),
         )
 
