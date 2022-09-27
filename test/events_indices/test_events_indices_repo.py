@@ -13,7 +13,7 @@ def test_read_write(events_indices_repo: EventsIndicesRepo):
     events_index = EventsIndex(
         1, "0x1234", "TestEvent", {"from": "0x1234", "value": 1}, events_index_data
     )
-    events_indices_repo.save(events_index)
+    events_indices_repo.save([events_index])
     list1 = events_indices_repo.find_indices(events_index.address, events_index.event)
     list2 = events_indices_repo.find_indices(
         events_index.address, events_index.event, events_index.args

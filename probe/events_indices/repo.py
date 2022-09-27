@@ -22,11 +22,12 @@ class EventsIndicesRepo:
         indices = [EventsIndex.from_tuple(r) for r in rows]
         return [i for i in indices if args_is_subset(args, i.args)]
 
-    def save(self, index: EventsIndex):
+    def save(self, indices: List[EventsIndex]):
         cursor = self._db.cursor()
-        cursor.execute(
-            "INSERT INTO events_indices (chain_id,address,event,args,mask) VALUES (?,?,?,?,?)",
-            index.to_tuple(),
+        rows = [i.to_tuple() for i in indices]
+        cursor.executemany(
+            "INSERT INTO events_indices VALUES (?,?,?,?,?)",
+            rows,
         )
 
 

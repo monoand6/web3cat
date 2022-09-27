@@ -31,7 +31,7 @@ class BlocksRepo:
             return None
         return Block.from_tuple(row)
 
-    def read_blocks(
+    def find(
         self, blocks: int | str | List[int | str], chain_id: int
     ) -> Tuple[List[Block]]:
         int_blocks, str_blocks = self._resolve_blocks_args(blocks)
@@ -58,7 +58,7 @@ class BlocksRepo:
         blocks_res = list({(b.number): b for b in blocks_res}.values())
         return sorted(blocks_res, key=lambda x: x.number)
 
-    def write_blocks(self, blocks: List[Block]):
+    def read(self, blocks: List[Block]):
         cursor = self._db.cursor()
         rows = [b.to_tuple() for b in blocks]
         cursor.executemany(

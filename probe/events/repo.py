@@ -1,11 +1,20 @@
-# from calendar import leapdays
-# import json
-# from operator import sub
-# from typing import Any, Dict, List
-# from web3.contract import ContractEvent
-# from probe.db import DB
-# from probe.events_indices.index import EventsIndexData, SECONDS_IN_BIT
-# from probe.events_indices.model import Event
+from typing import List
+from probe.db import DB
+from probe.events.event import Event
+
+
+class EventsRepo:
+    _db: DB
+
+    def __init__(self, db: DB):
+        self._db = db
+
+    def save(self, events: List[Event]):
+        cursor = self._db.cursor()
+        rows = [e.to_tuple() for e in events]
+        cursor.executemany(
+            "INSERT INTO events VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING", rows
+        )
 
 
 # class EventsDB:

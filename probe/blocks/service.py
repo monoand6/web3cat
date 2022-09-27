@@ -62,7 +62,7 @@ class BlocksService:
         number = None => fetch latest
         """
         if number:
-            blocks = self._blocks_db.read_blocks(number, self._chain_id)
+            blocks = self._blocks_db.find(number, self._chain_id)
             if len(blocks) > 0:
                 return blocks[0]
         raw_block = None
@@ -78,6 +78,6 @@ class BlocksService:
             number=raw_block["number"],
             timestamp=raw_block["timestamp"],
         )
-        self._blocks_db.write_blocks([block])
+        self._blocks_db.read([block])
         self._blocks_db.commit()
         return block
