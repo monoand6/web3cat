@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
-from probe.event_indices.index_data import EventsIndexData
+from probe.events_indices.index_data import EventsIndexData
 
 SECONDS_IN_BIT = 86400
 FIRST_EVM_TIMESTAMP = 1438269000

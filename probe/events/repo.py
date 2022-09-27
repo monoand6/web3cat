@@ -4,8 +4,8 @@
 # from typing import Any, Dict, List
 # from web3.contract import ContractEvent
 # from probe.db import DB
-# from probe.event_indices.index import EventsIndexData, SECONDS_IN_BIT
-# from probe.event_indices.model import Event
+# from probe.events_indices.index import EventsIndexData, SECONDS_IN_BIT
+# from probe.events_indices.model import Event
 
 
 # class EventsDB:

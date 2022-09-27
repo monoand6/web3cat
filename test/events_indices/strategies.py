@@ -1,7 +1,7 @@
 from string import printable
 from typing import Any, Dict, Tuple
 from hypothesis.strategies import composite, integers, text, lists, one_of
-from probe.event_indices.index import EventsIndexData, EventsIndex
+from probe.events_indices.index import EventsIndexData, EventsIndex
 
 
 @composite

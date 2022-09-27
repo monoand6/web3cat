@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
-from probe.event_indices.bitarray import BitArray
+from probe.events_indices.bitarray import BitArray
 
 SECONDS_IN_BIT = 86400
 FIRST_EVM_TIMESTAMP = 1438269000
