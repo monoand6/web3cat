@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Tuple
+from typing import Any, Dict, Tuple
+import json
 
 
 class Event:
@@ -9,7 +10,7 @@ class Event:
     log_index: int
     address: str
     event: str
-    args: str
+    args: Dict[str, Any]
 
     def __init__(
         self,
@@ -19,7 +20,7 @@ class Event:
         log_index: int,
         address: str,
         event: str,
-        args: str,
+        args: Dict[str, Any],
     ):
         self.chain_id = chain_id
         self.block_number = block_number
@@ -30,7 +31,9 @@ class Event:
         self.args = args
 
     def from_tuple(tuple: Tuple[int, int, str, int, str, str, str]) -> Event:
-        return Event(*tuple)
+        event = Event(*tuple)
+        event.args = json.loads(event.args)
+        return event
 
     def to_tuple(self) -> Tuple[int, int, str, int, str, str, str]:
         return (
@@ -40,7 +43,7 @@ class Event:
             self.log_index,
             self.address,
             self.event,
-            self.args,
+            json.dumps(self.args),
         )
 
     def __eq__(self, other):
@@ -49,4 +52,4 @@ class Event:
         return False
 
     def __repr__(self):
-        return f'Block({{"chain_id":{self.chain_id}, "hash": {self.hash}, "number":{self.number}, "timestamp":{self.timestamp}}})'
+        return f'Event({{"chain_id":{self.chain_id}, "block_number": {self.block_number}, "transaction_hash":{self.transaction_hash}, "log_index":{self.log_index}, "address": {self.address}, "event": {self.event}, "args": {json.dumps(self.args)}}})'

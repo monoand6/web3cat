@@ -9,6 +9,17 @@ class EventsRepo:
     def __init__(self, db: DB):
         self._db = db
 
+    def find(
+        self, event: str, address: str, from_block: int = 0, to_block: int = 2**32 - 1
+    ) -> List[Event]:
+        cursor = self._db.cursor()
+        cursor.execute(
+            "SELECT * FROM events WHERE event = ? AND address = ? AND block_number >= ? AND block_number < ?",
+            (event, address, from_block, to_block),
+        )
+        rows = cursor.fetchall()
+        return [Event.from_tuple(r) for r in rows]
+
     def save(self, events: List[Event]):
         cursor = self._db.cursor()
         rows = [e.to_tuple() for e in events]

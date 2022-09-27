@@ -5,7 +5,6 @@ from probe.events_indices.index_data import EventsIndexData
 
 from probe.events_indices.repo import EventsIndicesRepo, args_is_subset
 from events_indices.strategies import args_subset_and_superset
-from fixtures.events_indices import events_indices_repo
 
 
 def test_read_write(events_indices_repo: EventsIndicesRepo):
