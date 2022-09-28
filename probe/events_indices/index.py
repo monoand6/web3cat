@@ -46,16 +46,18 @@ class EventsIndex:
 
     @args.setter
     def args(self, val: Dict[str, Any] | None):
-        if val is None:
-            self._args = {}
-            return
+        self._args = EventsIndex.normalize_args(val)
+
+    def normalize_args(args: Dict[str, Any] | None) -> Dict[str, Any]:
+        if args is None:
+            return {}
         res = {}
-        for k in sorted(val.keys()):
-            v = val[k]
+        for k in sorted(args.keys()):
+            v = args[k]
             if type(v) is list:
                 v = sorted(v)
             res[k] = v
-        self._args = res
+        return res
 
     def step(self) -> int:
         return self.data.step()

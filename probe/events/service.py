@@ -24,58 +24,136 @@ class EventsService:
         self._events_indices_repo = events_indices_repo
         self._w3 = w3
 
+    def get_events(
+        self,
+        chain_id: int,
+        event: ContractEvent,
+        argument_filters: Dict[str, Any] | None,
+        from_block: int,
+        to_block: int,
+    ):
+        self._fetch_events(chain_id, event, argument_filters, from_block, to_block)
+        return self._events_repo.find(
+            chain_id, event.event_name, event.address, from_block, to_block
+        )
+
+    def _fetch_events(
+        self,
+        chain_id: int,
+        event: ContractEvent,
+        argument_filters: Dict[str, Any] | None,
+        from_block: int,
+        to_block: int,
+    ):
+        read_indices = self._events_indices_repo.find_indices(
+            chain_id, event.address, event.event_name, argument_filters
+        )
+        write_index = self._events_indices_repo.get_index(
+            chain_id, event.address, event.event_name, argument_filters
+        )
+        if write_index is None:
+            write_index = EventsIndex(
+                chain_id,
+                event.address,
+                event.event_name,
+                argument_filters,
+                EventsIndexData(),
+            )
+        current_chunk_size = (to_block - from_block) // write_index.step() + 1
+        fetched = False
+        while not fetched:
+            if current_chunk_size == 0:
+                raise RuntimeError(
+                    "Couldn't fetch data because chunk size = 0 is reached"
+                )
+            try:
+                self._fetch_events_for_chunk_size(
+                    current_chunk_size,
+                    chain_id,
+                    event,
+                    argument_filters,
+                    from_block,
+                    to_block,
+                    read_indices,
+                    write_index,
+                )
+            # ValueError is for error of exceeding log size
+            # However requests.exceptions.ReadTimeout also happens sometimes, so it's better to use catch-all
+            except Exception:
+                current_chunk_size //= 2
+
     def _fetch_events_for_chunk_size(
         self,
         chunk_size: int,
         chain_id: int,
         event: ContractEvent,
+        argument_filters: Dict[str, Any] | None,
         from_block: int,
         to_block: int,
-        argument_filters: Dict[str, Any] | None,
+        read_indices: List[EventsIndex],
+        write_index: EventsIndex,
     ):
-        chunks = int((to_block - from_block) / chunk_size)
+        from_block = write_index.data.snap_block_to_grid(from_block)
+        offset = 0 if to_block == write_index.data.snap_block_to_grid(to_block) else 1
+        to_block = (
+            write_index.data.snap_block_to_grid(to_block) + offset * write_index.step()
+        )
+
+        chunks = ((to_block - from_block) // write_index.step()) // chunk_size
         current_block = from_block
         for c in range(chunks):
             self._print_progress(
                 c,
                 chunks,
                 prefix=f"Fetching `{event.event_name}` event for `{event.address}`",
+                suffix=f"{chunk_size * write_index.step()} events per fetch",
             )
-            _fetch_and_cache_events(
-                event,
-                current_block,
-                current_block + chunk_size,
+            from_block_local = current_block
+            to_block_local = current_block + chunk_size * write_index.step()
+            if self._is_in_indices(read_indices, from_block, to_block):
+                continue
+            self._fetch_and_save_events_in_one_chunk(
                 chain_id,
+                event,
                 argument_filters,
+                from_block_local,
+                to_block_local,
+                write_index,
             )
-            current_block += chunk_size
+            current_block += chunk_size * write_index.step()
         if current_block < to_block:
-            logging.info("Last chunk")
-            _fetch_and_cache_events(
-                event, current_block, to_block, chain_id, argument_filters
+            self._print_progress(
+                chunks,
+                chunks,
+                prefix=f"Fetching `{event.event_name}` event for `{event.address}`",
+                suffix=f"{chunk_size * write_index.step()} events per fetch",
             )
-        add_to_events_cache(event, from_block, to_block, chain_id, argument_filters)
-        return get_db_events(
-            event.event_name,
-            event.address,
-            from_block,
-            to_block,
-            chain_id,
-            argument_filters,
-        )
+            if not self._is_in_indices(read_indices, current_block, to_block):
+                self._fetch_and_save_events_in_one_chunk(
+                    chain_id,
+                    event,
+                    argument_filters,
+                    from_block_local,
+                    to_block_local,
+                    write_index,
+                )
 
     def _fetch_and_save_events_in_one_chunk(
         self,
         chain_id: int,
         event: ContractEvent,
+        argument_filters: Dict[str, Any] | None,
         from_block: int,
         to_block: int,
-        argument_filters: Dict[str, Any] | None,
-        index: EventsIndex,
+        write_index: EventsIndex,
     ) -> List[Event]:
-        
-        pass
-        # events = self._fetch_and_save_events_in_one_chunk(chain_id, event, from)
+        events = self._fetch_events_in_one_chunk(
+            chain_id, event, from_block, to_block, argument_filters
+        )
+        self._events_repo.save(events)
+        write_index.data.set_range(from_block, to_block, True)
+        self._events_indices_repo.save([write_index])
+        self._events_indices_repo.commit()
 
     def _fetch_events_in_one_chunk(
         self,
@@ -105,6 +183,26 @@ class EventsService:
             for j in jsons
         ]
         return events
+
+    def _is_in_indices(
+        self, indices: List[EventsIndex], start_block: int, end_block: int
+    ) -> bool:
+        for index in indices:
+            if self._is_in_index(index, start_block, end_block):
+                return True
+        return False
+
+    def _is_in_index(
+        self, index: EventsIndex, start_block: int, end_block: int
+    ) -> bool:
+        if end_block == 0:
+            return True
+        if not index[end_block]:
+            return False
+        for b in range(start_block, end_block, index.step()):
+            if not index[b]:
+                return False
+        return True
 
     def _pick_index(
         event_indices: List[EventsIndex],

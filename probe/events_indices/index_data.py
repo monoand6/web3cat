@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, Tuple
 from probe.events_indices.bitarray import BitArray
 
-BLOCKS_PER_BIT = 10_000
+BLOCKS_PER_BIT = 5_000
 
 
 class EventsIndexData:

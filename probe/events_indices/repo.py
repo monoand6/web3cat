@@ -3,34 +3,38 @@ from typing import Any, Dict, List
 import json
 from probe.db import DB
 from probe.events_indices.index import EventsIndex
+from probe.repo import Repo
 
 
-class EventsIndicesRepo:
-    _db: DB
-
-    def __init__(self, db: DB):
-        self._db = db
-
+class EventsIndicesRepo(Repo):
     def find_indices(
-        self, address: str, event: str, args: Dict[str, Any] | None = None
+        self,
+        chain_id: int,
+        address: str,
+        event: str,
+        args: Dict[str, Any] | None = None,
     ) -> List[EventsIndex]:
         cursor = self._db.cursor()
         cursor.execute(
-            f"SELECT * FROM events_indices WHERE address = ? AND event = ?",
-            (address, event),
+            f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
+            (chain_id, address, event),
         )
         rows = cursor.fetchall()
         indices = [EventsIndex.from_tuple(r) for r in rows]
         return [i for i in indices if args_is_subset(args, i.args)]
 
     def get_index(
-        self, address: str, event: str, args: Dict[str, Any] | None = None
+        self,
+        chain_id: int,
+        address: str,
+        event: str,
+        args: Dict[str, Any] | None = None,
     ) -> EventsIndex | None:
         args = args or {}
         cursor = self._db.cursor()
         cursor.execute(
-            f"SELECT * FROM events_indices WHERE address = ? AND event = ? and args = ?",
-            (address, event, json.dumps(args)),
+            f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ? and args = ?",
+            (chain_id, address, event, json.dumps(EventsIndex.normalize_args(args))),
         )
         row = cursor.fetchone()
         if row is None:

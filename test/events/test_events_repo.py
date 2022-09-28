@@ -13,7 +13,7 @@ def test_read_write(event: Event, events_repo: EventsRepo):
     e2.block_number += 10
     e2.log_index += 1
     events_repo.save([e1, e2])
-    events = events_repo.find(e1.event, e1.address)
+    events = events_repo.find(e1.chain_id, e1.event, e1.address)
     assert sorted(events, key=lambda x: x.block_number) == sorted(
         [e1, e2], key=lambda x: x.block_number
     )

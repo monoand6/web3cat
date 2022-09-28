@@ -9,22 +9,29 @@ from events_indices.strategies import args_subset_and_superset
 
 def test_read_write(events_indices_repo: EventsIndicesRepo):
     events_index_data = EventsIndexData(100)
+    chain_id = 1
     events_index = EventsIndex(
-        1, "0x1234", "TestEvent", {"from": "0x1234", "value": 1}, events_index_data
+        chain_id,
+        "0x1234",
+        "TestEvent",
+        {"from": "0x1234", "value": 1},
+        events_index_data,
     )
     events_indices_repo.save([events_index])
-    list1 = events_indices_repo.find_indices(events_index.address, events_index.event)
+    list1 = events_indices_repo.find_indices(
+        chain_id, events_index.address, events_index.event
+    )
     list2 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, events_index.args
+        chain_id, events_index.address, events_index.event, events_index.args
     )
     list3 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {"from": "0x1234"}
+        chain_id, events_index.address, events_index.event, {"from": "0x1234"}
     )
     list4 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {"value": 1}
+        chain_id, events_index.address, events_index.event, {"value": 1}
     )
     list5 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {}
+        chain_id, events_index.address, events_index.event, {}
     )
 
     assert len(list1) == 1
@@ -39,13 +46,13 @@ def test_read_write(events_indices_repo: EventsIndicesRepo):
     assert list4[0] == list5[0]
 
     elist1 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {"value": 2}
+        chain_id, events_index.address, events_index.event, {"value": 2}
     )
     elist2 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {"some": 3}
+        chain_id, events_index.address, events_index.event, {"some": 3}
     )
     elist3 = events_indices_repo.find_indices(
-        events_index.address, events_index.event, {"from": "0x12"}
+        chain_id, events_index.address, events_index.event, {"from": "0x12"}
     )
     assert len(elist1) == 0
     assert len(elist2) == 0
