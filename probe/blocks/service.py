@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import json
 from probe.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
+from web3.auto import w3 as w3auto
 
 from probe.blocks.block import Block
 from probe.w3_utils import json_response
+from probe.db import DB
 
 
 class BlocksService:
@@ -20,6 +24,16 @@ class BlocksService:
         self._block_time_est = 1.0
         if self._chain_id in [1, 3, 4, 5, 42]:
             self._block_time_est = 13.0
+
+    def create(
+        cache_path: str = "cache.sqlite3", rpc: str | None = None
+    ) -> BlocksService:
+        db = DB.from_path(cache_path)
+        blocks_repo = BlocksRepo(db)
+        w3 = w3auto
+        if rpc:
+            w3 = Web3(Web3.HTTPProvider(rpc))
+        return BlocksService(blocks_repo, w3)
 
     def get_latest_block(self) -> Block:
         return self.get_block()
