@@ -8,7 +8,7 @@ class Event:
     block_number: int
     transaction_hash: str
     log_index: int
-    address: str
+    _address: str
     event: str
     args: Dict[str, Any]
 
@@ -45,6 +45,14 @@ class Event:
             self.event,
             json.dumps(self.args),
         )
+
+    @property
+    def address(self) -> str:
+        return self._address
+
+    @address.setter
+    def address(self, val: str) -> str:
+        self._address = val.lower()
 
     def __eq__(self, other):
         if type(other) is type(self):

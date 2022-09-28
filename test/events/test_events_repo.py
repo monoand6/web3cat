@@ -9,7 +9,15 @@ from probe.events.event import Event
 @given(event=event())
 def test_read_write(event: Event, events_repo: EventsRepo):
     e1 = event
-    e2 = Event(**e1.__dict__)
+    e2 = Event(
+        chain_id=e1.chain_id,
+        block_number=e1.block_number,
+        transaction_hash=e1.transaction_hash,
+        log_index=e1.log_index,
+        address=e1.address,
+        event=e1.event,
+        args=e1.args,
+    )
     e2.block_number += 10
     e2.log_index += 1
     events_repo.save([e1, e2])

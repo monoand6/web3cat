@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import json
 from typing import Any, Dict, List
@@ -8,8 +9,10 @@ from probe.events_indices.index_data import EventsIndexData
 from probe.events_indices.repo import EventsIndicesRepo
 from web3 import Web3
 from web3.contract import ContractEvent
+from web3.auto import w3 as w3auto
 
 from probe.w3_utils import json_response
+from probe.db import DB
 
 
 class EventsService:
@@ -23,6 +26,17 @@ class EventsService:
         self._events_repo = events_repo
         self._events_indices_repo = events_indices_repo
         self._w3 = w3
+
+    def create(
+        cache_path: str = "cache.sqlite3", rpc: str | None = None
+    ) -> EventsService:
+        db = DB.from_path(cache_path)
+        events_repo = EventsRepo(db)
+        events_indices_repo = EventsIndicesRepo(db)
+        w3 = w3auto
+        if rpc:
+            w3 = Web3(Web3.HTTPProvider(rpc))
+        return EventsService(events_repo, events_indices_repo, w3)
 
     def get_events(
         self,
