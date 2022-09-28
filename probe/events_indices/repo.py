@@ -45,7 +45,7 @@ class EventsIndicesRepo(Repo):
         cursor = self._db.cursor()
         rows = [i.to_tuple() for i in indices]
         cursor.executemany(
-            "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING",
+            "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO UPDATE SET mask = excluded.mask",
             rows,
         )
 

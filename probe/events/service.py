@@ -125,13 +125,20 @@ class EventsService:
             self._print_progress(
                 c,
                 chunks,
-                prefix=f"Fetching `{event.event_name}` event for `{short_address(event.address)}`",
-                suffix=f"{chunk_size * write_index.step()} events per fetch",
+                prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
+                suffix=f" ({chunk_size * write_index.step()} events per fetch)",
             )
             from_block_local = current_block
             to_block_local = current_block + chunk_size * write_index.step()
             if self._is_in_indices(read_indices, from_block, to_block):
+                self._print_progress(
+                    c + 1,
+                    chunks,
+                    prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
+                    suffix=f" ({chunk_size * write_index.step()} events per fetch)",
+                )
                 continue
+
             self._fetch_and_save_events_in_one_chunk(
                 chain_id,
                 event,
@@ -140,14 +147,14 @@ class EventsService:
                 to_block_local,
                 write_index,
             )
+            self._print_progress(
+                c + 1,
+                chunks,
+                prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
+                suffix=f" ({chunk_size * write_index.step()} events per fetch)",
+            )
             current_block += chunk_size * write_index.step()
         if current_block < to_block:
-            self._print_progress(
-                chunks,
-                chunks,
-                prefix=f"Fetching `{event.event_name}` event for `{short_address(event.address)}`",
-                suffix=f"{chunk_size * write_index.step()} events per fetch",
-            )
             if not self._is_in_indices(read_indices, current_block, to_block):
                 self._fetch_and_save_events_in_one_chunk(
                     chain_id,
@@ -171,7 +178,8 @@ class EventsService:
             chain_id, event, from_block, to_block, argument_filters
         )
         self._events_repo.save(events)
-        write_index.data.set_range(from_block, to_block, True)
+        # set_range is non-inclusive on the to_block
+        write_index.data.set_range(from_block, to_block + write_index.step(), True)
         self._events_indices_repo.save([write_index])
         self._events_indices_repo.commit()
 
@@ -224,25 +232,8 @@ class EventsService:
                 return False
         return True
 
-    def _pick_index(
-        event_indices: List[EventsIndex],
-        chain_id: str,
-        event: ContractEvent,
-        args: Dict[str, Any] | None,
-        start_block: int,
-        end_block: int,
-    ) -> EventsIndex:
-        if len(event_indices) == 0:
-            return EventsIndex(
-                chain_id=chain_id,
-                address=event.address,
-                event=event.event_name,
-                args=args,
-                data=EventsIndexData(),
-            )
-
     def _print_progress(
-        self, iteration, total, prefix="", suffix="", decimals=1, bar_length=10
+        self, iteration, total, prefix="", suffix="", decimals=1, bar_length=20
     ):
         """
         Call in a loop to create terminal progress bar
@@ -263,7 +254,7 @@ class EventsService:
 
         if iteration == total:
             sys.stdout.write("\n")
-        sys.stdout.flush()
+            sys.stdout.flush()
 
 
 # class EventsDB:
