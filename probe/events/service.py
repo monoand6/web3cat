@@ -11,7 +11,7 @@ from web3 import Web3
 from web3.contract import ContractEvent
 from web3.auto import w3 as w3auto
 
-from probe.w3_utils import json_response
+from probe.w3_utils import json_response, short_address
 from probe.db import DB
 
 
@@ -42,9 +42,9 @@ class EventsService:
         self,
         chain_id: int,
         event: ContractEvent,
-        argument_filters: Dict[str, Any] | None,
         from_block: int,
         to_block: int,
+        argument_filters: Dict[str, Any] | None = None,
     ):
         self._fetch_events(chain_id, event, argument_filters, from_block, to_block)
         return self._events_repo.find(
@@ -75,11 +75,15 @@ class EventsService:
             )
         current_chunk_size = (to_block - from_block) // write_index.step() + 1
         fetched = False
+        e_memoized = None
         while not fetched:
             if current_chunk_size == 0:
-                raise RuntimeError(
-                    "Couldn't fetch data because chunk size = 0 is reached"
-                )
+                if not e_memoized:
+                    raise RuntimeError(
+                        "Couldn't fetch data because chunk size = 0 is reached"
+                    )
+                else:
+                    raise e_memoized
             try:
                 self._fetch_events_for_chunk_size(
                     current_chunk_size,
@@ -91,9 +95,11 @@ class EventsService:
                     read_indices,
                     write_index,
                 )
+                fetched = True
             # ValueError is for error of exceeding log size
             # However requests.exceptions.ReadTimeout also happens sometimes, so it's better to use catch-all
-            except Exception:
+            except Exception as e:
+                e_memoized = e
                 current_chunk_size //= 2
 
     def _fetch_events_for_chunk_size(
@@ -119,7 +125,7 @@ class EventsService:
             self._print_progress(
                 c,
                 chunks,
-                prefix=f"Fetching `{event.event_name}` event for `{event.address}`",
+                prefix=f"Fetching `{event.event_name}` event for `{short_address(event.address)}`",
                 suffix=f"{chunk_size * write_index.step()} events per fetch",
             )
             from_block_local = current_block
@@ -139,7 +145,7 @@ class EventsService:
             self._print_progress(
                 chunks,
                 chunks,
-                prefix=f"Fetching `{event.event_name}` event for `{event.address}`",
+                prefix=f"Fetching `{event.event_name}` event for `{short_address(event.address)}`",
                 suffix=f"{chunk_size * write_index.step()} events per fetch",
             )
             if not self._is_in_indices(read_indices, current_block, to_block):
@@ -211,10 +217,10 @@ class EventsService:
     ) -> bool:
         if end_block == 0:
             return True
-        if not index[end_block]:
+        if not index.data[end_block]:
             return False
         for b in range(start_block, end_block, index.step()):
-            if not index[b]:
+            if not index.data[b]:
                 return False
         return True
 

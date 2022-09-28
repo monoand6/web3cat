@@ -18,3 +18,7 @@ class Web3JsonEncoder(json.JSONEncoder):
 
 def json_response(response: AttributeDict) -> str:
     return json.dumps(response, cls=Web3JsonEncoder)
+
+
+def short_address(address: str) -> str:
+    return f"{address[:6]}...{address[37:]}"
