@@ -37,6 +37,9 @@ class EventsIndexData:
     def snap_block_to_grid(self, block: int) -> int:
         return block - block % self._blocks_per_bit
 
+    def step(self) -> int:
+        return self._blocks_per_bit
+
     def dump(self) -> bytes:
         if self._start_block is None:
             return bytes()

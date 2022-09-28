@@ -57,6 +57,9 @@ class EventsIndex:
             res[k] = v
         self._args = res
 
+    def step(self) -> int:
+        return self.data.step()
+
     def _dump_args(self) -> str:
         if self.args is None:
             return json.dumps({})
