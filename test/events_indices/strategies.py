@@ -1,4 +1,4 @@
-from string import printable
+from string import ascii_letters, printable
 from typing import Any, Dict, Tuple
 from hypothesis.strategies import composite, integers, text, lists, one_of
 from probe.events_indices.index import EventsIndexData, EventsIndex
@@ -32,17 +32,25 @@ def args_subset_and_superset(draw) -> Tuple[Dict[str, Any], Dict[str, Any]]:
 @composite
 def events_index(draw) -> EventsIndex:
     args = {}
-    for k in draw(lists(text(printable))):
+    for k in draw(lists(text(ascii_letters))):
         args[k] = draw(
             one_of(
-                lists(one_of(integers(), text(printable))), integers(), text(printable)
+                lists(one_of(integers(), text(ascii_letters))),
+                integers(),
+                text(ascii_letters),
             )
         )
-    data = EventsIndexData(draw(integers(8, 1000)) * 86400)
+    data = EventsIndexData()
     for _ in range(draw(integers(0, 20))):
-        start = draw(integers(8, 1000)) * 86400
-        end = start + draw(integers(0, 200)) * 86400
+        start = draw(integers(0, 1_000_000))
+        end = start + draw(integers(0, 200_000))
+        start = data.snap_block_to_grid(start)
+        end = data.snap_block_to_grid(end)
         data.set_range(start, end, True)
     return EventsIndex(
-        draw(integers()), draw(text(printable)), draw(text(printable)), args, data
+        draw(integers()),
+        draw(text(ascii_letters)),
+        draw(text(ascii_letters)),
+        args,
+        data,
     )

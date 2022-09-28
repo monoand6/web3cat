@@ -3,83 +3,109 @@ import json
 from typing import Any, Dict, Tuple
 from probe.events_indices.bitarray import BitArray
 
-SECONDS_IN_BIT = 86400
-FIRST_EVM_TIMESTAMP = 1438269000
-
 
 class EventsIndexData:
-    """
-    Doesn't work for timestamps < 8 * 86400
-    """
-
-    _start_timestamp: int | None
+    _start_block: int | None
     _mask: BitArray
+    _blocks_per_bit: int
 
-    def __init__(self, start_timestamp: int | None = None, mask: bytes | None = None):
-        self._start_timestamp = None
+    def __init__(
+        self,
+        start_block: int | None = None,
+        mask: bytes | None = None,
+    ):
+        self._blocks_per_bit = 10_000
+        self._start_block = None
         self._mask = BitArray(mask or [])
-        self._update_timestamp(start_timestamp)
+        self._update_start_block(start_block)
 
-    def set_range(self, start_timestamp: int, end_timestamp: int, value: bool):
-        if start_timestamp % SECONDS_IN_BIT != 0 or end_timestamp % SECONDS_IN_BIT != 0:
+    def set_range(self, start_block: int, end_block: int, value: bool):
+        if (
+            start_block % self._blocks_per_bit != 0
+            or end_block % self._blocks_per_bit != 0
+        ):
             raise IndexError(
-                f"EventsIndexData only multiples of {SECONDS_IN_BIT} are allowed for start_timestamp and end_timestamp. Got {start_timestamp} and {end_timestamp}"
+                f"EventsIndexData only multiples of `{self._blocks_per_bit}` are allowed for start_block and end_block. Got `{start_block}` and `{end_block}`"
             )
-        self._update_timestamp(start_timestamp)
-        start_idx = self._timestamp_to_idx(start_timestamp)
-        end_idx = self._timestamp_to_idx(end_timestamp)
+        self._update_start_block(start_block)
+        start_idx = self._block_to_bit(start_block)
+        end_idx = self._block_to_bit(end_block)
         self._mask.set_range(start_idx, end_idx, value)
 
+    def snap_block_to_grid(self, block: int) -> int:
+        return block - block % self._blocks_per_bit
+
     def dump(self) -> bytes:
-        if self._start_timestamp is None:
+        if self._start_block is None:
             return bytes()
-        bytes4 = self._start_timestamp.to_bytes(4, "big")
+        bytes4 = self._start_block.to_bytes(4, "big")
         return bytes4 + self._mask._data
 
     def load(data: bytes) -> EventsIndexData:
         if len(data) < 4:
             return EventsIndexData()
-        ts = int.from_bytes(data[0:4], "big")
+        block = int.from_bytes(data[0:4], "big")
         mask = data[4:]
-        return EventsIndexData(ts, mask)
+        return EventsIndexData(block, mask)
 
-    def snap_to_grid(self, timestamp: int) -> int:
-        return timestamp - timestamp % SECONDS_IN_BIT
-
-    def __getitem__(self, timestamp: int) -> bool:
-        if self._start_timestamp is None:
+    def __getitem__(self, block: int) -> bool:
+        if self._start_block is None:
             return False
-        idx = self._timestamp_to_idx(timestamp)
-        if idx < 0 or idx >= len(self._mask):
+        bit = self._block_to_bit(block)
+        if bit < 0 or bit >= len(self._mask):
             return False
-        return self._mask[idx]
+        return self._mask[bit]
 
     def __repr__(self) -> str:
-        return f"EventsIndexData(start: {self._start_timestamp}, mask: {self._mask})"
+        return f"EventsIndexData(start_block: {self._start_block}, mask: {self._mask})"
 
-    def _update_timestamp(self, timestamp: int | None):
-        if timestamp is None:
+    def _update_start_block(self, block: int | None):
+        """
+
+        Example
+
+        Before:
+        start_block: 0x10
+        mask: 0011000011111100
+        0               1
+        0123456789abcdef0123456789abcdef
+                        0011000011111100
+
+        update start block to 0x04
+        prepend 2 bytes, update start_block to 0x00 (multiple of 8 bits)
+
+        After:
+        start_block: 0x00
+        mask: 00000000000000000011000011111100
+        0               1
+        0123456789abcdef0123456789abcdef
+        00000000000000000011000011111100
+
+        """
+        if block is None:
             return
 
-        timestamp -= timestamp % SECONDS_IN_BIT
+        bit_number = block // self._blocks_per_bit
+        byte_number = bit_number // 8
+        # snap block to grid of bytes and blocks_per_bit
+        block = byte_number * 8 * self._blocks_per_bit
 
-        if self._start_timestamp is None:
-            self._start_timestamp = timestamp
+        if self._start_block is None:
+            self._start_block = block
             return
 
-        if timestamp >= self._start_timestamp:
+        if block >= self._start_block:
+            # no need to update
             return
 
-        # make sure that offset % 8 would be == 0, so that we can add bytes
-        while ((self._start_timestamp - timestamp) // SECONDS_IN_BIT) % 8 != 0:
-            timestamp -= SECONDS_IN_BIT
+        num_bytes_to_prepend = (
+            (self._start_block - block) // self._blocks_per_bit
+        ) // 8
+        self._mask.prepend_empty_bytes(num_bytes_to_prepend)
+        self._start_block = block
 
-        num_bytes = ((self._start_timestamp - timestamp) // SECONDS_IN_BIT) // 8
-        self._start_timestamp = timestamp
-        self._mask.prepend_empty_bytes(num_bytes)
-
-    def _timestamp_to_idx(self, timestamp: int) -> int:
-        return (timestamp - self._start_timestamp) // SECONDS_IN_BIT
+    def _block_to_bit(self, block: int) -> int:
+        return (block - self._start_block) // self._blocks_per_bit
 
     def __eq__(self, other):
         if type(other) is type(self):

@@ -9,69 +9,79 @@ START = 1538269000 - 1538269000 % 86400
 
 
 @given(events_index())
-def test_events_index_from_to_tuple(idx):
+def test_events_index_from_to_tuple(idx: EventsIndex):
     assert EventsIndex.from_tuple(idx.to_tuple()) == idx
 
 
-@given(lists(integers(8, 100)), lists(integers(8, 100)))
+@given(events_index())
+def test_events_index_data_dump_load(idx: EventsIndex):
+    data = idx.data
+    restored = EventsIndexData.load(data.dump())
+    for i in range(0, 1_000_000, 10000):
+        assert data[i] == restored[i]
+
+    assert EventsIndex.from_tuple(idx.to_tuple()) == idx
+
+
+@given(lists(integers(0, 1_000_000)), lists(integers(0, 1_000_000)))
 def test_events_index_data_set_range(begins: list[int], ends: list[int]):
     index = EventsIndexData()
-    test_index = {}
+    mock_index = {}
     N = min(len(begins), len(ends))
     for i in range(N):
         begin, end = min(begins[i], ends[i]), max(begins[i], ends[i])
-        for x in range(begin, end):
-            test_index[x] = True
-        index.set_range(begin * 86400, end * 86400, True)
-    for i in range(0, 100):
-        assert index[i * 86400] == (i in test_index)
-
-
-@given(lists(integers(8, 100)), lists(integers(8, 100)))
-def test_events_index_data_dump_load(begins: list[int], ends: list[int]):
-    index = EventsIndexData()
-    N = min(len(begins), len(ends))
-    for i in range(N):
-        begin, end = min(begins[i], ends[i]), max(begins[i], ends[i])
-        index.set_range(begin * 86400, end * 86400, True)
-    restored = EventsIndexData.load(index.dump())
-    for i in range(0, 100):
-        assert index[i * 86400] == restored[i * 86400]
+        begin, end = index.snap_block_to_grid(begin), index.snap_block_to_grid(end)
+        for x in range(begin, end, 10000):
+            mock_index[x] = True
+        index.set_range(begin, end, True)
+    for i in range(0, 1_000_000, 10_000):
+        assert index[i] == (i in mock_index)
 
 
 def test_events_index_data_set_range_1():
-    index = EventsIndexData(START)
-    index.set_range(START, START, True)
-    assert not index[START]
-    assert not index[START + 100]
-    assert not index[START + SECONDS_IN_BIT - 1]
-    assert not index[START + SECONDS_IN_BIT]
+    index = EventsIndexData()
+    index.set_range(0, 0, True)
+    assert not index[0]
+    assert not index[100]
+    assert not index[9999]
+    assert not index[10000]
 
 
 def test_events_index_data_set_range_2():
-    index = EventsIndexData(START)
+    index = EventsIndexData()
     with pytest.raises(IndexError):
-        index.set_range(START + 100, START + SECONDS_IN_BIT + 101, True)
+        index.set_range(1, 2, True)
 
 
 def test_events_index_data_set_range_3():
-    index = EventsIndexData(START)
-    index.set_range(START, START + SECONDS_IN_BIT, True)
-    assert index[START]
-    assert index[START + 101]
-    assert index[START + SECONDS_IN_BIT - 1]
-    assert not index[START + SECONDS_IN_BIT]
+    index = EventsIndexData()
+    index.set_range(0, 10000, True)
+    assert index[0]
+    assert index[101]
+    assert index[9999]
+    assert not index[10000]
 
 
 def test_events_index_data_set_range_4():
-    index = EventsIndexData(START)
-    index.set_range(START, START + 2 * SECONDS_IN_BIT, True)
-    assert index[START]
-    assert index[START + 101]
-    assert index[START + SECONDS_IN_BIT - 1]
-    assert index[START + SECONDS_IN_BIT]
-    assert index[START + SECONDS_IN_BIT + 1]
-    assert index[START + SECONDS_IN_BIT - 1]
-    assert index[START + 2 * SECONDS_IN_BIT - 1]
-    assert not index[START + 2 * SECONDS_IN_BIT]
-    assert not index[START + 2 * SECONDS_IN_BIT + 1]
+    index = EventsIndexData()
+    index.set_range(10000, 20000, True)
+    assert not index[0]
+    assert not index[101]
+    assert not index[9999]
+    assert index[10000]
+    assert index[10100]
+    assert index[19999]
+    assert not index[20000]
+
+
+def test_events_index_data_set_range_5():
+    index = EventsIndexData()
+    index.set_range(0, 20000, True)
+    assert index[0]
+    assert index[101]
+    assert index[9999]
+    assert index[10000]
+    assert index[10001]
+    assert index[19999]
+    assert not index[20000]
+    assert not index[20001]
