@@ -11,7 +11,7 @@ class EventsIndex:
     chain_id: int
     address: str
     event: str
-    args: Dict[str, Any]
+    _args: Dict[str, Any]
     data: EventsIndexData
 
     def __init__(
@@ -42,6 +42,34 @@ class EventsIndex:
             json.dumps(self.args),
             self.data.dump(),
         )
+
+    @property
+    def args(self) -> Dict[str, Any] | None:
+        return self._args
+
+    @args.setter
+    def args(self, val: Dict[str, Any] | None):
+        if val is None:
+            self._args = None
+            return
+        res = {}
+        for k in sorted(val.keys()):
+            v = val[k]
+            if type(v) is list:
+                v = sorted(v)
+            res[k] = v
+        self._args = res
+
+    def _dump_args(self) -> str:
+        if self.args is None:
+            return json.dumps({})
+        res = {}
+        for k in sorted(self.args.keys()):
+            v = self.args[k]
+            if type(v) is list:
+                v = sorted(v)
+            res[k] = v
+        return json.dumps(res)
 
     def __repr__(self) -> str:
         return f"EventsIndex(chain_id: {self.chain_id}, address: {self.address}, event: {self.event}, args: {self.args}, data: {self.data})"

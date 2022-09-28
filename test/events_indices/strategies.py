@@ -35,7 +35,8 @@ def events_index(draw) -> EventsIndex:
     for k in draw(lists(text(ascii_letters))):
         args[k] = draw(
             one_of(
-                lists(one_of(integers(), text(ascii_letters))),
+                lists(integers()),
+                lists(text(ascii_letters)),
                 integers(),
                 text(ascii_letters),
             )

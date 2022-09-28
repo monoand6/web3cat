@@ -3,6 +3,9 @@ import json
 from typing import Any, Dict, List
 from probe.events.event import Event
 from probe.events.repo import EventsRepo
+from probe.events_indices.index import EventsIndex
+from probe.events_indices.index_data import EventsIndexData
+from probe.events_indices.repo import EventsIndicesRepo
 from web3 import Web3
 from web3.contract import ContractEvent
 
@@ -10,11 +13,15 @@ from probe.w3_utils import json_response
 
 
 class EventsService:
-    _repo: EventsRepo
+    _events_repo: EventsRepo
+    _events_indices_repo: EventsIndicesRepo
     _w3: Web3
 
-    def __init__(self, repo: EventsRepo, w3: Web3):
-        self._repo = repo
+    def __init__(
+        self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, w3: Web3
+    ):
+        self._events_repo = events_repo
+        self._events_indices_repo = events_indices_repo
         self._w3 = w3
 
     def _fetch_events_for_chunk_size(
@@ -29,7 +36,7 @@ class EventsService:
         chunks = int((to_block - from_block) / chunk_size)
         current_block = from_block
         for c in range(chunks):
-            self.print_progress(
+            self._print_progress(
                 c,
                 chunks,
                 prefix=f"Fetching `{event.event_name}` event for `{event.address}`",
@@ -65,6 +72,7 @@ class EventsService:
         to_block: int,
         argument_filters: Dict[str, Any] | None,
     ) -> List[Event]:
+
         pass
         # events = self._fetch_and_save_events_in_one_chunk(chain_id, event, from)
 
@@ -97,7 +105,24 @@ class EventsService:
         ]
         return events
 
-    def print_progress(
+    def _pick_index(
+        event_indices: List[EventsIndex],
+        chain_id: str,
+        event: ContractEvent,
+        args: Dict[str, Any] | None,
+        start_block: int,
+        end_block: int,
+    ) -> EventsIndex:
+        if len(event_indices) == 0:
+            return EventsIndex(
+                chain_id=chain_id,
+                address=event.address,
+                event=event.event_name,
+                args=args,
+                data=EventsIndexData(),
+            )
+
+    def _print_progress(
         self, iteration, total, prefix="", suffix="", decimals=1, bar_length=10
     ):
         """
