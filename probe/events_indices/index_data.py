@@ -3,6 +3,8 @@ import json
 from typing import Any, Dict, Tuple
 from probe.events_indices.bitarray import BitArray
 
+BLOCKS_PER_BIT = 10_000
+
 
 class EventsIndexData:
     _start_block: int | None
@@ -14,7 +16,7 @@ class EventsIndexData:
         start_block: int | None = None,
         mask: bytes | None = None,
     ):
-        self._blocks_per_bit = 10_000
+        self._blocks_per_bit = BLOCKS_PER_BIT
         self._start_block = None
         self._mask = BitArray(mask or [])
         self._update_start_block(start_block)

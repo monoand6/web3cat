@@ -3,9 +3,6 @@ import json
 from typing import Any, Dict, Tuple
 from probe.events_indices.index_data import EventsIndexData
 
-SECONDS_IN_BIT = 86400
-FIRST_EVM_TIMESTAMP = 1438269000
-
 
 class EventsIndex:
     chain_id: int
@@ -50,7 +47,7 @@ class EventsIndex:
     @args.setter
     def args(self, val: Dict[str, Any] | None):
         if val is None:
-            self._args = None
+            self._args = {}
             return
         res = {}
         for k in sorted(val.keys()):

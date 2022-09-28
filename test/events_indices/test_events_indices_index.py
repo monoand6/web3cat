@@ -1,11 +1,8 @@
 import pytest
-from probe.events_indices.index import EventsIndexData, EventsIndex, SECONDS_IN_BIT
+from probe.events_indices.index import EventsIndexData, EventsIndex
 from hypothesis import given
 from hypothesis.strategies import lists, integers, tuples
 from events_indices.strategies import events_index
-
-
-START = 1538269000 - 1538269000 % 86400
 
 
 @given(events_index())

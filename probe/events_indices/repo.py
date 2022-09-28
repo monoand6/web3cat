@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+import json
 from probe.db import DB
 from probe.events_indices.index import EventsIndex
 
@@ -21,6 +22,20 @@ class EventsIndicesRepo:
         rows = cursor.fetchall()
         indices = [EventsIndex.from_tuple(r) for r in rows]
         return [i for i in indices if args_is_subset(args, i.args)]
+
+    def get_index(
+        self, address: str, event: str, args: Dict[str, Any] | None = None
+    ) -> EventsIndex | None:
+        args = args or {}
+        cursor = self._db.cursor()
+        cursor.execute(
+            f"SELECT * FROM events_indices WHERE address = ? AND event = ? and args = ?",
+            (address, event, json.dumps(args)),
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        return EventsIndex.from_tuple(row)
 
     def save(self, indices: List[EventsIndex]):
         cursor = self._db.cursor()

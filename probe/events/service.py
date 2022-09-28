@@ -71,8 +71,9 @@ class EventsService:
         from_block: int,
         to_block: int,
         argument_filters: Dict[str, Any] | None,
+        index: EventsIndex,
     ) -> List[Event]:
-
+        
         pass
         # events = self._fetch_and_save_events_in_one_chunk(chain_id, event, from)
 
