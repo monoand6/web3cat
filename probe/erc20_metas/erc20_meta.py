@@ -21,3 +21,6 @@ class ERC20Meta:
     @address.setter
     def address(self, val: str):
         self._address = val.lower()
+
+    def __repr__(self):
+        return f'ERC20Meta({{"chain_id": {self.chain_id}, "address": {self.address}, "name": {self.name}, "symbol": {self.symbol}, "decimals": {self.decimals}}})'
