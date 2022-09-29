@@ -65,12 +65,12 @@ class DB:
                     (chain_id integer, address text, name text, symbol text, decimals integer)"""
         )
         cursor.execute(
-            """CREATE UNIQUE INDEX IF NOT EXISTS idx_erc20_metas_id_symbol
-                ON erc20_metas(chain_id,symbol)"""
+            """CREATE UNIQUE INDEX IF NOT EXISTS idx_erc20_metas_id
+                ON erc20_metas(chain_id,address)"""
         )
         cursor.execute(
-            """CREATE UNIQUE INDEX IF NOT EXISTS idx_erc20_metas_id_address
-                ON erc20_metas(chain_id,address)"""
+            """CREATE INDEX IF NOT EXISTS idx_erc20_metas_index
+                ON erc20_metas(chain_id,address,symbol)"""
         )
 
     def cursor(self) -> sqlite3.Cursor:
