@@ -47,7 +47,7 @@ class DB:
         )
         self._conn.commit()
 
-        # Indexes table
+        # Event indices table
 
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS events_indices
@@ -56,6 +56,21 @@ class DB:
         cursor.execute(
             """CREATE UNIQUE INDEX IF NOT EXISTS idx_events_indices_id
                 ON events_indices(chain_id,address,event,args)"""
+        )
+
+        # ERC20 metas table
+
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS erc20_metas
+                    (chain_id integer, address text, name text, symbol text, decimals integer)"""
+        )
+        cursor.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS idx_erc20_metas_id_symbol
+                ON events_indices(chain_id,symbol)"""
+        )
+        cursor.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS idx_erc20_metas_id_address
+                ON events_indices(chain_id,address)"""
         )
 
     def cursor(self) -> sqlite3.Cursor:
