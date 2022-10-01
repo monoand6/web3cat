@@ -5,7 +5,7 @@ sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 import pytest
 from fixtures.general import rpc
-from probe.blocks.service import BlocksService
+from fetcher.blocks.service import BlocksService
 import time
 
 

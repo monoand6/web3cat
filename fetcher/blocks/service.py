@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-from probe.blocks.repo import BlocksRepo
+from fetcher.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
 from web3.auto import w3 as w3auto
 
-from probe.blocks.block import Block
-from probe.w3_utils import json_response
-from probe.db import DB
+from fetcher.blocks.block import Block
+from fetcher.w3_utils import json_response
+from fetcher.db import DB
 
 
 class BlocksService:

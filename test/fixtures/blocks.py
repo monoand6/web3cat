@@ -2,8 +2,8 @@ import pytest
 
 from fixtures.general import DB, Web3
 
-from probe.blocks.service import BlocksService
-from probe.blocks.repo import BlocksRepo
+from fetcher.blocks.service import BlocksService
+from fetcher.blocks.repo import BlocksRepo
 
 
 @pytest.fixture

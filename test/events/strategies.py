@@ -1,6 +1,6 @@
 from string import ascii_letters
 from hypothesis.strategies import integers, text, dictionaries, builds, SearchStrategy
-from probe.events.event import Event
+from fetcher.events.event import Event
 
 
 def event() -> SearchStrategy[Event]:

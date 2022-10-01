@@ -1,10 +1,10 @@
 from hypothesis import given, settings, HealthCheck
 
 from erc20_metas.strategies import erc20_meta
-from probe.erc20_metas.repo import ERC20MetasRepo
-from probe.events.repo import EventsRepo
-from probe.events.event import Event
-from probe.erc20_metas.erc20_meta import ERC20Meta
+from fetcher.erc20_metas.repo import ERC20MetasRepo
+from fetcher.events.repo import EventsRepo
+from fetcher.events.event import Event
+from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

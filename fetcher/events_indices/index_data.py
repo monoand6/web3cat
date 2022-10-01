@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
-from probe.events_indices.bitarray import BitArray
+from fetcher.events_indices.bitarray import BitArray
 
 BLOCKS_PER_BIT = 1_000
 

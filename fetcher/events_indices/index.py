@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
-from probe.events_indices.index_data import EventsIndexData
+from fetcher.events_indices.index_data import EventsIndexData
 
 
 class EventsIndex:

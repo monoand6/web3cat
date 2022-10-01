@@ -1,8 +1,8 @@
 from hypothesis import given, settings, HealthCheck
 
 from events.strategies import event
-from probe.events.repo import EventsRepo
-from probe.events.event import Event
+from fetcher.events.repo import EventsRepo
+from fetcher.events.event import Event
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

@@ -1,7 +1,7 @@
 import pytest
 
-from probe.db import DB
-from probe.events_indices.repo import EventsIndicesRepo
+from fetcher.db import DB
+from fetcher.events_indices.repo import EventsIndicesRepo
 
 
 @pytest.fixture

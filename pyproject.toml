@@ -9,6 +9,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 web3 = "^5.30.0"
+# this is a temporary dependency fix for web3, as 3.20.2 doesn't work on M1
+protobuf = "3.20.1" 
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.3"

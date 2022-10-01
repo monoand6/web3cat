@@ -1,9 +1,9 @@
 from typing import Any, Dict, List
 
 import json
-from probe.db import DB
-from probe.events_indices.index import EventsIndex
-from probe.repo import Repo
+from fetcher.db import DB
+from fetcher.events_indices.index import EventsIndex
+from fetcher.repo import Repo
 
 
 class EventsIndicesRepo(Repo):

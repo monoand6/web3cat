@@ -6,9 +6,9 @@ from web3 import Web3
 from web3.auto import w3 as w3auto
 from web3.contract import Contract
 
-from probe.erc20_metas.erc20_meta import ERC20Meta
-from probe.db import DB
-from probe.erc20_metas.repo import ERC20MetasRepo
+from fetcher.erc20_metas.erc20_meta import ERC20Meta
+from fetcher.db import DB
+from fetcher.erc20_metas.repo import ERC20MetasRepo
 
 
 class ERC20MetaService:

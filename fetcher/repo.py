@@ -1,4 +1,4 @@
-from probe.db import DB
+from fetcher.db import DB
 
 
 class Repo:

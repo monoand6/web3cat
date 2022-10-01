@@ -1,6 +1,6 @@
 from string import ascii_letters
 from hypothesis.strategies import integers, text, dictionaries, builds, SearchStrategy
-from probe.erc20_metas.erc20_meta import ERC20Meta
+from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
 def erc20_meta() -> SearchStrategy[ERC20Meta]:

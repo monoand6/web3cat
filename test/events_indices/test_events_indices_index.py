@@ -1,9 +1,9 @@
 import pytest
-from probe.events_indices.index import EventsIndexData, EventsIndex
+from fetcher.events_indices.index import EventsIndexData, EventsIndex
 from hypothesis import given
 from hypothesis.strategies import lists, integers, tuples
 from events_indices.strategies import events_index
-from probe.events_indices.index_data import BLOCKS_PER_BIT
+from fetcher.events_indices.index_data import BLOCKS_PER_BIT
 
 
 @given(events_index())

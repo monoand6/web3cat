@@ -1,7 +1,7 @@
 import pytest
 
-from probe.db import DB
-from probe.events.repo import EventsRepo
+from fetcher.db import DB
+from fetcher.events.repo import EventsRepo
 
 
 @pytest.fixture

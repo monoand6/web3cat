@@ -1,7 +1,7 @@
 import pytest
 
-from probe.db import DB
-from probe.erc20_metas.repo import ERC20MetasRepo
+from fetcher.db import DB
+from fetcher.erc20_metas.repo import ERC20MetasRepo
 
 
 @pytest.fixture

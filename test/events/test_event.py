@@ -1,6 +1,6 @@
 from hypothesis import given
 from events.strategies import event
-from probe.events.event import Event
+from fetcher.events.event import Event
 
 
 @given(event())

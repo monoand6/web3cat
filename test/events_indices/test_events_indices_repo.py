@@ -1,9 +1,9 @@
 from typing import Any, Dict, Tuple
 from hypothesis import given
-from probe.events_indices.index import EventsIndex
-from probe.events_indices.index_data import EventsIndexData
+from fetcher.events_indices.index import EventsIndex
+from fetcher.events_indices.index_data import EventsIndexData
 
-from probe.events_indices.repo import EventsIndicesRepo, args_is_subset
+from fetcher.events_indices.repo import EventsIndicesRepo, args_is_subset
 from events_indices.strategies import args_subset_and_superset
 
 

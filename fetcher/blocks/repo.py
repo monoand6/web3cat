@@ -1,7 +1,7 @@
 from typing import List, Tuple
-from probe.db import DB
-from probe.blocks.block import Block
-from probe.repo import Repo
+from fetcher.db import DB
+from fetcher.blocks.block import Block
+from fetcher.repo import Repo
 
 
 class BlocksRepo(Repo):

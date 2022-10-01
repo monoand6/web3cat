@@ -1,8 +1,8 @@
 from typing import List
-from probe.db import DB
-from probe.events.event import Event
-from probe.repo import Repo
-from probe.erc20_metas.erc20_meta import ERC20Meta
+from fetcher.db import DB
+from fetcher.events.event import Event
+from fetcher.repo import Repo
+from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
 class ERC20MetasRepo(Repo):

@@ -5,7 +5,7 @@ sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 
 import pytest
-from probe.db import DB
+from fetcher.db import DB
 from web3 import Web3
 
 
@@ -20,7 +20,7 @@ def db(tmp_path_factory: pytest.TempPathFactory) -> DB:
     """
     Instance of db.DB
     """
-    tmp = tmp_path_factory.mktemp("probe")
+    tmp = tmp_path_factory.mktemp("selene")
     return DB.from_path(f"{tmp}/test.db")
 
 
