@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "probe"
+name = "selene"
 version = "0.1.0"
 description = ""
 authors = ["mono6"]

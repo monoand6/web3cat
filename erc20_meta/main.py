@@ -41,5 +41,11 @@ current_folder = os.path.realpath(os.path.dirname(__file__))
 
 
 data = fetch_tokens()
+sorted_data = {}
+for chain_id in sorted(data.keys()):
+    for idx in sorted(data[chain_id].keys()):
+        if not chain_id in sorted_data:
+            sorted_data[chain_id] = {}
+        sorted_data[chain_id][idx] = data[chain_id][idx]
 with open(f"{current_folder}/tokens.json", "w") as f:
-    json.dump(data, f)
+    json.dump(sorted_data, f)
