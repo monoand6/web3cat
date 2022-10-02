@@ -14,7 +14,7 @@ Web3Cat
    guide
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: Api
 
-   api-fetcher
+   api.fetcher
