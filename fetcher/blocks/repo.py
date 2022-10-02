@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from fetcher.db import DB
 from fetcher.blocks.block import Block
-from fetcher.repo import Repo
+from fetcher.db import Repo
 
 
 class BlocksRepo(Repo):

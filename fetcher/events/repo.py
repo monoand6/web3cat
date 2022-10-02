@@ -1,7 +1,7 @@
 from typing import List
 from fetcher.db import DB
 from fetcher.events.event import Event
-from fetcher.repo import Repo
+from fetcher.db import Repo
 
 
 class EventsRepo(Repo):
