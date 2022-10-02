@@ -1,10 +1,3 @@
-"""
-
-
-Db module contains db class
-
-"""
-
 from __future__ import annotations
 import sqlite3
 from os.path import exists
@@ -12,9 +5,7 @@ from os.path import exists
 
 class DB:
     """
-    fetcher.db.DB
-    ^^^^^^^^^^^^^
-    Class for database
+    A base class for working with sqlite3 database
     """
 
     _conn: sqlite3.Connection
@@ -22,7 +13,21 @@ class DB:
     def __init__(self, conn: sqlite3.Connection):
         self._conn = conn
 
+    @staticmethod
     def from_path(path: str) -> DB:
+        """
+        Initiate database at a specific path. If the database at path exists,
+        just conect to it. Otherwise create a new database and initalize a schema.
+
+        Args:
+            path:The absolute path for the database
+
+        Returns:
+            An instance of the db class
+
+        Note:
+            The schema migration mechanics are currently not supported.
+        """
         is_fresh = not exists(path)
         conn = sqlite3.connect(path)
         db = DB(conn)
@@ -87,9 +92,16 @@ class DB:
         )
 
     def cursor(self) -> sqlite3.Cursor:
+        """
+        Returns a cursor over current connection
+        """
         return self._conn.cursor()
 
-    def commit(self):
+    def commit(self, val: str):
+        """
+        Commit changes
+        """
+        print(val)
         self._conn.commit()
 
     def rollback(self):
