@@ -5,7 +5,15 @@ from os.path import exists
 
 class DB:
     """
-    A base class for working with sqlite3 database
+    A base class for working with sqlite3 cache database.
+    This is a thin wrapper around the sqlite3 connection that is used
+    in :class:`fetcher.db.Repo` and its subslcasses.
+
+    The instance is asummed to be initialized once and
+
+
+    Args:
+        connection: The connection to sqlite3 databse
     """
 
     _conn: sqlite3.Connection
@@ -20,7 +28,7 @@ class DB:
         just conect to it. Otherwise create a new database and initalize a schema.
 
         Args:
-            path:The absolute path for the database
+            path: The absolute path for the database
 
         Returns:
             An instance of the db class
@@ -97,11 +105,10 @@ class DB:
         """
         return self._conn.cursor()
 
-    def commit(self, val: str):
+    def commit(self):
         """
         Commit changes
         """
-        print(val)
         self._conn.commit()
 
     def rollback(self):
