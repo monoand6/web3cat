@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import json
 from typing import Any, Dict, List
+from fetcher.db import connection_from_path
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
 from fetcher.events_indices.index import EventsIndex
@@ -12,7 +13,6 @@ from web3.contract import ContractEvent
 from web3.auto import w3 as w3auto
 
 from fetcher.w3_utils import json_response, short_address
-from fetcher.db import DB
 
 
 class EventsService:
@@ -30,9 +30,9 @@ class EventsService:
     def create(
         cache_path: str = "cache.sqlite3", rpc: str | None = None
     ) -> EventsService:
-        db = DB.from_path(cache_path)
-        events_repo = EventsRepo(db)
-        events_indices_repo = EventsIndicesRepo(db)
+        conn = connection_from_path(cache_path)
+        events_repo = EventsRepo(conn)
+        events_indices_repo = EventsIndicesRepo(conn)
         w3 = w3auto
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))

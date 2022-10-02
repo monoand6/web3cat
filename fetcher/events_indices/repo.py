@@ -1,7 +1,6 @@
 from typing import Any, Dict, List
 
 import json
-from fetcher.db import DB
 from fetcher.events_indices.index import EventsIndex
 from fetcher.db import Repo
 
@@ -14,7 +13,7 @@ class EventsIndicesRepo(Repo):
         event: str,
         args: Dict[str, Any] | None = None,
     ) -> List[EventsIndex]:
-        cursor = self._db.cursor()
+        cursor = self._connection.cursor()
         cursor.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
             (chain_id, address, event),
@@ -31,7 +30,7 @@ class EventsIndicesRepo(Repo):
         args: Dict[str, Any] | None = None,
     ) -> EventsIndex | None:
         args = args or {}
-        cursor = self._db.cursor()
+        cursor = self._connection.cursor()
         cursor.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ? and args = ?",
             (chain_id, address, event, json.dumps(EventsIndex.normalize_args(args))),
@@ -42,7 +41,7 @@ class EventsIndicesRepo(Repo):
         return EventsIndex.from_tuple(row)
 
     def save(self, indices: List[EventsIndex]):
-        cursor = self._db.cursor()
+        cursor = self._connection.cursor()
         rows = [i.to_tuple() for i in indices]
         cursor.executemany(
             "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO UPDATE SET mask = excluded.mask",

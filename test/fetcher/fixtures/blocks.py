@@ -1,17 +1,17 @@
+from sqlite3 import Connection
 import pytest
 
-from fixtures.general import DB, Web3
-
+from fixtures.general import Web3
 from fetcher.blocks.service import BlocksService
 from fetcher.blocks.repo import BlocksRepo
 
 
 @pytest.fixture
-def blocks_repo(db: DB) -> BlocksRepo:
+def blocks_repo(conn: Connection) -> BlocksRepo:
     """
     Instance of db.BlocksRepo
     """
-    return BlocksRepo(db)
+    return BlocksRepo(conn)
 
 
 @pytest.fixture

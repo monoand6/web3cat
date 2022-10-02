@@ -1,11 +1,13 @@
+from sqlite3 import Connection
 import sys
 import os
 
+
 sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
+from fetcher.db import connection_from_path
 
 import pytest
-from fetcher.db import DB
 from web3 import Web3
 
 
@@ -16,23 +18,23 @@ rpc = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="session")
-def db(tmp_path_factory: pytest.TempPathFactory) -> DB:
+def conn(tmp_path_factory: pytest.TempPathFactory) -> Connection:
     """
-    Instance of db.DB
+    Instance of sqlite3.Connection
     """
     tmp = tmp_path_factory.mktemp("selene")
-    return DB.from_path(f"{tmp}/test.db")
+    return connection_from_path(f"{tmp}/test.db")
 
 
 @pytest.fixture(autouse=True)
-def rollback_db(db: DB):
+def rollback_db(conn: Connection):
     """
     Auto use fixture to rollback db after each test
     """
     try:
         yield
     finally:
-        db.rollback()
+        conn.rollback()
 
 
 @pytest.fixture(scope="session")

@@ -7,8 +7,8 @@ from web3.exceptions import BlockNotFound
 from web3.auto import w3 as w3auto
 
 from fetcher.blocks.block import Block
+from fetcher.db import connection_from_path
 from fetcher.w3_utils import json_response
-from fetcher.db import DB
 
 
 class BlocksService:
@@ -28,8 +28,8 @@ class BlocksService:
     def create(
         cache_path: str = "cache.sqlite3", rpc: str | None = None
     ) -> BlocksService:
-        db = DB.from_path(cache_path)
-        blocks_repo = BlocksRepo(db)
+        conn = connection_from_path(cache_path)
+        blocks_repo = BlocksRepo(conn)
         w3 = w3auto
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))

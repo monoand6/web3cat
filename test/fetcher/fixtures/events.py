@@ -1,12 +1,12 @@
+from sqlite3 import Connection
 import pytest
 
-from fetcher.db import DB
 from fetcher.events.repo import EventsRepo
 
 
 @pytest.fixture
-def events_repo(db: DB) -> EventsRepo:
+def events_repo(conn: Connection) -> EventsRepo:
     """
     Instance of events.EventsRepo
     """
-    return EventsRepo(db)
+    return EventsRepo(conn)

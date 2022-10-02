@@ -5,9 +5,9 @@ from typing import Any, Dict
 from web3 import Web3
 from web3.auto import w3 as w3auto
 from web3.contract import Contract
+from fetcher.db import connection_from_path
 
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
-from fetcher.db import DB
 from fetcher.erc20_metas.repo import ERC20MetasRepo
 
 
@@ -31,8 +31,8 @@ class ERC20MetaService:
     def create(
         cache_path: str = "cache.sqlite3", rpc: str | None = None
     ) -> ERC20MetaService:
-        db = DB.from_path(cache_path)
-        erc20_metas_repo = ERC20MetasRepo(db)
+        conn = connection_from_path(cache_path)
+        erc20_metas_repo = ERC20MetasRepo(conn)
         w3 = w3auto
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))
