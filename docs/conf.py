@@ -28,13 +28,12 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 
-# autodoc_typehints = "both"
-# autodoc_typehints = "description"
 autodoc_default_options = {
     "member-order": "bysource",
     "undoc-members": True,
 }
 
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

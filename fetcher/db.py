@@ -1,3 +1,7 @@
+"""
+This module contains base classes for working with sqlite3 db.
+"""
+
 from __future__ import annotations
 from sqlite3 import Connection, connect
 from os.path import exists
@@ -5,7 +9,28 @@ from os.path import exists
 
 class Repo:
     """
-    Base class for any repo
+    Base class for any repo used in the :mod:`fetcher` module.
+    This is a thin wrapper around `sqlite3.Connection <https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection>`_ so that
+    subclasses use has-a inheritance with a connection.
+
+    Important:
+        All the changes happening at the repo must be committed using
+        :meth:`commit` method or rolled back using :meth:`rollback` method. Otherwise
+        there's no guarantee that changes will be saved.
+
+    Examples:
+        ::
+
+            class Widgets(Repo):
+                def save(self, w: Widget):
+                    cursor = self._connection.cursor()
+                    cursor.execute("INSERT INTO widgets VALUES (...)", w)
+
+            ws = Widgets.from_path("cache.db")
+            w = Widget(...)
+            w.save() # Doesn't really save anything, changes are pending
+            w.commit() # Now everything is saved
+
     """
 
     _connection: Connection
@@ -14,17 +39,23 @@ class Repo:
         self._connection = db
 
     def commit(self):
+        """
+        Commits all changes pending on the database connection
+        """
         self._connection.commit()
 
     def rollback(self):
+        """
+        Rollbacks all changes pending on the database connection
+        """
         self._connection.rollback()
 
 
 def connection_from_path(path: str) -> Connection:
     """
-    Create a connection to a database at `path`.
-    If the file at `path` doesn't exist, create a new one and
-    initialize a database schema.
+    Creates a connection to a database at :code:`path`.
+    If the file at :code:`path` doesn't exist, creates a new one and
+    initializes a database schema.
 
     Args:
         path: The absolute path to the database
@@ -45,6 +76,12 @@ def connection_from_path(path: str) -> Connection:
 
 
 def _init_db(conn: Connection):
+    """
+    Initialize db schema
+
+    Args:
+        conn: Connection to the database
+    """
     cursor = conn.cursor()
     # Events table
     cursor.execute(
