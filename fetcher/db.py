@@ -1,9 +1,22 @@
+"""
+
+
+Db module contains db class
+
+"""
+
 from __future__ import annotations
 import sqlite3
 from os.path import exists
 
 
 class DB:
+    """
+    fetcher.db.DB
+    ^^^^^^^^^^^^^
+    Class for database
+    """
+
     _conn: sqlite3.Connection
 
     def __init__(self, conn: sqlite3.Connection):

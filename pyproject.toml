@@ -2,7 +2,7 @@
 name = "web3cat"
 version = "0.1.0"
 description = ""
-authors = [{name = "Mono6", email="monowhile6@gmail.com"}]
+authors = ["Mono6 <monowhile6@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
@@ -19,6 +19,15 @@ hypothesis = "^6.54.5"
 
 [tool.poetry.group.dev.dependencies]
 black = {version = "^22.8.0", allow-prereleases = true}
+
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^5.2.3"
+sphinx-rtd-theme = "^1.0.0"
+
 
 [build-system]
 requires = ["poetry-core"]
