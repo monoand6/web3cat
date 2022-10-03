@@ -16,4 +16,4 @@ fetcher
    :caption: Submodules
 
    api.fetcher.db
-   api.fetcher.w3_utils
+   api.fetcher.utils

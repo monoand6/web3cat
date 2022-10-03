@@ -1,5 +1,5 @@
 """
-Different utils for working with Web3.
+Utility functions.
 """
 
 from typing import Any, Dict, Union

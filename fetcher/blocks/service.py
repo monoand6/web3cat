@@ -8,7 +8,7 @@ from web3.auto import w3 as w3auto
 
 from fetcher.blocks.block import Block
 from fetcher.db import connection_from_path
-from fetcher.w3_utils import json_response
+from fetcher.utils import json_response
 
 
 class BlocksService:

@@ -12,7 +12,7 @@ from web3 import Web3
 from web3.contract import ContractEvent
 from web3.auto import w3 as w3auto
 
-from fetcher.w3_utils import json_response, short_address
+from fetcher.utils import json_response, short_address
 
 
 class EventsService:
