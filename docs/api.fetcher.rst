@@ -17,3 +17,4 @@ fetcher
 
    api.fetcher.db
    api.fetcher.utils
+   api.fetcher.events_indices
