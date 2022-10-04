@@ -114,7 +114,7 @@ def _init_db(conn: Connection):
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS events_indices
-                (chain_id integer, address text, event text, args text, mask blob)"""
+                (chain_id integer, address text, event text, args text, data blob)"""
     )
     cursor.execute(
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_events_indices_id
