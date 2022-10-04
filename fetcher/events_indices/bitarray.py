@@ -2,6 +2,10 @@ class BitArray:
     """
     This is a simple bitset tailored for :mod:`events_indices` needs.
 
+    >>> bits = Bitarray()
+    >>> bits[3] = True
+    >>> print(bits[3])
+
     Example:
         ::
 
