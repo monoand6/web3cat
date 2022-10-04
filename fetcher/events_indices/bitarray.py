@@ -1,30 +1,92 @@
 class BitArray:
+    """
+    This is a simple bitset tailored for :mod:`events_indices` needs.
+
+    Example:
+        ::
+
+            bits = Bitarray()
+            bits[3] = True
+            # => 00010000
+            assert not bits[0]
+            assert bits[3]
+
+            bits.prepend_empty_bytes(2)
+            # => 000000000000000000010000
+            assert not bits[0]
+            assert not bits[3]
+            assert bits[2 * 8 + 3]
+
+            bits.set_range(0, 4, True)
+            # => 111100000000000000010000
+            assert bits[0]
+            assert bits[1]
+            assert bits[2]
+            assert bits[3]
+            assert not bits[4]
+
+    """
+
     _data: bytearray
 
     def __init__(self, data: bytes | None = None):
         self._data = bytearray(data or [])
 
-    def __getitem__(self, idx: int) -> bool:
-        byte = self._data[idx // 8]
-        return byte & (1 << (idx % 8)) != 0
+    def __getitem__(self, pos: int) -> bool:
+        """
+        Get the bit value at :code:`pos`
 
-    def __setitem__(self, idx: int, value: bool):
-        self._ensure_length(idx)
+        Args:
+            pos: The position of the bit
+
+        Returns:
+            Bit value (:code:`False` or :code:`True`)
+        """
+        byte = self._data[pos // 8]
+        return byte & (1 << (pos % 8)) != 0
+
+    def __setitem__(self, pos: int, value: bool):
+        """
+        Set the bit value at :code:`pos`
+
+        Args:
+            pos: The position of the bit
+            value: Bit value (:code:`False` or :code:`True`)
+        """
+        self._ensure_length(pos)
         if value:
-            self._data[idx // 8] |= 1 << (idx % 8)
+            self._data[pos // 8] |= 1 << (pos % 8)
         else:
-            self._data[idx // 8] &= 255 - (1 << (idx % 8))
+            self._data[pos // 8] &= 255 - (1 << (pos % 8))
 
     def __len__(self):
         return len(self._data) * 8
 
     def prepend_empty_bytes(self, num_bytes: int):
+        """
+        Adds zero bytes (8 * num_bytes :code:`False` values) before the bitarray.
+
+        Args:
+            num_bytes: Number of bytes to add
+        """
         new_data = bytearray([0] * num_bytes)
         for b in self._data:
             new_data.append(b)
         self._data = new_data
 
     def set_range(self, start: int, end: int, value: bool):
+        """
+        Set value for bits starting at :code:`start` and ending
+        at :code:`end` (non-inclusive).
+
+        Exceptions:
+            Both values should be >= 0 and :code:`end` >= :code:`start`.
+            Otherwise :class:`IndexError` is raised.
+
+        Args:
+            start: start of the range (inclusive)
+            end: end of the range (non-inclusive)
+        """
         if start > end:
             raise IndexError(f"BitArray set_range with start: {start}, end: {end}")
         if end < 0:

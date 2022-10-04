@@ -33,7 +33,7 @@ that start timestamp must be a multiple of 8 * :const:`BLOCKS_PER_BIT`
 :class:`EventsIndex`'s :code:`data` is updated to :code:`00001F401C`
 
 +-----------------+------------+-----------------+---------------+
-| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin) |
+| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)    |
 +=================+============+=================+===============+
 | 00001F40        | 1C         | 8000            | 00011100      |
 +-----------------+------------+-----------------+---------------+
@@ -45,7 +45,7 @@ So the first bit of the mask is blocks 8000 - 9000, the second is 9000 - 10000, 
 Round blocks to 15000 - 20000, update :code:`data` to :code:`00001F401DF0`
 
 +-----------------+------------+-----------------+------------------+
-| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)    |
+| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)       |
 +=================+============+=================+==================+
 | 00001F40        | 1DF0       | 8000            | 0001110111110000 |
 +-----------------+------------+-----------------+------------------+
@@ -56,7 +56,7 @@ Now the start timestamp will be updated to 0 (the multiple of 8 * :const:`BLOCKS
 rounded down). The new index is :code:`000000001C1DF0`
 
 +-----------------+------------+-----------------+--------------------------+
-| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)            |
+| Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)               |
 +=================+============+=================+==========================+
 | 00000000        | 1C1DF0     | 0               | 000111000001110111110000 |
 +-----------------+------------+-----------------+--------------------------+
