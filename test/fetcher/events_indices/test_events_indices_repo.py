@@ -37,7 +37,7 @@ def test_read_write(events_indices_repo: EventsIndicesRepo):
         chain_id,
         events_index.address,
         events_index.event,
-        {"from": "0x1234", "value": 1},
+        {"value": 1, "from": "0x1234"},
     )
 
     assert len(list3) == 1

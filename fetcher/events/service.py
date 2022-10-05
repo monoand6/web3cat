@@ -16,6 +16,45 @@ from fetcher.utils import json_response, short_address
 
 
 class EventsService:
+    """
+    Service for fetching events.
+
+    The sole purpose of this service is to fetch events from web3, cache them,
+    and read from the cache on subsequent calls.
+
+    The exact flow goes like this
+    ::
+
+                   +---------------+              +-------+ +-------------------+ +-------------+
+                   | EventsService |              | Web3  | | EventsIndicesRepo | | EventsRepo  |
+                   +---------------+              +-------+ +-------------------+ +-------------+
+        -----------------\ |                          |               |                  |
+        | Request events |-|                          |               |                  |
+        |----------------| |                          |               |                  |
+                           |                          |               |                  |
+                           | Request index            |               |                  |
+                           |----------------------------------------->|                  |
+                           |                          |               |                  |
+                           | Fetch missing events     |               |                  |
+                           |------------------------->|               |                  |
+                           |                          |               |                  |
+                           | Store missing events     |               |                  |
+                           |------------------------------------------------------------>|
+                           |                          |               |                  |
+                           | Fetch all events         |               |                  |
+                           |------------------------------------------------------------>|
+          ---------------\ |                          |               |                  |
+          | Get response |-|                          |               |                  |
+          |--------------| |                          |               |                  |
+                           |                          |               |                  |
+
+    Args:
+        events_repo: Repo of events
+        events_indices_repo: Repo of events_indices
+        w3: instance of :class:`web3.Web3`
+
+    """
+
     _events_repo: EventsRepo
     _events_indices_repo: EventsIndicesRepo
     _w3: Web3
@@ -27,9 +66,20 @@ class EventsService:
         self._events_indices_repo = events_indices_repo
         self._w3 = w3
 
+    @staticmethod
     def create(
         cache_path: str = "cache.sqlite3", rpc: str | None = None
     ) -> EventsService:
+        """
+        Create an instance of :class:`EventsService`
+
+        Args:
+            cache_path: path for the cache database
+            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+
+        Returns:
+            An instance of :class:`EventsService`
+        """
         conn = connection_from_path(cache_path)
         events_repo = EventsRepo(conn)
         events_indices_repo = EventsIndicesRepo(conn)
@@ -45,20 +95,57 @@ class EventsService:
         from_block: int,
         to_block: int,
         argument_filters: Dict[str, Any] | None = None,
-    ):
-        self._fetch_events(chain_id, event, argument_filters, from_block, to_block)
+    ) -> List[Event]:
+        """
+        Get events specified by parameters.
+
+        Args:
+            chain_id: Ethereum chain_id
+            event: class:`web3.contract.ContractEvent` specifying contract and event_name.
+            from_block: fetch events from this block (inclusive)
+            to_block: fetch events from this block (non-inclusive)
+            argument_filters: Additional filters for events search. Example: :code:`{"from": "0xfa45..."}`
+
+        Returns:
+            A list of fetched events
+
+        Exceptions:
+            See :meth:`prefetch_events`
+        """
+        self.prefetch_events(chain_id, event, from_block, to_block, argument_filters)
         return self._events_repo.find(
             chain_id, event.event_name, event.address, from_block, to_block
         )
 
-    def _fetch_events(
+    def prefetch_events(
         self,
         chain_id: int,
         event: ContractEvent,
-        argument_filters: Dict[str, Any] | None,
         from_block: int,
         to_block: int,
+        argument_filters: Dict[str, Any] | None = None,
     ):
+        """
+        Fetch events specified by parameters and save them to cache.
+
+        Args:
+            chain_id: Ethereum chain_id
+            event: class:`web3.contract.ContractEvent` specifying contract and event_name.
+            from_block: fetch events from this block (inclusive)
+            to_block: fetch events from this block (non-inclusive)
+            argument_filters: Additional filters for events search. Example: :code:`{"from": "0xfa45..."}`
+
+        Exceptions:
+            This method tries to fetch all events from :code:`from_block`
+            to :code:`to_block` at once. More often than not, rpc endpoint
+            will block such attempts and ask to use a narrower block interval
+            for fetch. In this case, the interval is halved, and fetch is retried.
+            This is repeated until success.
+
+            However, if at some point the interval is less than
+            :const:`fetcher.events_indices.constants.BLOCKS_PER_BIT`,
+            :class:`RuntimeError` is raised.
+        """
         read_indices = self._events_indices_repo.find_indices(
             chain_id, event.address, event.event_name, argument_filters
         )
@@ -77,10 +164,10 @@ class EventsService:
         fetched = False
         e_memoized = None
         while not fetched:
-            if current_chunk_size == 0:
+            if current_chunk_size < write_index.step():
                 if not e_memoized:
                     raise RuntimeError(
-                        "Couldn't fetch data because chunk size = 0 is reached"
+                        "Couldn't fetch data because minimum chunk size is reached"
                     )
                 else:
                     raise e_memoized
