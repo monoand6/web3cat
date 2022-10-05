@@ -86,16 +86,17 @@ class BitArray:
 
     def set_range(self, start: int, end: int, value: bool):
         """
-        Set value for bits starting at :code:`start` and ending
+        Set value for bits starting at :code:`start` (inclusive) and ending
         at :code:`end` (non-inclusive).
+
+        Args:
+            start: start of the range (inclusive)
+            end: end of the range (non-inclusive)
 
         Exceptions:
             Both values should be >= 0 and :code:`end` >= :code:`start`.
             Otherwise :class:`IndexError` is raised.
 
-        Args:
-            start: start of the range (inclusive)
-            end: end of the range (non-inclusive)
         """
         if start > end:
             raise IndexError(f"BitArray set_range with start: {start}, end: {end}")

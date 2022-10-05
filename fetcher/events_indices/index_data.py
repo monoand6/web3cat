@@ -6,6 +6,28 @@ from fetcher.events_indices.bitarray import BitArray
 
 
 class EventsIndexData:
+    """
+    Stores blocks numbers with already fetched events.
+
+    All blocks are divided by chunks of
+    :const:`constants.BLOCKS_PER_BIT` size. A bit set to :code:`True`
+    means that events for the chunk were already fetched.
+
+    As a storage optimistaion :code:`start_block` parameter is used.
+    It is the first block that has :code:`True` entries after it.
+    Obviously, it must be a multiple of :const:`constants.BLOCKS_PER_BIT`.
+    However, there's an additional restriction of :code:`start_block` being
+    a multiple of 8 * :const:`constants.BLOCKS_PER_BIT` (for performance
+    reasons).
+
+    See the example section in :mod:`fetcher.events_indices` for
+    more details.
+
+    Args:
+        start_block: The starting block for the index
+        mask: A bitset for storing index values
+    """
+
     _start_block: int | None
     _mask: BitArray
     _blocks_per_bit: int
@@ -21,6 +43,20 @@ class EventsIndexData:
         self._update_start_block(start_block)
 
     def set_range(self, start_block: int, end_block: int, value: bool):
+        """
+        Set blocks range from :code:`start_block` (inclusive)
+        to :code:`end_block` (non-inclusive) to :code:`value`.
+
+        Args:
+            start_block: start of the range (inclusive)
+            end_block: end of the range (non-inclusive)
+
+        Exceptions:
+            The :code:`start_block` and :code:`end_block` arguments
+            must be a multiples of :const:`constants.BLOCKS_PER_BIT`
+            (:meth:`snap_block_to_grid` can be used for that).
+            Otherwise :class:`IndexError` is raised.
+        """
         if (
             start_block % self._blocks_per_bit != 0
             or end_block % self._blocks_per_bit != 0
@@ -34,18 +70,38 @@ class EventsIndexData:
         self._mask.set_range(start_idx, end_idx, value)
 
     def snap_block_to_grid(self, block: int) -> int:
+        """
+        Round down block to the nearest chunk start (chunks of size :const:`constants.BLOCKS_PER_BIT`)
+        """
         return block - block % self._blocks_per_bit
 
     def step(self) -> int:
+        """
+        Returns :const:`constants.BLOCKS_PER_BIT`.
+        """
         return self._blocks_per_bit
 
     def dump(self) -> bytes:
+        """
+        Serialize class data into binary.
+
+        The binary format is
+
+        +-------------+---------------------+
+        | start_block | mask                |
+        +=============+=====================+
+        | 4 bytes     | n bytes (as needed) |
+        +-------------+---------------------+
+        """
         if self._start_block is None:
             return bytes()
         bytes4 = self._start_block.to_bytes(4, "big")
         return bytes4 + self._mask._data
 
     def load(data: bytes) -> EventsIndexData:
+        """
+        Restore class from binary. See :meth:`dump` for binary format.
+        """
         if len(data) < 4:
             return EventsIndexData()
         block = int.from_bytes(data[0:4], "big")

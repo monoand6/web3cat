@@ -30,6 +30,7 @@ extensions = [
 ]
 
 autodoc_default_options = {
+    "members": True,
     "member-order": "bysource",
     "undoc-members": True,
 }
