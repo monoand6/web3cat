@@ -9,10 +9,10 @@ event name, and arguments for lookup) were already fetched.
 
 Note:
     :class:`EventsIndex` has some granularity in storing the blocks defined by the
-    :const:`BLOCKS_PER_BIT` constant. This means:
+    :const:`constants.BLOCKS_PER_BIT` constant. This means:
 
-    1. You cannot fetch events for less than :const:`BLOCKS_PER_BIT` blocks
-    2. Fetch start and end blocks should be snapped to the :const:`BLOCKS_PER_BIT` grid.
+    1. You cannot fetch events for less than :const:`constants.BLOCKS_PER_BIT` blocks
+    2. Fetch start and end blocks should be snapped to the :const:`constants.BLOCKS_PER_BIT` grid.
 
 Example
 ~~~~~~~
@@ -27,7 +27,7 @@ Assume :code:`BLOCKS_PER_BIT == 1000`.
 First, the fetch blocks are rounded to 11000 - 14000, and events are fetched
 for these blocks.
 Start timestamp, in this case, should be 11000. However, there's the rule
-that start timestamp must be a multiple of 8 * :const:`BLOCKS_PER_BIT`
+that start timestamp must be a multiple of 8 * :const:`constants.BLOCKS_PER_BIT`
 (for performance reasons). So it's rounded down to 8000.
 
 :class:`EventsIndex`'s :code:`data` is updated to :code:`00001F401C`
@@ -52,7 +52,7 @@ Round blocks to 15000 - 20000, update :code:`data` to :code:`00001F401DF0`
 
 **Step3: Fetch blocks 3000 - 5000**
 
-Now the start timestamp will be updated to 0 (the multiple of 8 * :const:`BLOCKS_PER_BIT`,
+Now the start timestamp will be updated to 0 (the multiple of 8 * :const:`constants.BLOCKS_PER_BIT`,
 rounded down). The new index is :code:`000000001C1DF0`
 
 +-----------------+------------+-----------------+--------------------------+
@@ -64,6 +64,6 @@ rounded down). The new index is :code:`000000001C1DF0`
 """
 
 from fetcher.events_indices.index import EventsIndex
-from fetcher.events_indices.index_data import EventsIndexData, BLOCKS_PER_BIT
+from fetcher.events_indices.index_data import EventsIndexData
 from fetcher.events_indices.bitarray import BitArray
 from fetcher.events_indices.repo import EventsIndicesRepo

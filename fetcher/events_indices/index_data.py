@@ -1,9 +1,8 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
+from fetcher.events_indices.constants import BLOCKS_PER_BIT
 from fetcher.events_indices.bitarray import BitArray
-
-BLOCKS_PER_BIT = 1_000
 
 
 class EventsIndexData:

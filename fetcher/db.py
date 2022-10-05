@@ -18,7 +18,11 @@ class Repo:
         :meth:`commit` method or rolled back using :meth:`rollback` method. Otherwise
         there's no guarantee that changes will be saved.
 
+    Args:
+        connection: Connection to an sqlite3 database
+
     Examples:
+
         ::
 
             class Widgets(Repo):
@@ -40,13 +44,13 @@ class Repo:
 
     def commit(self):
         """
-        Commits all changes pending on the database connection
+        Commits all changes pending on the database connection.
         """
         self._connection.commit()
 
     def rollback(self):
         """
-        Rollbacks all changes pending on the database connection
+        Rollbacks all changes pending on the database connection.
         """
         self._connection.rollback()
 
