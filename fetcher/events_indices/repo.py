@@ -6,6 +6,10 @@ from fetcher.db import Repo
 
 
 class EventsIndicesRepo(Repo):
+    """
+    Reading and writing :class:`EventsIndex` to database.
+    """
+
     def find_indices(
         self,
         chain_id: int,
@@ -13,6 +17,36 @@ class EventsIndicesRepo(Repo):
         event: str,
         args: Dict[str, Any] | None = None,
     ) -> List[EventsIndex]:
+        """
+        Find all indices that match :code:`chain_id`, :code:`address`,
+        :code:`event`, and :code:`args`.
+
+        The match for :code:`args` is non-trivial.
+        It tries to find all indices that could have the events for
+        the specific :code:`args`.
+
+        Example
+        ~~~~~~~
+
+        Imagine two indices for the ERC20 Transfer event:
+
+        1. Stating that all :code:`Transfer` events were fetched from block 2000 to 4000
+        2. Stating that :code:`Transfer` from address "0x6b17..." events were fetched from block 3000 to 4000
+
+        Now we want to query if the :code:`Transfer` events were fetched for
+        :code:`{"from": "0x6b17..."}` for blocks 2500 to 4000. A naive implementation
+        would return just the :code:`{"from": "0x6b17..."}` index stating that blocks
+        2500 to 3000 are missing. However, these events were already fetched
+        as part of all :code:`Transfer` events from block 2000 to 4000.
+        That's why a list of indices is returned, so the check is made
+        against the data that is really missing.
+
+        Args:
+            chain_id: Ethereum chain_id
+            address: Contract address
+            event: Event name
+            args: Argument filters
+        """
         cursor = self._connection.cursor()
         cursor.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
@@ -29,6 +63,18 @@ class EventsIndicesRepo(Repo):
         event: str,
         args: Dict[str, Any] | None = None,
     ) -> EventsIndex | None:
+        """
+        Find an index with the exact match of :code:`chain_id`, :code:`address`,
+        :code:`event`, and :code:`args`.
+
+        Args:
+            chain_id: Ethereum chain_id
+            address: Contract address
+            event: Event name
+            args: Argument filters
+
+        """
+
         args = args or {}
         cursor = self._connection.cursor()
         cursor.execute(

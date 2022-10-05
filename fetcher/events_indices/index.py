@@ -78,9 +78,13 @@ class EventsIndex:
     def args(self, val: Dict[str, Any] | None):
         self._args = EventsIndex.normalize_args(val)
 
+    @staticmethod
     def normalize_args(args: Dict[str, Any] | None) -> Dict[str, Any]:
         """
         Sort argument filters keys and each value (if :code:`list`).
+
+        Args:
+            args: Event argument filters
         """
         if args is None:
             return {}
