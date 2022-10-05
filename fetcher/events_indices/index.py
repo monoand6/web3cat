@@ -46,6 +46,9 @@ class EventsIndex:
     def from_tuple(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
         """
         Deserialize from database row
+
+        Args:
+            tuple: database row
         """
         chain_id, address, event, args_json, raw_data = tuple
         args = json.loads(args_json)
@@ -55,6 +58,9 @@ class EventsIndex:
     def to_tuple(self) -> Tuple[int, str, str, str, bytes]:
         """
         Serialize to database row
+
+        Returns:
+            database row
         """
         return (
             self.chain_id,

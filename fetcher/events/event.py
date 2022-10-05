@@ -4,12 +4,22 @@ import json
 
 
 class Event:
+    """
+    Event represents an event log on Ethereum blockchain.
+    """
+
+    #: Ethereum chain_id
     chain_id: int
+    #: The block this event appeared in
     block_number: int
+    #: The hash of the transaction this event appeared in
     transaction_hash: str
+    #: The log number for this event inside the transaction
     log_index: int
     _address: str
+    #: Event name
     event: str
+    #: Event data
     args: Dict[str, Any]
 
     def __init__(
@@ -30,12 +40,25 @@ class Event:
         self.event = event
         self.args = args
 
+    @staticmethod
     def from_tuple(tuple: Tuple[int, int, str, int, str, str, str]) -> Event:
+        """
+        Deserialize from database row
+
+        Args:
+            tuple: database row
+        """
         event = Event(*tuple)
         event.args = json.loads(event.args)
         return event
 
     def to_tuple(self) -> Tuple[int, int, str, int, str, str, str]:
+        """
+        Serialize to database row
+
+        Returns:
+            database row
+        """
         return (
             self.chain_id,
             self.block_number,
@@ -48,6 +71,10 @@ class Event:
 
     @property
     def address(self) -> str:
+        """
+        The contract address this event appeared in.
+        The convention is this address is always stored in lowercase.
+        """
         return self._address
 
     @address.setter

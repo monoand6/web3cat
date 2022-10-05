@@ -12,4 +12,7 @@ fetcher.events_indices
 .. autoclass:: EventsIndicesRepo
 .. autoclass:: EventsIndex
 .. autoclass:: EventsIndexData
+    :members:
+    :special-members: __getitem__
+    
 

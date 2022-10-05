@@ -15,6 +15,7 @@ fetcher
    :maxdepth: 1
    :caption: Submodules
 
+   api.fetcher.events
+   api.fetcher.events_indices
    api.fetcher.db
    api.fetcher.utils
-   api.fetcher.events_indices

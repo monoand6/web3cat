@@ -46,6 +46,9 @@ class EventsIndicesRepo(Repo):
             address: Contract address
             event: Event name
             args: Argument filters
+
+        Returns:
+            List of matched indices
         """
         cursor = self._connection.cursor()
         cursor.execute(
@@ -54,7 +57,7 @@ class EventsIndicesRepo(Repo):
         )
         rows = cursor.fetchall()
         indices = [EventsIndex.from_tuple(r) for r in rows]
-        return [i for i in indices if args_is_subset(args, i.args)]
+        return [i for i in indices if is_softer_filter_than(i.args, args)]
 
     def get_index(
         self,
@@ -73,6 +76,8 @@ class EventsIndicesRepo(Repo):
             event: Event name
             args: Argument filters
 
+        Returns:
+            Found index, or :code:`None` if nothing is found
         """
 
         args = args or {}
@@ -87,6 +92,12 @@ class EventsIndicesRepo(Repo):
         return EventsIndex.from_tuple(row)
 
     def save(self, indices: List[EventsIndex]):
+        """
+        Save indices to database.
+
+        Args:
+            indices: a list of indices to save
+        """
         cursor = self._connection.cursor()
         rows = [i.to_tuple() for i in indices]
         cursor.executemany(
@@ -95,26 +106,35 @@ class EventsIndicesRepo(Repo):
         )
 
 
-def args_is_subset(subset: Any | None, superset: Any | None) -> bool:
-    if subset is None:
+def is_softer_filter_than(filter1: Any | None, filter2: Any | None) -> bool:
+    """
+    Checks if :code:`filter1` is arguments filter is a softer version of
+    :code:`filter2` argument filter. Softer means more results after
+    filtering.
+
+    Args:
+        filter1: Argument filters to check. The convention is :code:`None == {}`
+        filter2: Argument filters to check. The convention is :code:`None == {}`
+    """
+    if filter1 is None:
         return True
-    if superset is None:
-        if isinstance(subset, dict) and len(subset.keys()) == 0:
+    if filter2 is None:
+        if isinstance(filter1, dict) and len(filter1.keys()) == 0:
             return True
         return False
-    if isinstance(subset, dict):
-        if not isinstance(superset, dict):
+    if isinstance(filter1, dict):
+        if not isinstance(filter2, dict):
             return False
-        for key in subset.keys():
-            if not key in superset:
+        for key in filter1.keys():
+            if not key in filter2:
                 return False
-            if not args_is_subset(subset[key], superset[key]):
+            if not is_softer_filter_than(filter1[key], filter2[key]):
                 return False
         return True
-    if isinstance(subset, list):
-        if not isinstance(superset, list):
+    if isinstance(filter1, list):
+        if not isinstance(filter2, list):
             return False
-        sb = set(subset)
-        sp = set(superset)
+        sb = set(filter1)
+        sp = set(filter2)
         return sb.issubset(sp)
-    return subset == superset
+    return filter1 == filter2

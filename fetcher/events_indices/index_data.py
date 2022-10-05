@@ -101,6 +101,9 @@ class EventsIndexData:
     def load(data: bytes) -> EventsIndexData:
         """
         Restore class from binary. See :meth:`dump` for binary format.
+
+        Returns:
+            An instance of :class:`EventsIndexData`
         """
         if len(data) < 4:
             return EventsIndexData()
@@ -109,6 +112,15 @@ class EventsIndexData:
         return EventsIndexData(block, mask)
 
     def __getitem__(self, block: int) -> bool:
+        """
+        Checks if the current block was fetched or not
+
+        Args:
+            block: block number
+
+        Returns:
+            :code:`True` if the block was fetched, :code:`False` otherwise
+        """
         if self._start_block is None:
             return False
         bit = self._block_to_bit(block)
