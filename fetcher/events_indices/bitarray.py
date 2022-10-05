@@ -2,32 +2,35 @@ class BitArray:
     """
     This is a simple bitset tailored for :mod:`events_indices` needs.
 
-    >>> bits = Bitarray()
-    >>> bits[3] = True
-    >>> print(bits[3])
+    Example
+    ~~~~~~~
 
-    Example:
-        ::
-
-            bits = Bitarray()
-            bits[3] = True
-            # => 00010000
-            assert not bits[0]
-            assert bits[3]
-
-            bits.prepend_empty_bytes(2)
-            # => 000000000000000000010000
-            assert not bits[0]
-            assert not bits[3]
-            assert bits[2 * 8 + 3]
-
-            bits.set_range(0, 4, True)
-            # => 111100000000000000010000
-            assert bits[0]
-            assert bits[1]
-            assert bits[2]
-            assert bits[3]
-            assert not bits[4]
+    >>> bits = BitArray()
+    >>> bits[3]
+    False
+    >>> bits[3] = True # 00010000
+    >>> bits[0]
+    False
+    >>> bits[3]
+    True
+    >>> bits.prepend_empty_bytes(2) # 000000000000000000010000
+    >>> bits[0]
+    False
+    >>> bits[3]
+    False
+    >>> bits[2 * 8 + 3]
+    True
+    >>> bits.set_range(0, 4, True) # 111100000000000000010000
+    >>> bits[0]
+    True
+    >>> bits[1]
+    True
+    >>> bits[2]
+    True
+    >>> bits[3]
+    True
+    >>> bits[4]
+    False
 
     """
 
@@ -46,6 +49,9 @@ class BitArray:
         Returns:
             Bit value (:code:`False` or :code:`True`)
         """
+        byte_idx = pos // 8
+        if byte_idx >= len(self._data):
+            return False
         byte = self._data[pos // 8]
         return byte & (1 << (pos % 8)) != 0
 
