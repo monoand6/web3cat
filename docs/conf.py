@@ -31,6 +31,7 @@ extensions = [
 
 autodoc_default_options = {
     "members": True,
+    "show-inheritance": True,
     "member-order": "bysource",
     "undoc-members": True,
 }
