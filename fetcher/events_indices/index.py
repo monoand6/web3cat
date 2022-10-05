@@ -5,10 +5,27 @@ from fetcher.events_indices.index_data import EventsIndexData
 
 
 class EventsIndex:
+    """
+    Stores data about fetched events for a specific
+    :code:`chain_id`, :code:`address`, :code:`event` and
+    :code:`argument_filters`.
+
+    Args:
+        chain_id: Ethereum chain_id
+        address: Contract address
+        event: Event name
+        _args: Argument filters (filter for indexed fields of event)
+        data: Index data storing blocks for which events were already fetched. See :class:`EventsIndexData` for details.
+    """
+
+    #: Ethereum chain_id
     chain_id: int
+    #: Contract address
     address: str
+    #: Event name
     event: str
     _args: Dict[str, Any]
+    #: Index data storing blocks for which events were already fetched.
     data: EventsIndexData
 
     def __init__(
@@ -25,13 +42,20 @@ class EventsIndex:
         self.args = args
         self.data = data
 
+    @staticmethod
     def from_tuple(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
+        """
+        Deserialize from database row
+        """
         chain_id, address, event, args_json, raw_data = tuple
         args = json.loads(args_json)
         data = EventsIndexData.load(raw_data)
         return EventsIndex(chain_id, address, event, args, data)
 
     def to_tuple(self) -> Tuple[int, str, str, str, bytes]:
+        """
+        Serialize to database row
+        """
         return (
             self.chain_id,
             self.address,
@@ -42,6 +66,12 @@ class EventsIndex:
 
     @property
     def args(self) -> Dict[str, Any] | None:
+        """
+        Argument filters for the event.
+
+        Arguments filters are sorted by key, and each value (if :code:`list`)
+        is sorted as well. This sorting is required to compare argument filters fast.
+        """
         return self._args
 
     @args.setter
@@ -49,6 +79,9 @@ class EventsIndex:
         self._args = EventsIndex.normalize_args(val)
 
     def normalize_args(args: Dict[str, Any] | None) -> Dict[str, Any]:
+        """
+        Sort argument filters keys and each value (if :code:`list`).
+        """
         if args is None:
             return {}
         res = {}
@@ -60,6 +93,9 @@ class EventsIndex:
         return res
 
     def step(self) -> int:
+        """
+        Returns :const:`contants.BLOCKS_PER_BIT`.
+        """
         return self.data.step()
 
     def _dump_args(self) -> str:
