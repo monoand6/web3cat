@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 from fetcher.events.event import Event
 from fetcher.db import Repo
 

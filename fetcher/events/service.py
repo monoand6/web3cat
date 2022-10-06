@@ -58,6 +58,7 @@ class EventsService:
     _events_repo: EventsRepo
     _events_indices_repo: EventsIndicesRepo
     _w3: Web3
+    _last_progress_bar_length: int
 
     def __init__(
         self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, w3: Web3
@@ -65,6 +66,7 @@ class EventsService:
         self._events_repo = events_repo
         self._events_indices_repo = events_indices_repo
         self._w3 = w3
+        self._last_progress_bar_length = 0
 
     @staticmethod
     def create(
@@ -113,9 +115,12 @@ class EventsService:
             See :meth:`prefetch_events`
         """
         self.prefetch_events(chain_id, event, from_block, to_block, argument_filters)
-        return self._events_repo.find(
+        all_events = self._events_repo.find(
             chain_id, event.event_name, event.address, from_block, to_block
         )
+        return [
+            e for e in all_events if self._args_match_filter(e.args, argument_filters)
+        ]
 
     def prefetch_events(
         self,
@@ -205,52 +210,51 @@ class EventsService:
         to_block = (
             write_index.data.snap_block_to_grid(to_block) + offset * write_index.step()
         )
+        prefix = f"Fetching {event.event_name}@{short_address(event.address)} ({from_block} - {to_block})"
 
         chunks = ((to_block - from_block) // write_index.step()) // chunk_size_in_steps
         current_block = from_block
-        for c in range(chunks):
-            self._print_progress(
-                c,
-                chunks,
-                prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
-            )
+        for _ in range(chunks):
             from_block_local = current_block
             to_block_local = current_block + chunk_size_in_steps * write_index.step()
-            if self._is_in_indices(read_indices, from_block_local, to_block_local):
-                self._print_progress(
-                    c + 1,
-                    chunks,
-                    prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                    suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
-                )
-                continue
-
-            self._fetch_and_save_events_in_one_chunk(
-                chain_id,
-                event,
-                argument_filters,
-                from_block_local,
-                to_block_local,
-                write_index,
-            )
             self._print_progress(
-                c + 1,
-                chunks,
-                prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
+                from_block_local - from_block, to_block - from_block, prefix=prefix
             )
-            current_block += chunk_size_in_steps * write_index.step()
-        if current_block < to_block:
-            if not self._is_in_indices(read_indices, current_block, to_block):
+
+            if not self._is_in_indices(read_indices, from_block_local, to_block_local):
                 self._fetch_and_save_events_in_one_chunk(
                     chain_id,
                     event,
                     argument_filters,
-                    current_block,
-                    to_block,
+                    from_block_local,
+                    to_block_local,
                     write_index,
                 )
+            self._print_progress(
+                to_block_local - from_block, to_block - from_block, prefix=prefix
+            )
+            current_block += chunk_size_in_steps * write_index.step()
+
+        if current_block < to_block and not self._is_in_indices(
+            read_indices, current_block, to_block
+        ):
+            from_block_local = current_block
+            to_block_local = to_block
+
+            self._print_progress(
+                from_block_local - from_block, to_block - from_block, prefix=prefix
+            )
+            self._fetch_and_save_events_in_one_chunk(
+                chain_id,
+                event,
+                argument_filters,
+                current_block,
+                to_block,
+                write_index,
+            )
+            self._print_progress(
+                to_block_local - from_block, to_block - from_block, prefix=prefix
+            )
 
     def _fetch_and_save_events_in_one_chunk(
         self,
@@ -319,6 +323,46 @@ class EventsService:
                 return False
         return True
 
+    def _args_match_filter(
+        self, args: Dict[str, Any] | None, filter: Dict[str, Any] | None
+    ) -> bool:
+        if filter is None or filter == {}:
+            return True
+        if args is None:
+            return False
+        for k in filter.keys():
+            if not k in args:
+                return False
+            if not self._value_match_filter(args[k], filter[k]):
+                return False
+        return True
+
+    def _value_match_filter(self, value, filter_value):
+        # the most basic case: 2 plain values
+        if not type(filter_value) is list and not type(value) is list:
+            return value == filter_value
+        # filter_value is a list of possible values (OR filter) and value is list
+        if type(filter_value) is list and not type(value) is list:
+            for ifv in filter_value:
+                if ifv == value:
+                    return True
+        # filter value is plain value but value is list
+        if not type(filter_value) is list and type(value) is list:
+            return False
+        # Now we have both values as lists
+        # Case 1: filter_value is []. It is a plain list comparison then.
+        # Doesn't make sense to supply [] as an empty list of ORs
+        if len(filter_value) == 0:
+            return value == filter_value
+
+        # Case 2: filter_value is a list of lists. Then it's OR on lists
+        if type(filter_value[0]) is list:
+            for fv in filter_value:
+                if fv == value:
+                    return True
+        # Case 3: filter_value is a list and value is a list
+        return value == filter_value
+
     def _print_progress(
         self, iteration, total, prefix="", suffix="", decimals=1, bar_length=20
     ):
@@ -336,8 +380,10 @@ class EventsService:
         percents = str_format.format(100 * (iteration / float(total)))
         filled_length = int(round(bar_length * iteration / float(total)))
         bar = "█" * filled_length + "-" * (bar_length - filled_length)
-
-        sys.stdout.write("%s |%s| %s%s %s\r" % (prefix, bar, percents, "%", suffix)),
+        text = "%s |%s| %s%s %s\r" % (prefix, bar, percents, "%", suffix)
+        sys.stdout.write("%s\r" % (" " * self._last_progress_bar_length)),
+        sys.stdout.write(text),
+        self._last_progress_bar_length = len(text)
 
         if iteration == total:
             sys.stdout.write("\n")

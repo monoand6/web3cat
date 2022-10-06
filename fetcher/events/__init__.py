@@ -30,12 +30,12 @@ Example:
 
         chain_id = 1
         dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-        dai_abi = json.load(open("erc20_abi.json", "r"))
+        dai_abi = json.load(...)
         token: Contract = w3.eth.contract(address=dai_address, abi=dai_abi)
 
         service = EventsService.create()
         events = service.get_events(
-            chain_id, token.events.Transfer, from_block=15632000 - 3000, to_block=15632000
+            chain_id, token.events.Transfer, from_block=15632000 - 10000, to_block=15632000
         )
 """
 
