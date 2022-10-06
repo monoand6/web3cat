@@ -16,7 +16,7 @@ class BlocksService:
     Service for fetching Ethereum block data.
 
     The sole purpose of this service is to fetch events from web3, cache them,
-    and read from the cache on subsequent calls.
+    and save from the cache on subsequent calls.
 
 
     The exact flow goes like this:
@@ -25,7 +25,7 @@ class BlocksService:
                 +---------------+            +-------+ +-------------+
                 | BlocksService |            | Web3  | | BlocksRepo  |
                 +---------------+            +-------+ +-------------+
-        -----------------\ |                        |            |
+        -----------------  |                        |            |
         | Request blocks |-|                        |            |
         |----------------| |                        |            |
                            |                        |            |
@@ -37,10 +37,11 @@ class BlocksService:
                            |                        |            |
                            | Save missing blocks    |            |
                            |------------------------------------>|
-              -----------\ |                        |            |
+              -----------  |                        |            |
               | Response |-|                        |            |
               |----------| |                        |            |
                            |                        |            |
+
     """
 
     _blocksRepo: BlocksRepo
@@ -65,7 +66,7 @@ class BlocksService:
 
         Args:
             cache_path: path for the cache database
-            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
             An instance of :class:`BlocksService`
@@ -97,14 +98,14 @@ class BlocksService:
         ts = timestamp
 
         # right_block is guaranteed to be after the timestamp
-        right_block = self._blocks_db.get_block_after_timestamp(ts, self._chain_id)
+        right_block = self._blocks_db.get_block_after_timestamp(self._chain_id, ts)
         if right_block is None:
             right_block = self.get_block()
 
         if right_block.timestamp < timestamp:  # no blocks exist after the timestamp
             return None
 
-        left_block = self._blocks_db.get_block_before_timestamp(ts, self._chain_id)
+        left_block = self._blocks_db.get_block_before_timestamp(self._chain_id, ts)
         if left_block is None:
             # harsh approximation but once it's run a single time
             # a better approximation from db will come on each
@@ -137,7 +138,7 @@ class BlocksService:
             Block with this number. :code:`None` if the block doesn't exist.
         """
         if number:
-            blocks = self._blocks_db.find(number, self._chain_id)
+            blocks = self._blocks_db.find(self._chain_id, number)
             if len(blocks) > 0:
                 return blocks[0]
         raw_block = None
@@ -153,6 +154,6 @@ class BlocksService:
             number=raw_block["number"],
             timestamp=raw_block["timestamp"],
         )
-        self._blocks_db.read([block])
+        self._blocks_db.save([block])
         self._blocks_db.commit()
         return block

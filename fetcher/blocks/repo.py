@@ -4,7 +4,22 @@ from fetcher.db import Repo
 
 
 class BlocksRepo(Repo):
-    def get_block_after_timestamp(self, timestamp: int, chain_id: int) -> Block | None:
+    """
+    Reading and writing :class:`Block` to database.
+    """
+
+    def get_block_after_timestamp(self, chain_id: int, timestamp: int) -> Block | None:
+        """
+        Get the first block after the timestamp in database.
+
+        Args:
+            chain_id: Ethereum chain_id
+            timestamp: UNIX timestamp, UTC+0
+
+        Returns:
+            First block after the timestamp, :code:`None` if the block doesn't exist
+        """
+
         cursor = self._connection.cursor()
         cursor.execute(
             "SELECT * FROM blocks WHERE timestamp >= ? AND chain_id = ? ORDER BY block_number LIMIT 1",
@@ -15,7 +30,18 @@ class BlocksRepo(Repo):
             return None
         return Block.from_tuple(row)
 
-    def get_block_before_timestamp(self, timestamp: int, chain_id: int) -> Block | None:
+    def get_block_before_timestamp(self, chain_id: int, timestamp: int) -> Block | None:
+        """
+        Get the first block before the timestamp in database.
+
+        Args:
+            chain_id: Ethereum chain_id
+            timestamp: UNIX timestamp, UTC+0
+
+        Returns:
+            First block before the timestamp, :code:`None` if the block doesn't exist
+        """
+
         cursor = self._connection.cursor()
         cursor.execute(
             "SELECT * FROM blocks WHERE timestamp < ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
@@ -26,9 +52,17 @@ class BlocksRepo(Repo):
             return None
         return Block.from_tuple(row)
 
-    def find(
-        self, blocks: int | str | List[int | str], chain_id: int
-    ) -> Tuple[List[Block]]:
+    def find(self, chain_id: int, blocks: int | str | List[int | str]) -> List[Block]:
+        """
+        Find blocks by number or hash
+
+        Args:
+            chain_id: Ethereum chain_id
+            blocks: block number or block hash or a list of block numbers or hashes
+
+        Returns:
+            A list of found blocks
+        """
         int_blocks, str_blocks = self._resolve_blocks_args(blocks)
         cursor = self._connection.cursor()
         int_blocks_res = []
@@ -53,18 +87,19 @@ class BlocksRepo(Repo):
         blocks_res = list({(b.number): b for b in blocks_res}.values())
         return sorted(blocks_res, key=lambda x: x.number)
 
-    def read(self, blocks: List[Block]):
+    def save(self, blocks: List[Block]):
+        """
+        Save a set of blocks into the database.
+
+        Args:
+            blocks: List of blocks to save
+        """
+
         cursor = self._connection.cursor()
         rows = [b.to_tuple() for b in blocks]
         cursor.executemany(
             "INSERT INTO blocks VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
-
-    def commit(self):
-        self._db.commit()
-
-    def rollback(self):
-        self._db.rollback()
 
     def _resolve_blocks_args(
         self, blocks: int | str | List[int | str]

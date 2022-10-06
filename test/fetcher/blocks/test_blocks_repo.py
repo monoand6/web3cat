@@ -19,14 +19,14 @@ def test_get_block_after_timestamp(blocks_repo: BlocksRepo):
         Block(1, "0x82a", 29, 10704),
         Block(1, "0x92a", 30, 10705),
     ]
-    blocks_repo.read(blocks)
-    assert blocks_repo.get_block_after_timestamp(10701, 1) == blocks[2]
-    assert blocks_repo.get_block_after_timestamp(10703, 1) == blocks[4]
-    assert blocks_repo.get_block_after_timestamp(10705, 1) == blocks[-1]
-    assert blocks_repo.get_block_after_timestamp(10706, 1) == blocks[0]
-    assert blocks_repo.get_block_after_timestamp(10800, 1) == blocks[0]
-    assert blocks_repo.get_block_after_timestamp(10801, 1) == None
-    assert blocks_repo.get_block_after_timestamp(10000, 1) == blocks[1]
+    blocks_repo.save(blocks)
+    assert blocks_repo.get_block_after_timestamp(1, 10701) == blocks[2]
+    assert blocks_repo.get_block_after_timestamp(1, 10703) == blocks[4]
+    assert blocks_repo.get_block_after_timestamp(1, 10705) == blocks[-1]
+    assert blocks_repo.get_block_after_timestamp(1, 10706) == blocks[0]
+    assert blocks_repo.get_block_after_timestamp(1, 10800) == blocks[0]
+    assert blocks_repo.get_block_after_timestamp(1, 10801) == None
+    assert blocks_repo.get_block_after_timestamp(1, 10000) == blocks[1]
 
 
 def test_get_block_before_timestamp(blocks_repo: BlocksRepo):
@@ -39,14 +39,14 @@ def test_get_block_before_timestamp(blocks_repo: BlocksRepo):
         Block(1, "0x82a", 29, 10704),
         Block(1, "0x92a", 30, 10705),
     ]
-    blocks_repo.read(blocks)
-    assert blocks_repo.get_block_before_timestamp(10701, 1) == blocks[1]
-    assert blocks_repo.get_block_before_timestamp(10703, 1) == blocks[3]
-    assert blocks_repo.get_block_before_timestamp(10705, 1) == blocks[-2]
-    assert blocks_repo.get_block_before_timestamp(10706, 1) == blocks[-1]
-    assert blocks_repo.get_block_before_timestamp(10800, 1) == blocks[-1]
-    assert blocks_repo.get_block_before_timestamp(10801, 1) == blocks[0]
-    assert blocks_repo.get_block_before_timestamp(10000, 1) == None
+    blocks_repo.save(blocks)
+    assert blocks_repo.get_block_before_timestamp(1, 10701) == blocks[1]
+    assert blocks_repo.get_block_before_timestamp(1, 10703) == blocks[3]
+    assert blocks_repo.get_block_before_timestamp(1, 10705) == blocks[-2]
+    assert blocks_repo.get_block_before_timestamp(1, 10706) == blocks[-1]
+    assert blocks_repo.get_block_before_timestamp(1, 10800) == blocks[-1]
+    assert blocks_repo.get_block_before_timestamp(1, 10801) == blocks[0]
+    assert blocks_repo.get_block_before_timestamp(1, 10000) == None
 
 
 def test_blocks_repo_write(blocks_repo: BlocksRepo):
@@ -56,9 +56,9 @@ def test_blocks_repo_write(blocks_repo: BlocksRepo):
         Block(1, "0x52a", 23, 10701),
     ]
     numbers = [b.number for b in blocks]
-    assert len(blocks_repo.find(numbers, 1)) == 0
-    blocks_repo.read(blocks)
-    assert len(blocks_repo.find(numbers, 1)) == 3
+    assert len(blocks_repo.find(1, numbers)) == 0
+    blocks_repo.save(blocks)
+    assert len(blocks_repo.find(1, numbers)) == 3
 
 
 def test_blocks_repo_write_uniq(blocks_repo: BlocksRepo):
@@ -68,35 +68,35 @@ def test_blocks_repo_write_uniq(blocks_repo: BlocksRepo):
         Block(1, "0x123", 25, 10800),
     ]
     numbers = [b.number for b in blocks]
-    blocks_repo.read(blocks)
-    blocks_repo.read([Block(1, "0x52a", 23, 107)])
-    assert blocks_repo.find(numbers, 1) == blocks
+    blocks_repo.save(blocks)
+    blocks_repo.save([Block(1, "0x52a", 23, 107)])
+    assert blocks_repo.find(1, numbers) == blocks
 
 
-def test_blocks_repo_read_sorted(blocks_repo: BlocksRepo):
+def test_blocks_repo_save_sorted(blocks_repo: BlocksRepo):
     blocks = [
         Block(1, "0x123", 25, 10800),
         Block(1, "0xd2f", 22, 10700),
         Block(1, "0x52a", 23, 10701),
     ]
     numbers = [b.number for b in blocks]
-    blocks_repo.read(blocks)
-    assert blocks_repo.find(numbers, 1) == [blocks[1], blocks[2], blocks[0]]
+    blocks_repo.save(blocks)
+    assert blocks_repo.find(1, numbers) == [blocks[1], blocks[2], blocks[0]]
 
 
-def test_blocks_repo_read_chain_id(blocks_repo: BlocksRepo):
+def test_blocks_repo_save_chain_id(blocks_repo: BlocksRepo):
     blocks = [
         Block(1, "0x123", 25, 10800),
         Block(2, "0xd2f", 22, 10700),
         Block(1, "0x52a", 23, 10701),
     ]
     numbers = [b.number for b in blocks]
-    blocks_repo.read(blocks)
-    assert len(blocks_repo.find(numbers, 1)) == 2
-    assert len(blocks_repo.find(numbers, 2)) == 1
+    blocks_repo.save(blocks)
+    assert len(blocks_repo.find(1, numbers)) == 2
+    assert len(blocks_repo.find(2, numbers)) == 1
 
 
-def test_blocks_repo_read_hash_and_number(blocks_repo: BlocksRepo):
+def test_blocks_repo_save_hash_and_number(blocks_repo: BlocksRepo):
     blocks = [
         Block(1, "0x123", 25, 10800),
         Block(1, "0xd2f", 22, 10700),
@@ -106,6 +106,6 @@ def test_blocks_repo_read_hash_and_number(blocks_repo: BlocksRepo):
         Block(1, "0x82a", 29, 10704),
         Block(1, "0x92a", 30, 10705),
     ]
-    reads = [22, "0x123", 25, "0x62a", "0x92a"]
-    blocks_repo.read(blocks)
-    assert len(blocks_repo.find(reads, 1)) == 4
+    saves = [22, "0x123", 25, "0x62a", "0x92a"]
+    blocks_repo.save(blocks)
+    assert len(blocks_repo.find(1, saves)) == 4
