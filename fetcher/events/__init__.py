@@ -13,7 +13,7 @@ only 20_000 - 21_000 from web3 and save to cache.
 A subsequent request for blocks 15_000 - 21_000 will read 
 everything from cache.
 
-It also supports nesting of the argument filters. 
+Additionally, it supports nesting of the argument filters. 
 Imagine you 
 
 1. Fetched all Transfer events from blocks 2000 - 4000
