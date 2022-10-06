@@ -17,6 +17,7 @@ fetcher
 
    api.fetcher.events
    api.fetcher.blocks
+   api.fetcher.erc20_metas
    api.fetcher.events_indices
    api.fetcher.db
    api.fetcher.utils

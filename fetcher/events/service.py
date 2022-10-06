@@ -17,7 +17,7 @@ from fetcher.utils import json_response, short_address
 
 class EventsService:
     """
-    Service for fetching events.
+    Service for fetching web3 events.
 
     The sole purpose of this service is to fetch events from web3, cache them,
     and read from the cache on subsequent calls.
