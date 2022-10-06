@@ -57,27 +57,20 @@ class EventsService:
 
     _events_repo: EventsRepo
     _events_indices_repo: EventsIndicesRepo
-    _w3: Web3
     _last_progress_bar_length: int
 
-    def __init__(
-        self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, w3: Web3
-    ):
+    def __init__(self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo):
         self._events_repo = events_repo
         self._events_indices_repo = events_indices_repo
-        self._w3 = w3
         self._last_progress_bar_length = 0
 
     @staticmethod
-    def create(
-        cache_path: str = "cache.sqlite3", rpc: str | None = None
-    ) -> EventsService:
+    def create(cache_path: str = "cache.sqlite3") -> EventsService:
         """
         Create an instance of :class:`EventsService`
 
         Args:
             cache_path: path for the cache database
-            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
             An instance of :class:`EventsService`
@@ -85,10 +78,7 @@ class EventsService:
         conn = connection_from_path(cache_path)
         events_repo = EventsRepo(conn)
         events_indices_repo = EventsIndicesRepo(conn)
-        w3 = w3auto
-        if rpc:
-            w3 = Web3(Web3.HTTPProvider(rpc))
-        return EventsService(events_repo, events_indices_repo, w3)
+        return EventsService(events_repo, events_indices_repo)
 
     def get_events(
         self,
@@ -118,9 +108,7 @@ class EventsService:
         all_events = self._events_repo.find(
             chain_id, event.event_name, event.address, from_block, to_block
         )
-        return [
-            e for e in all_events if self._args_match_filter(e.args, argument_filters)
-        ]
+        return [e for e in all_events if e.matches_filter(argument_filters)]
 
     def prefetch_events(
         self,
@@ -322,46 +310,6 @@ class EventsService:
             if not index.data[b]:
                 return False
         return True
-
-    def _args_match_filter(
-        self, args: Dict[str, Any] | None, filter: Dict[str, Any] | None
-    ) -> bool:
-        if filter is None or filter == {}:
-            return True
-        if args is None:
-            return False
-        for k in filter.keys():
-            if not k in args:
-                return False
-            if not self._value_match_filter(args[k], filter[k]):
-                return False
-        return True
-
-    def _value_match_filter(self, value, filter_value):
-        # the most basic case: 2 plain values
-        if not type(filter_value) is list and not type(value) is list:
-            return value == filter_value
-        # filter_value is a list of possible values (OR filter) and value is list
-        if type(filter_value) is list and not type(value) is list:
-            for ifv in filter_value:
-                if ifv == value:
-                    return True
-        # filter value is plain value but value is list
-        if not type(filter_value) is list and type(value) is list:
-            return False
-        # Now we have both values as lists
-        # Case 1: filter_value is []. It is a plain list comparison then.
-        # Doesn't make sense to supply [] as an empty list of ORs
-        if len(filter_value) == 0:
-            return value == filter_value
-
-        # Case 2: filter_value is a list of lists. Then it's OR on lists
-        if type(filter_value[0]) is list:
-            for fv in filter_value:
-                if fv == value:
-                    return True
-        # Case 3: filter_value is a list and value is a list
-        return value == filter_value
 
     def _print_progress(
         self, iteration, total, prefix="", suffix="", decimals=1, bar_length=20

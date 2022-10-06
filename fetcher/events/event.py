@@ -83,6 +83,65 @@ class Event:
             "args": self.args,
         }
 
+    @staticmethod
+    def from_dict(d: Dict[str, Any]):
+        return Event(
+            chain_id=d["chain_id"],
+            block_number=d["block_number"],
+            transaction_hash=d["transaction_hash"],
+            log_index=d["log_index"],
+            address=d["address"],
+            event=d["event"],
+            args=d["args"],
+        )
+
+    def matches_filter(self, filter: Dict[str, Any] | None) -> bool:
+        """
+        Checks if :class:`Event` matches given event filter.
+
+        Args:
+            filter: Event filter
+
+        Returns:
+            :code:`True` if matches, :code:`False` otherwise
+        """
+        if filter is None or filter == {}:
+            return True
+        if self.args is None:
+            return False
+        for k in filter.keys():
+            if not k in self.args:
+                return False
+            if not self._value_match_filter(self.args[k], filter[k]):
+                return False
+        return True
+
+    def _value_match_filter(self, value, filter_value):
+        # the most basic case: 2 plain values
+        if not type(filter_value) is list and not type(value) is list:
+            return value == filter_value
+        # filter_value is a list of possible values (OR filter) and value is list
+        if type(filter_value) is list and not type(value) is list:
+            for ifv in filter_value:
+                if ifv == value:
+                    return True
+        # filter value is plain value but value is list
+        if not type(filter_value) is list and type(value) is list:
+            return False
+        # Now we have both values as lists
+        # Case 1: filter_value is []. It is a plain list comparison then.
+        # Doesn't make sense to supply [] as an empty list of ORs
+        if len(filter_value) == 0:
+            return value == filter_value
+
+        # Case 2: filter_value is a list of lists. Then it's OR on lists
+        if type(filter_value[0]) is list:
+            for fv in filter_value:
+                if fv == value:
+                    return True
+        # Case 3: filter_value is a list and value is a list
+        return value == filter_value
+
     @property
     def address(self) -> str:
         """
