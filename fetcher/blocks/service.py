@@ -12,6 +12,37 @@ from fetcher.utils import json_response
 
 
 class BlocksService:
+    """
+    Service for fetching Ethereum block data.
+
+    The sole purpose of this service is to fetch events from web3, cache them,
+    and read from the cache on subsequent calls.
+
+
+    The exact flow goes like this:
+    ::
+
+                +---------------+            +-------+ +-------------+
+                | BlocksService |            | Web3  | | BlocksRepo  |
+                +---------------+            +-------+ +-------------+
+        -----------------\ |                        |            |
+        | Request blocks |-|                        |            |
+        |----------------| |                        |            |
+                           |                        |            |
+                           | Get blocks             |            |
+                           |------------------------------------>|
+                           |                        |            |
+                           | Get missing blocks     |            |
+                           |----------------------->|            |
+                           |                        |            |
+                           | Save missing blocks    |            |
+                           |------------------------------------>|
+              -----------\ |                        |            |
+              | Response |-|                        |            |
+              |----------| |                        |            |
+                           |                        |            |
+    """
+
     _blocksRepo: BlocksRepo
     _w3: Web3
     _chain_id: int
@@ -25,9 +56,21 @@ class BlocksService:
         if self._chain_id in [1, 3, 4, 5, 42]:
             self._block_time_est = 13.0
 
+    @staticmethod
     def create(
         cache_path: str = "cache.sqlite3", rpc: str | None = None
     ) -> BlocksService:
+        """
+        Create an instance of :class:`BlocksService`
+
+        Args:
+            cache_path: path for the cache database
+            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+
+        Returns:
+            An instance of :class:`BlocksService`
+        """
+
         conn = connection_from_path(cache_path)
         blocks_repo = BlocksRepo(conn)
         w3 = w3auto
@@ -36,9 +79,21 @@ class BlocksService:
         return BlocksService(blocks_repo, w3)
 
     def get_latest_block(self) -> Block:
+        """
+        Get the latest block from Ethereum
+        """
         return self.get_block()
 
     def get_block_right_after_timestamp(self, timestamp: int) -> Block | None:
+        """
+        Get the first block after a timestamp.
+
+        Args:
+            timestamp: UNIX timestamp, UTC+0
+
+        Returns:
+            First block after timestamp, :code:`None` if the block doesn't exist
+        """
         ts = timestamp
 
         # right_block is guaranteed to be after the timestamp
@@ -73,7 +128,13 @@ class BlocksService:
 
     def get_block(self, number: int | None = None) -> Block | None:
         """
-        number = None => fetch latest
+        Get block with a specific number.
+
+        Args:
+            number: block number. If :code:`None`, fetches the latest block
+
+        Returns:
+            Block with this number. :code:`None` if the block doesn't exist.
         """
         if number:
             blocks = self._blocks_db.find(number, self._chain_id)

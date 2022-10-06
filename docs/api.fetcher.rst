@@ -16,6 +16,7 @@ fetcher
    :caption: Submodules
 
    api.fetcher.events
+   api.fetcher.blocks
    api.fetcher.events_indices
    api.fetcher.db
    api.fetcher.utils

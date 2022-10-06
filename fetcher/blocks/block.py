@@ -3,6 +3,10 @@ from typing import Tuple
 
 
 class Block:
+    """
+    Block model
+    """
+
     chain_id: int
     hash: str
     number: int
