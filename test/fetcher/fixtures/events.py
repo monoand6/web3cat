@@ -6,6 +6,8 @@ import json
 import pytest
 
 from fetcher.events.repo import EventsRepo
+from fetcher.events.service import EventsService
+from fetcher.events_indices.repo import EventsIndicesRepo
 
 
 class Web3EventFilterMock:
@@ -20,22 +22,29 @@ class Web3EventFilterMock:
 
 class Web3ContractEventMock:
     _events: List[Event]
+    events_fetched: int
+    address: str
+    event_name: str
 
     def __init__(self):
         current_folder = os.path.realpath(os.path.dirname(__file__))
         events = json.load(open(f"{current_folder}/events.json"))
         self._events = [Event.from_dict(e) for e in events]
+        self.events_fetched = 0
+        self.address = "0x6b175474e89094c44da98b954eedeac495271d0f"
+        self.event_name = "Transfer"
 
     def createFilter(
-        self, from_block: int, to_block: int, args: Dict[str, Any] | None
+        self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
     ) -> Web3EventFilterMock:
         events = [
             e
             for e in self._events
-            if e.block_number >= from_block
-            and e.block_number <= to_block
-            and e.matches_filter(args)
+            if e.block_number >= fromBlock
+            and e.block_number <= toBlock
+            and e.matches_filter(argument_filters)
         ]
+        self.events_fetched += len(events)
         return Web3EventFilterMock([e.to_dict() for e in events])
 
 
@@ -45,6 +54,13 @@ def events_repo(conn: Connection) -> EventsRepo:
     Instance of events.EventsRepo
     """
     return EventsRepo(conn)
+
+
+@pytest.fixture
+def events_service(
+    events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo
+) -> EventsService:
+    return EventsService(events_repo, events_indices_repo)
 
 
 @pytest.fixture(scope="session")

@@ -116,7 +116,7 @@ class EventsIndexData:
         Convert :class:`EventsIndexData` to dict
         """
         return {
-            "start_block": self._start_block,
+            "startBlock": self._start_block,
             "mask": self._mask.to_hex(),
         }
 

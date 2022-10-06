@@ -87,7 +87,18 @@ def test_events_index_data_set_range_5():
     assert not index[2 * index.step() + 1]
 
 
-def test_events_index_data_to_dict():
-    index = EventsIndexData()
-    index.set_range(11000, 14000, True)
-    assert index.to_dict() == {"start_block": 8000, "mask": "0x38"}
+def test_events_index_to_dict():
+    index_data = EventsIndexData()
+    index_data.set_range(11000, 14000, True)
+    chain_id = 1
+    address = "0x1234"
+    event = "Transfer"
+    args = {"from": "0x2345"}
+    index = EventsIndex(chain_id, address, event, args, index_data)
+    assert index.to_dict() == {
+        "chainId": 1,
+        "address": address,
+        "event": event,
+        "args": args,
+        "data": {"startBlock": 8000, "mask": "0x38"},
+    }

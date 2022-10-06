@@ -74,10 +74,10 @@ class Event:
         Convert :class:`Event` to dict
         """
         return {
-            "chain_id": self.chain_id,
-            "block_number": self.block_number,
-            "transaction_hash": self.transaction_hash,
-            "log_index": self.log_index,
+            "chainId": self.chain_id,
+            "blockNumber": self.block_number,
+            "transactionHash": self.transaction_hash,
+            "logIndex": self.log_index,
             "address": self.address,
             "event": self.event,
             "args": self.args,
@@ -86,10 +86,10 @@ class Event:
     @staticmethod
     def from_dict(d: Dict[str, Any]):
         return Event(
-            chain_id=d["chain_id"],
-            block_number=d["block_number"],
-            transaction_hash=d["transaction_hash"],
-            log_index=d["log_index"],
+            chain_id=d["chainId"],
+            block_number=d["blockNumber"],
+            transaction_hash=d["transactionHash"],
+            log_index=d["logIndex"],
             address=d["address"],
             event=d["event"],
             args=d["args"],

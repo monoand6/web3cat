@@ -45,7 +45,7 @@ class Block:
         Convert :class:`Block` to dict
         """
         return {
-            "chain_id": self.chain_id,
+            "chainId": self.chain_id,
             "hash": self.hash,
             "number": self.number,
             "timestamp": self.timestamp,

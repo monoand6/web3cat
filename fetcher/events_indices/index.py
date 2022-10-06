@@ -113,7 +113,7 @@ class EventsIndex:
         Convert :class:`EventsIndex` to dict
         """
         return {
-            "chain_id": self.chain_id,
+            "chainId": self.chain_id,
             "address": self.address,
             "event": self.event,
             "args": self.args,
