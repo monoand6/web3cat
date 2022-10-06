@@ -1,3 +1,6 @@
+from hexbytes import HexBytes
+
+
 class BitArray:
     """
     This is a simple bitset tailored for :mod:`events_indices` needs.
@@ -120,6 +123,12 @@ class BitArray:
             self[i] = value
         for i in range(full_end * 8, end):
             self[i] = value
+
+    def to_hex(self) -> str:
+        """
+        Returns hex representation starting with '0x'.
+        """
+        return HexBytes(self).hex()
 
     def _ensure_length(self, idx: int):
         while len(self._data) <= idx // 8:

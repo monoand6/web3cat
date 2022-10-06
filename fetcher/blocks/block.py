@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 
 class Block:
@@ -39,6 +39,17 @@ class Block:
             database row
         """
         return (self.chain_id, self.hash, self.number, self.timestamp)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert :class:`Block` to dict
+        """
+        return {
+            "chain_id": self.chain_id,
+            "hash": self.hash,
+            "number": self.number,
+            "timestamp": self.timestamp,
+        }
 
     def __eq__(self, other):
         if type(other) is type(self):

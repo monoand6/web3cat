@@ -111,6 +111,15 @@ class EventsIndexData:
         mask = data[4:]
         return EventsIndexData(block, mask)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert :class:`EventsIndexData` to dict
+        """
+        return {
+            "start_block": self._start_block,
+            "mask": self._mask.to_hex(),
+        }
+
     def __getitem__(self, block: int) -> bool:
         """
         Checks if the current block was fetched or not

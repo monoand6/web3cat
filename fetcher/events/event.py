@@ -69,6 +69,20 @@ class Event:
             json.dumps(self.args),
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert :class:`Event` to dict
+        """
+        return {
+            "chain_id": self.chain_id,
+            "block_number": self.block_number,
+            "transaction_hash": self.transaction_hash,
+            "log_index": self.log_index,
+            "address": self.address,
+            "event": self.event,
+            "args": self.args,
+        }
+
     @property
     def address(self) -> str:
         """

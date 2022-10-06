@@ -108,6 +108,18 @@ class EventsIndex:
         """
         return self.data.step()
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert :class:`EventsIndex` to dict
+        """
+        return {
+            "chain_id": self.chain_id,
+            "address": self.address,
+            "event": self.event,
+            "args": self.args,
+            "data": self.data.to_dict(),
+        }
+
     def _dump_args(self) -> str:
         if self.args is None:
             return json.dumps({})
