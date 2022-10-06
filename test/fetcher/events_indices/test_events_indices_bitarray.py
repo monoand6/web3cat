@@ -62,3 +62,16 @@ def test_bit_array_set_range_edge_1():
     assert len(b) == 8
     assert b[0] == True
     assert b[1] == False
+
+
+def test_bit_array_to_hex():
+    b = BitArray()
+    assert b.to_hex() == "0x"
+    b[3] = True
+    assert b.to_hex() == "0x08"
+    b[2] = True
+    assert b.to_hex() == "0x0c"
+    b[4] = True
+    assert b.to_hex() == "0x1c"
+    b[8] = True
+    assert b.to_hex() == "0x1c01"

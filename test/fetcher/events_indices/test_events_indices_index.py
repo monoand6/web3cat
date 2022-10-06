@@ -85,3 +85,9 @@ def test_events_index_data_set_range_5():
     assert index[2 * index.step() - 1]
     assert not index[2 * index.step()]
     assert not index[2 * index.step() + 1]
+
+
+def test_events_index_data_to_dict():
+    index = EventsIndexData()
+    index.set_range(11000, 14000, True)
+    assert index.to_dict() == {"start_block": 8000, "mask": "0x38"}

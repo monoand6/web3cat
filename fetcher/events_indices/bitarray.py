@@ -5,35 +5,34 @@ class BitArray:
     """
     This is a simple bitset tailored for :mod:`events_indices` needs.
 
-    Example
-    ~~~~~~~
+    Example:
 
-    >>> bits = BitArray()
-    >>> bits[3]
-    False
-    >>> bits[3] = True # 00010000
-    >>> bits[0]
-    False
-    >>> bits[3]
-    True
-    >>> bits.prepend_empty_bytes(2) # 000000000000000000010000
-    >>> bits[0]
-    False
-    >>> bits[3]
-    False
-    >>> bits[2 * 8 + 3]
-    True
-    >>> bits.set_range(0, 4, True) # 111100000000000000010000
-    >>> bits[0]
-    True
-    >>> bits[1]
-    True
-    >>> bits[2]
-    True
-    >>> bits[3]
-    True
-    >>> bits[4]
-    False
+        >>> bits = BitArray()
+        >>> bits[3]
+        False
+        >>> bits[3] = True # 00010000
+        >>> bits[0]
+        False
+        >>> bits[3]
+        True
+        >>> bits.prepend_empty_bytes(2) # 000000000000000000010000
+        >>> bits[0]
+        False
+        >>> bits[3]
+        False
+        >>> bits[2 * 8 + 3]
+        True
+        >>> bits.set_range(0, 4, True) # 111100000000000000010000
+        >>> bits[0]
+        True
+        >>> bits[1]
+        True
+        >>> bits[2]
+        True
+        >>> bits[3]
+        True
+        >>> bits[4]
+        False
 
     """
 
@@ -127,8 +126,27 @@ class BitArray:
     def to_hex(self) -> str:
         """
         Returns hex representation starting with '0x'.
+
+        Example:
+
+            >>> b = BitArray()
+            >>> b.to_hex()
+            '0x'
+            >>> b[3] = True
+            >>> b.to_hex()
+            '0x08'
+            >>> b[2] = True
+            >>> b.to_hex()
+            '0x0c'
+            >>> b[4] = True
+            >>> b.to_hex()
+            '0x1c'
+            >>> b[8] = True
+            >>> b.to_hex()
+            '0x1c01'
+
         """
-        return HexBytes(self).hex()
+        return HexBytes(self._data).hex()
 
     def _ensure_length(self, idx: int):
         while len(self._data) <= idx // 8:
