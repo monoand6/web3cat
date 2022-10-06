@@ -4,12 +4,16 @@ from typing import Tuple
 
 class Block:
     """
-    Block model
+    Ethereum block data
     """
 
+    #: Ethereum chain_id
     chain_id: int
+    #: Block hash
     hash: str
+    #: Block number
     number: int
+    #: Block timestamp
     timestamp: int
 
     def __init__(self, chain_id: int, hash: str, number: int, timestamp: int):
@@ -19,9 +23,21 @@ class Block:
         self.timestamp = timestamp
 
     def from_tuple(tuple: Tuple[int, str, int, int]) -> Block:
+        """
+        Deserialize from database row
+
+        Args:
+            tuple: database row
+        """
         return Block(*tuple)
 
     def to_tuple(self) -> Tuple[int, str, int, int]:
+        """
+        Serialize to database row
+
+        Returns:
+            database row
+        """
         return (self.chain_id, self.hash, self.number, self.timestamp)
 
     def __eq__(self, other):
