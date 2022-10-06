@@ -160,11 +160,11 @@ class EventsService:
                 argument_filters,
                 EventsIndexData(),
             )
-        current_chunk_size = (to_block - from_block) // write_index.step() + 1
+        current_chunk_size_in_steps = (to_block - from_block) // write_index.step() + 1
         fetched = False
         e_memoized = None
         while not fetched:
-            if current_chunk_size < write_index.step():
+            if current_chunk_size_in_steps == 0:
                 if not e_memoized:
                     raise RuntimeError(
                         "Couldn't fetch data because minimum chunk size is reached"
@@ -173,7 +173,7 @@ class EventsService:
                     raise e_memoized
             try:
                 self._fetch_events_for_chunk_size(
-                    current_chunk_size,
+                    current_chunk_size_in_steps,
                     chain_id,
                     event,
                     argument_filters,
@@ -187,11 +187,11 @@ class EventsService:
             # However requests.exceptions.ReadTimeout also happens sometimes, so it's better to use catch-all
             except Exception as e:
                 e_memoized = e
-                current_chunk_size //= 2
+                current_chunk_size_in_steps //= 2
 
     def _fetch_events_for_chunk_size(
         self,
-        chunk_size: int,
+        chunk_size_in_steps: int,
         chain_id: int,
         event: ContractEvent,
         argument_filters: Dict[str, Any] | None,
@@ -206,23 +206,23 @@ class EventsService:
             write_index.data.snap_block_to_grid(to_block) + offset * write_index.step()
         )
 
-        chunks = ((to_block - from_block) // write_index.step()) // chunk_size
+        chunks = ((to_block - from_block) // write_index.step()) // chunk_size_in_steps
         current_block = from_block
         for c in range(chunks):
             self._print_progress(
                 c,
                 chunks,
                 prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                suffix=f" ({chunk_size * write_index.step()} events per fetch)",
+                suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
             )
             from_block_local = current_block
-            to_block_local = current_block + chunk_size * write_index.step()
+            to_block_local = current_block + chunk_size_in_steps * write_index.step()
             if self._is_in_indices(read_indices, from_block_local, to_block_local):
                 self._print_progress(
                     c + 1,
                     chunks,
                     prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                    suffix=f" ({chunk_size * write_index.step()} events per fetch)",
+                    suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
                 )
                 continue
 
@@ -238,17 +238,17 @@ class EventsService:
                 c + 1,
                 chunks,
                 prefix=f"Fetching {event.event_name}@{short_address(event.address)}",
-                suffix=f" ({chunk_size * write_index.step()} events per fetch)",
+                suffix=f" ({chunk_size_in_steps * write_index.step()} events per fetch)",
             )
-            current_block += chunk_size * write_index.step()
+            current_block += chunk_size_in_steps * write_index.step()
         if current_block < to_block:
             if not self._is_in_indices(read_indices, current_block, to_block):
                 self._fetch_and_save_events_in_one_chunk(
                     chain_id,
                     event,
                     argument_filters,
-                    from_block_local,
-                    to_block_local,
+                    current_block,
+                    to_block,
                     write_index,
                 )
 
@@ -337,7 +337,7 @@ class EventsService:
         filled_length = int(round(bar_length * iteration / float(total)))
         bar = "█" * filled_length + "-" * (bar_length - filled_length)
 
-        sys.stdout.write("\r%s |%s| %s%s %s" % (prefix, bar, percents, "%", suffix)),
+        sys.stdout.write("%s |%s| %s%s %s\r" % (prefix, bar, percents, "%", suffix)),
 
         if iteration == total:
             sys.stdout.write("\n")
