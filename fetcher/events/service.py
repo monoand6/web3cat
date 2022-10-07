@@ -209,22 +209,27 @@ class EventsService:
         )
         prefix = f"Fetching {event.event_name}@{short_address(event.address)} ({from_block} - {to_block})"
         step = chunk_size_in_steps * write_index.step()
+        should_print_progress = False
         for start in range(from_block, to_block, step):
             end = min(start + step, to_block)
-            self._print_progress(
-                start - from_block, to_block - from_block, prefix=prefix
-            )
             shinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
-            # doesn't fetch if shinked_start >= shrinked_end
-            self._fetch_and_save_events_in_one_chunk(
-                chain_id,
-                event,
-                argument_filters,
-                shinked_start,
-                shrinked_end,
-                write_index,
-            )
-            self._print_progress(end - from_block, to_block - from_block, prefix=prefix)
+            if shinked_start < shrinked_end:
+                should_print_progress = True
+                self._print_progress(
+                    start - from_block, to_block - from_block, prefix=prefix
+                )
+                self._fetch_and_save_events_in_one_chunk(
+                    chain_id,
+                    event,
+                    argument_filters,
+                    shinked_start,
+                    shrinked_end,
+                    write_index,
+                )
+            if should_print_progress:
+                self._print_progress(
+                    end - from_block, to_block - from_block, prefix=prefix
+                )
 
     def _shrink_blocks(
         self, read_indices: List[EventsIndex], from_block: int, to_block: int
@@ -270,8 +275,6 @@ class EventsService:
         to_block: int,
         write_index: EventsIndex,
     ) -> List[Event]:
-        if from_block >= to_block:
-            return
         events = self._fetch_events_in_one_chunk(
             chain_id, event, from_block, to_block, argument_filters
         )

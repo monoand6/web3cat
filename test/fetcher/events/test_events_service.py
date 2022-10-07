@@ -1,7 +1,8 @@
 import chunk
 from random import shuffle
+from typing import List
 from hypothesis import given, settings, HealthCheck
-from hypothesis.strategies import integers, just
+from hypothesis.strategies import integers, lists
 from fetcher.events.service import EventsService
 from fetcher.events_indices.constants import BLOCKS_PER_BIT
 
