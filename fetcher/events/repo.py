@@ -49,3 +49,10 @@ class EventsRepo(Repo):
         cursor.executemany(
             "INSERT INTO events VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
+
+    def purge(self):
+        """
+        Clean all database entries
+        """
+        cursor = self._connection.cursor()
+        cursor.execute("DELETE FROM events")

@@ -101,6 +101,13 @@ class BlocksRepo(Repo):
             "INSERT INTO blocks VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
 
+    def purge(self):
+        """
+        Clean all database entries
+        """
+        cursor = self._connection.cursor()
+        cursor.execute("DELETE FROM blocks")
+
     def _resolve_blocks_args(
         self, blocks: int | str | List[int | str]
     ) -> Tuple[List[int], List[str]]:

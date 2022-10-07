@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sys
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from fetcher.db import connection_from_path
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
@@ -182,6 +182,15 @@ class EventsService:
                 e_memoized = e
                 current_chunk_size_in_steps //= 2
 
+    def clear_cache(self):
+        """
+        Delete all cached entries
+        """
+        self._events_indices_repo.purge()
+        self._events_repo.purge()
+        self._events_indices_repo.commit()
+        self._events_repo.commit()
+
     def _fetch_events_for_chunk_size(
         self,
         chunk_size_in_steps: int,
@@ -199,50 +208,58 @@ class EventsService:
             write_index.data.snap_block_to_grid(to_block) + offset * write_index.step()
         )
         prefix = f"Fetching {event.event_name}@{short_address(event.address)} ({from_block} - {to_block})"
-
-        chunks = ((to_block - from_block) // write_index.step()) // chunk_size_in_steps
-        current_block = from_block
-        for _ in range(chunks):
-            from_block_local = current_block
-            to_block_local = current_block + chunk_size_in_steps * write_index.step()
+        step = chunk_size_in_steps * write_index.step()
+        for start in range(from_block, to_block, step):
+            end = min(start + step, to_block)
             self._print_progress(
-                from_block_local - from_block, to_block - from_block, prefix=prefix
+                start - from_block, to_block - from_block, prefix=prefix
             )
-
-            if not self._is_in_indices(read_indices, from_block_local, to_block_local):
-                self._fetch_and_save_events_in_one_chunk(
-                    chain_id,
-                    event,
-                    argument_filters,
-                    from_block_local,
-                    to_block_local,
-                    write_index,
-                )
-            self._print_progress(
-                to_block_local - from_block, to_block - from_block, prefix=prefix
-            )
-            current_block += chunk_size_in_steps * write_index.step()
-
-        if current_block < to_block and not self._is_in_indices(
-            read_indices, current_block, to_block
-        ):
-            from_block_local = current_block
-            to_block_local = to_block
-
-            self._print_progress(
-                from_block_local - from_block, to_block - from_block, prefix=prefix
-            )
+            shinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
+            # doesn't fetch if shinked_start >= shrinked_end
             self._fetch_and_save_events_in_one_chunk(
                 chain_id,
                 event,
                 argument_filters,
-                current_block,
-                to_block,
+                shinked_start,
+                shrinked_end,
                 write_index,
             )
-            self._print_progress(
-                to_block_local - from_block, to_block - from_block, prefix=prefix
-            )
+            self._print_progress(end - from_block, to_block - from_block, prefix=prefix)
+
+    def _shrink_blocks(
+        self, read_indices: List[EventsIndex], from_block: int, to_block: int
+    ) -> Tuple[int, int]:
+        """
+        Shorten a block range so that both start and end are facing 0 bits.
+
+        Example:
+          from            to            from  to
+            |             |               |   |
+            111111100101111   =>   111111100101111
+        """
+        if len(read_indices) == 0:
+            return (from_block, to_block)
+        step = read_indices[0].step()
+        shrinked_start, shrinked_end = from_block, to_block
+        while (
+            self._block_is_in_indices(read_indices, shrinked_start)
+            and shrinked_start <= shrinked_end
+        ):
+            shrinked_start += step
+        while (
+            self._block_is_in_indices(read_indices, shrinked_end - step)
+            and shrinked_start <= shrinked_end
+        ):
+            shrinked_end -= step
+        return (shrinked_start, shrinked_end)
+
+    def _block_is_in_indices(self, indices: List[EventsIndex], block: int) -> bool:
+        if block < 0:
+            return False
+        for i in indices:
+            if i.data[block]:
+                return True
+        return False
 
     def _fetch_and_save_events_in_one_chunk(
         self,
@@ -253,12 +270,13 @@ class EventsService:
         to_block: int,
         write_index: EventsIndex,
     ) -> List[Event]:
+        if from_block >= to_block:
+            return
         events = self._fetch_events_in_one_chunk(
             chain_id, event, from_block, to_block, argument_filters
         )
         self._events_repo.save(events)
-        # set_range is non-inclusive on the to_block
-        write_index.data.set_range(from_block, to_block + write_index.step(), True)
+        write_index.data.set_range(from_block, to_block, True)
         self._events_indices_repo.save([write_index])
         self._events_indices_repo.commit()
 
@@ -290,26 +308,6 @@ class EventsService:
             for j in jsons
         ]
         return events
-
-    def _is_in_indices(
-        self, indices: List[EventsIndex], start_block: int, end_block: int
-    ) -> bool:
-        for index in indices:
-            if self._is_in_index(index, start_block, end_block):
-                return True
-        return False
-
-    def _is_in_index(
-        self, index: EventsIndex, start_block: int, end_block: int
-    ) -> bool:
-        if end_block == 0:
-            return True
-        if not index.data[end_block]:
-            return False
-        for b in range(start_block, end_block, index.step()):
-            if not index.data[b]:
-                return False
-        return True
 
     def _print_progress(
         self, iteration, total, prefix="", suffix="", decimals=1, bar_length=20

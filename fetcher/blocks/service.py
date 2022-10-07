@@ -157,3 +157,10 @@ class BlocksService:
         self._blocks_db.save([block])
         self._blocks_db.commit()
         return block
+
+    def clear_cache(self):
+        """
+        Delete all cached entries
+        """
+        self._blocksRepo.purge()
+        self._blocksRepo.commit()

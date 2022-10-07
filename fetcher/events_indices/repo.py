@@ -105,6 +105,13 @@ class EventsIndicesRepo(Repo):
             rows,
         )
 
+    def purge(self):
+        """
+        Clean all database entries
+        """
+        cursor = self._connection.cursor()
+        cursor.execute("DELETE FROM events_indices")
+
 
 def is_softer_filter_than(filter1: Any | None, filter2: Any | None) -> bool:
     """

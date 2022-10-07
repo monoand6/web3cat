@@ -49,3 +49,10 @@ class ERC20MetasRepo(Repo):
         cursor.executemany(
             "INSERT INTO erc20_metas VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
+
+    def purge(self):
+        """
+        Clean all database entries
+        """
+        cursor = self._connection.cursor()
+        cursor.execute("DELETE FROM erc20_metas")

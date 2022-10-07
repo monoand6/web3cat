@@ -118,6 +118,13 @@ class ERC20MetasService:
         self._erc20_metas_repo.commit()
         return meta
 
+    def clear_cache(self):
+        """
+        Delete all cached entries
+        """
+        self._erc20_metas_repo.purge()
+        self._erc20_metas_repo.commit()
+
     def _get_from_cache(self, token: str) -> ERC20Meta | None:
         token = token.lower()
         chain_id = str(self._chain_id)
