@@ -1,4 +1,5 @@
 import chunk
+from random import shuffle
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import integers, just
 from fetcher.events.service import EventsService
@@ -73,7 +74,12 @@ def test_events_service_cache_chunks(
 ):
     try:
         chunk_size = (EVENTS_END_BLOCK - EVENTS_START_BLOCK) // chunks
+        ranges = []
         for start in range(EVENTS_START_BLOCK, EVENTS_END_BLOCK, chunk_size):
+            end = min(start + chunk_size, EVENTS_END_BLOCK)
+            ranges.append((start, end))
+        shuffle(ranges)
+        for start, end in ranges:
             end = min(start + chunk_size, EVENTS_END_BLOCK)
             events = events_service.get_events(1, web3_event_mock, start, end)
             fetched = web3_event_mock.events_fetched
