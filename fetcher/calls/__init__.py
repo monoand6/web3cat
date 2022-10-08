@@ -16,12 +16,14 @@ Example:
 
         service = CallsService.create()
         response = service.get_call(
-            chain_id, token.functions.balanceOf(compound_address), block_number=15632000
+            chain_id,
+            token.functions.balanceOf(compound_address), block_number=15632000
         )
         # => going for web3 rpc
 
         response = service.get_call(
-            chain_id, token.functions.balanceOf(compound_address), block_number=15632000
+            chain_id,
+            token.functions.balanceOf(compound_address), block_number=15632000
         )
         # => serving from cache
 """

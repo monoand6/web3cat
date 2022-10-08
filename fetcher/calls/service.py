@@ -70,6 +70,7 @@ class CallsService:
 
     def get_call(
         self,
+        chain_id: int,
         call: ContractFunction,
         block_number: int,
     ) -> Call:
@@ -83,7 +84,7 @@ class CallsService:
         Returns:
             A fetched calls
         """
-        chain_id = call.web3.eth.chain_id
+
         data = calldata(call)
         calls = self._calls_repo.find(
             chain_id, call.address, data, block_number, block_number + 1
