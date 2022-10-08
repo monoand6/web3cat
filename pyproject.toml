@@ -12,6 +12,7 @@ web3 = "^5.30.0"
 # This is a temporary dependency fix for web3, as 3.20.2 doesn't work on M1
 # After this is fixed, remove this dependency
 protobuf = "3.20.1" 
+polars = "^0.14.18"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.3"
