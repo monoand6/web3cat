@@ -85,6 +85,9 @@ class Event:
 
     @staticmethod
     def from_dict(d: Dict[str, Any]):
+        """
+        Create :class:`Event` from dict
+        """
         return Event(
             chain_id=d["chainId"],
             block_number=d["blockNumber"],

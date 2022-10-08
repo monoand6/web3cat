@@ -80,6 +80,32 @@ class Call:
             json.dumps(self.response),
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert :class:`Call` to dict
+        """
+        return {
+            "chainId": self.chain_id,
+            "address": self.address,
+            "calldata": self.calldata,
+            "blockNumber": self.block_number,
+            "response": self.response,
+        }
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]):
+        """
+        Create :class:`Call` from dict
+        """
+
+        return Call(
+            chain_id=d["chainId"],
+            address=d["address"],
+            calldata=d["calldata"],
+            block_number=d["blockNumber"],
+            response=d["response"],
+        )
+
     def __eq__(self, other):
         if type(other) is type(self):
             return self.__dict__ == other.__dict__
