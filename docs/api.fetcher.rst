@@ -9,6 +9,7 @@ fetcher
    :caption: Submodules
 
    api.fetcher.events
+   api.fetcher.calls
    api.fetcher.blocks
    api.fetcher.erc20_metas
    api.fetcher.events_indices

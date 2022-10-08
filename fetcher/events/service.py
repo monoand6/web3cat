@@ -51,7 +51,6 @@ class EventsService:
     Args:
         events_repo: Repo of events
         events_indices_repo: Repo of events_indices
-        w3: instance of :class:`web3.Web3`
 
     """
 
