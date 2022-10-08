@@ -79,3 +79,11 @@ class Call:
             self.calldata,
             json.dumps(self.response),
         )
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def __repr__(self):
+        return f'Call({{"chain_id":{self.chain_id}, "block_number": {self.block_number}, "address": {self.address}, "calldata": {self.calldata}, "response": {json.dumps(self.response)}}})'
