@@ -144,9 +144,9 @@ def _init_db(conn: Connection):
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS calls
-                (chain_id integer, block_number integer, address text, calldata str, response str)"""
+                (chain_id integer, address text, calldata text, block_number integer, response text)"""
     )
     cursor.execute(
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_id
-            ON calls(chain_id,block_number,address,calldata)"""
+            ON calls(chain_id,address,calldata,block_number)"""
     )

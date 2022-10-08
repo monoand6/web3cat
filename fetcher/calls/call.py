@@ -10,25 +10,25 @@ class Call:
 
     #: Ethereum chain_id
     chain_id: int
-    #: Number of the block for this call
-    block_number: int
     _address: str
     _calldata: str
+    #: Number of the block for this call
+    block_number: int
     #: Response received for the call
     response: Dict[str, Any]
 
     def __init__(
         self,
         chain_id: int,
-        block_number: int,
         address: str,
         calldata: str,
+        block_number: int,
         response: Dict[str, Any],
     ):
         self.chain_id = chain_id
-        self.block_number = block_number
         self.address = address
         self.calldata = calldata
+        self.block_number = block_number
         self.response = response
 
     @property
@@ -54,7 +54,7 @@ class Call:
         self._calldata = val.lower()
 
     @staticmethod
-    def from_tuple(tuple: Tuple[int, int, str, str, str]) -> Call:
+    def from_tuple(tuple: Tuple[int, str, str, int, str]) -> Call:
         """
         Deserialize from database row
 
@@ -65,7 +65,7 @@ class Call:
         call.response = json.loads(call.response)
         return call
 
-    def to_tuple(self) -> Tuple[int, int, str, str, str]:
+    def to_tuple(self) -> Tuple[int, str, str, int, str]:
         """
         Serialize to database row
 
@@ -74,9 +74,9 @@ class Call:
         """
         return (
             self.chain_id,
-            self.block_number,
             self.address,
             self.calldata,
+            self.block_number,
             json.dumps(self.response),
         )
 
@@ -86,4 +86,4 @@ class Call:
         return False
 
     def __repr__(self):
-        return f'Call({{"chain_id":{self.chain_id}, "block_number": {self.block_number}, "address": {self.address}, "calldata": {self.calldata}, "response": {json.dumps(self.response)}}})'
+        return f'Call({{"chain_id":{self.chain_id}, "address": {self.address}, "calldata": {self.calldata}, "block_number": {self.block_number}, "response": {json.dumps(self.response)}}})'

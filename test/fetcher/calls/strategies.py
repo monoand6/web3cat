@@ -7,8 +7,8 @@ def call() -> SearchStrategy[Call]:
     return builds(
         Call,
         integers(0, 10000),
+        text(ascii_letters),
+        text(ascii_letters),
         integers(0, 10000),
-        text(ascii_letters),
-        text(ascii_letters),
         dictionaries(text(ascii_letters), integers()),
     )
