@@ -101,3 +101,10 @@ class CallsService:
             chain_id, call.address, data, block_number, block_number + 1
         )
         return calls[0]
+
+    def clear_cache(self):
+        """
+        Delete all cached entries
+        """
+        self._calls_repo.purge()
+        self._calls_repo.commit()
