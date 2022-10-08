@@ -6,6 +6,9 @@ from typing import Any, Dict, Union
 from hexbytes import HexBytes
 from eth_typing.encoding import HexStr
 from web3.datastructures import AttributeDict
+from web3.contract import ContractFunction, get_abi_input_types
+from web3.auto import w3
+
 import json
 
 
@@ -62,3 +65,17 @@ def short_address(address: str) -> str:
 
     """
     return f"{address[:6]}...{address[37:]}"
+
+
+def calldata(call: ContractFunction) -> str:
+    """
+    Hex calldata for :class:`web3.contract.ContractFunction` call
+
+    Args:
+        func: A web3 call
+
+    Returns:
+        Hex data (starting with 0x, lowercase)
+    """
+    bytes_calldata = w3.codec.encode(get_abi_input_types(call.abi), call.args)
+    return HexBytes(bytes_calldata).hex()

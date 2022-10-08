@@ -139,3 +139,14 @@ def _init_db(conn: Connection):
         """CREATE INDEX IF NOT EXISTS idx_erc20_metas_index
             ON erc20_metas(chain_id,address,symbol)"""
     )
+
+    # Calls
+
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS calls
+                (chain_id integer, block_number integer, address text, calldata str, response str)"""
+    )
+    cursor.execute(
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_id
+            ON calls(chain_id,block_number,address,calldata)"""
+    )
