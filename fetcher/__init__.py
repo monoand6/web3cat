@@ -10,6 +10,8 @@ There are several services that do exactly this:
 +================================================+===========================+
 | :class:`fetcher.events.EventsService`          | Fetching Ethereum events  |
 +------------------------------------------------+---------------------------+
+| :class:`fetcher.calls.CallsService`            | Static calls to Ethereum  |
++------------------------------------------------+---------------------------+
 | :class:`fetcher.blocks.BlocksService`          | Fetching blocks metadata  |
 +------------------------------------------------+---------------------------+
 | :class:`fetcher.erc20_metas.ERC20MetasService` | Fetching token metadata   |
