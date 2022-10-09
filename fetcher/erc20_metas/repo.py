@@ -18,7 +18,7 @@ class ERC20MetasRepo(Repo):
             token: token symbol or address
 
         Returns:
-            An instance of :class:`ERC20Meta` or :code:`None` if not found
+            An instance of :class:`ERC20Meta` or ``None`` if not found
 
         Examples:
             ..

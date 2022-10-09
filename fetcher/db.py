@@ -57,8 +57,8 @@ class Repo:
 
 def connection_from_path(path: str) -> Connection:
     """
-    Creates a connection to a database at :code:`path`.
-    If the file at :code:`path` doesn't exist, creates a new one and
+    Creates a connection to a database at ``path``.
+    If the file at ``path`` doesn't exist, creates a new one and
     initializes a database schema.
 
     Args:

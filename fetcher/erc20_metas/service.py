@@ -71,7 +71,7 @@ class ERC20MetasService:
 
         Args:
             cache_path: path for the cache database
-            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
             An instance of :class:`ERC20MetasService`
@@ -96,7 +96,7 @@ class ERC20MetasService:
             token: token symbol or token address
 
         Returns:
-            An instance of :class:`ERC20Meta` or :code:`None` if not found.
+            An instance of :class:`ERC20Meta` or ``None`` if not found.
         """
         token = token.lower()
         cached_token = self._get_from_cache(token)

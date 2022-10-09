@@ -18,26 +18,26 @@ class EventsIndicesRepo(Repo):
         args: Dict[str, Any] | None = None,
     ) -> List[EventsIndex]:
         """
-        Find all indices that match :code:`chain_id`, :code:`address`,
-        :code:`event`, and :code:`args`.
+        Find all indices that match :code:`chain_id`, ``address``,
+        ``event``, and ``args``.
 
-        The match for :code:`args` is non-trivial.
+        The match for ``args`` is non-trivial.
         It tries to find all indices that could have the events for
-        the specific :code:`args`.
+        the specific ``args``.
 
         Example
         ~~~~~~~
 
         Imagine two indices for the ERC20 Transfer event:
 
-        1. Stating that all :code:`Transfer` events were fetched from block 2000 to 4000
-        2. Stating that :code:`Transfer` from address "0x6b17..." events were fetched from block 3000 to 4000
+        1. Stating that all ``Transfer`` events were fetched from block 2000 to 4000
+        2. Stating that ``Transfer`` from address "0x6b17..." events were fetched from block 3000 to 4000
 
-        Now we want to query if the :code:`Transfer` events were fetched for
+        Now we want to query if the ``Transfer`` events were fetched for
         :code:`{"from": "0x6b17..."}` for blocks 2500 to 4000. A naive implementation
         would return just the :code:`{"from": "0x6b17..."}` index stating that blocks
         2500 to 3000 are missing. However, these events were already fetched
-        as part of all :code:`Transfer` events from block 2000 to 4000.
+        as part of all ``Transfer`` events from block 2000 to 4000.
         That's why a list of indices is returned, so the check is made
         against the data that is really missing.
 
@@ -67,8 +67,8 @@ class EventsIndicesRepo(Repo):
         args: Dict[str, Any] | None = None,
     ) -> EventsIndex | None:
         """
-        Find an index with the exact match of :code:`chain_id`, :code:`address`,
-        :code:`event`, and :code:`args`.
+        Find an index with the exact match of :code:`chain_id`, ``address``,
+        ``event``, and ``args``.
 
         Args:
             chain_id: Ethereum chain_id
@@ -77,7 +77,7 @@ class EventsIndicesRepo(Repo):
             args: Argument filters
 
         Returns:
-            Found index, or :code:`None` if nothing is found
+            Found index, or ``None`` if nothing is found
         """
 
         args = args or {}
@@ -115,8 +115,8 @@ class EventsIndicesRepo(Repo):
 
 def is_softer_filter_than(filter1: Any | None, filter2: Any | None) -> bool:
     """
-    Checks if :code:`filter1` is arguments filter is a softer version of
-    :code:`filter2` argument filter. Softer means more results after
+    Checks if ``filter1`` is arguments filter is a softer version of
+    ``filter2`` argument filter. Softer means more results after
     filtering.
 
     Args:

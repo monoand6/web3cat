@@ -7,7 +7,7 @@ class ERC20Meta:
     ERC20 token metadata (name, symbol, decimals).
 
     Note:
-        The convention is to use :code:`address` and :code:`symbol` in lowercase format.
+        The convention is to use ``address`` and ``symbol`` in lowercase format.
         This is not in line with EIP55 but makes things more uniform and
         simpler.
     """

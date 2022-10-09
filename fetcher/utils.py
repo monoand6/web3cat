@@ -17,14 +17,14 @@ class Web3JsonEncoder(json.JSONEncoder):
     """
     Custom encoder to parse `Web3 <https://web3py.readthedocs.io/en/stable/>`_ responses.
     By default `Web3 <https://web3py.readthedocs.io/en/stable/>`_ returns
-    responses as :code:`AttributeDict` with binary values.
+    responses as ``AttributeDict`` with binary values.
     :class:`Web3JsonEncoder` thansforms it into the :code:`0x...`
     hex format.
     """
 
     def default(self, obj: Any) -> Union[Dict[Any, Any], HexStr]:
         """
-        Convert Web3 response to :code:`dict`
+        Convert Web3 response to ``dict``
         """
         if isinstance(obj, AttributeDict):
             return {k: v for k, v in obj.items()}
@@ -37,7 +37,7 @@ class Web3JsonEncoder(json.JSONEncoder):
 
 def json_response(response: AttributeDict) -> str:
     """
-    Convert :code:`AttributeDict` to standard json string
+    Convert ``AttributeDict`` to standard json string
 
     Args:
         response: a `Web3 <https://web3py.readthedocs.io/en/stable/>`_ response

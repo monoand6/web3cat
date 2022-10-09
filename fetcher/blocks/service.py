@@ -71,7 +71,7 @@ class BlocksService:
 
         Args:
             cache_path: path for the cache database
-            rpc: Ethereum rpc url. If :code:`None`, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
             An instance of :class:`BlocksService`
@@ -98,7 +98,7 @@ class BlocksService:
             timestamp: UNIX timestamp, UTC+0
 
         Returns:
-            First block after timestamp, :code:`None` if the block doesn't exist
+            First block after timestamp, ``None`` if the block doesn't exist
         """
         ts = timestamp
 
@@ -135,6 +135,17 @@ class BlocksService:
     def get_block_timestamps(
         self, block_numbers: List[int], grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID
     ) -> List[int]:
+        """
+        Get timestamps for block numbers.
+
+        Note that by default these timestamps are not 100% accurate.
+        The use case for this function is to provide timestamps for
+        events. However, fetching a block for every events might demand
+        a fair amount of rpc calls.
+
+        That's why the following algorithm is proposed. We make a block
+        number grid with width specified by the ``grid_step`` parameter.
+        """
         blocks_index = {}
         for bn in block_numbers:
             if grid_step == 0 or bn % grid_step == 0:
@@ -174,10 +185,10 @@ class BlocksService:
         Get block with a specific number.
 
         Args:
-            number: block number. If :code:`None`, fetches the latest block
+            number: block number. If ``None``, fetches the latest block
 
         Returns:
-            Block with this number. :code:`None` if the block doesn't exist.
+            Block with this number. ``None`` if the block doesn't exist.
         """
         if number:
             blocks = self._blocks_db.find(self._chain_id, number)

@@ -3,7 +3,7 @@ Module with repos and models for :class:`EventsIndex`.
 
 :class:`EventsIndex` stores the information about fetched events.
 Each :class:`EventsIndex` is persisted in the :code:`events_indices` table.
-:class:`EventsIndex` has a field :code:`data` that stores the blocks
+:class:`EventsIndex` has a field ``data`` that stores the blocks
 for which events (with given chain_id, contract address, 
 event name, and arguments for lookup) were already fetched.
 
@@ -30,7 +30,7 @@ Start timestamp, in this case, should be 11000. However, there's the rule
 that start timestamp must be a multiple of 8 * :const:`constants.BLOCKS_PER_BIT`
 (for performance reasons). So it's rounded down to 8000.
 
-:class:`EventsIndex`'s :code:`data` is updated to :code:`00001F401C`
+:class:`EventsIndex`'s ``data`` is updated to ``00001F401C``
 
 +-----------------+------------+-----------------+---------------+
 | Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)    |
@@ -42,7 +42,7 @@ So the first bit of the mask is blocks 8000 - 9000, the second is 9000 - 10000, 
 
 **Step2: Fetch blocks 15546 - 19403**
 
-Round blocks to 15000 - 20000, update :code:`data` to :code:`00001F401DF0`
+Round blocks to 15000 - 20000, update ``data`` to ``00001F401DF0``
 
 +-----------------+------------+-----------------+------------------+
 | Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)       |
@@ -53,7 +53,7 @@ Round blocks to 15000 - 20000, update :code:`data` to :code:`00001F401DF0`
 **Step3: Fetch blocks 3000 - 5000**
 
 Now the start timestamp will be updated to 0 (the multiple of 8 * :const:`constants.BLOCKS_PER_BIT`,
-rounded down). The new index is :code:`000000001C1DF0`
+rounded down). The new index is ``000000001C1DF0``
 
 +-----------------+------------+-----------------+--------------------------+
 | Timestamp (hex) | Mask (hex) | Timestamp (dec) | Mask (bin)               |

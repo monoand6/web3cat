@@ -7,7 +7,7 @@ from fetcher.events_indices.index_data import EventsIndexData
 class EventsIndex:
     """
     Stores data about fetched events for a specific
-    :code:`chain_id`, :code:`address`, :code:`event` and
+    :code:`chain_id`, ``address``, ``event`` and
     :code:`argument_filters`.
 
     Args:
@@ -75,7 +75,7 @@ class EventsIndex:
         """
         Argument filters for the event.
 
-        Arguments filters are sorted by key, and each value (if :code:`list`)
+        Arguments filters are sorted by key, and each value (if ``list``)
         is sorted as well. This sorting is required to compare argument filters fast.
         """
         return self._args
@@ -87,7 +87,7 @@ class EventsIndex:
     @staticmethod
     def normalize_args(args: Dict[str, Any] | None) -> Dict[str, Any]:
         """
-        Sort argument filters keys and each value (if :code:`list`).
+        Sort argument filters keys and each value (if ``list``).
 
         Args:
             args: Event argument filters

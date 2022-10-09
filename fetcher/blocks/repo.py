@@ -17,7 +17,7 @@ class BlocksRepo(Repo):
             timestamp: UNIX timestamp, UTC+0
 
         Returns:
-            First block after the timestamp, :code:`None` if the block doesn't exist
+            First block after the timestamp, ``None`` if the block doesn't exist
         """
 
         cursor = self._connection.cursor()
@@ -39,7 +39,7 @@ class BlocksRepo(Repo):
             timestamp: UNIX timestamp, UTC+0
 
         Returns:
-            First block before the timestamp, :code:`None` if the block doesn't exist
+            First block before the timestamp, ``None`` if the block doesn't exist
         """
 
         cursor = self._connection.cursor()

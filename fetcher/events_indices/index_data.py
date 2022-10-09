@@ -10,11 +10,11 @@ class EventsIndexData:
     Stores blocks numbers with already fetched events.
 
     All blocks are divided by chunks of
-    :const:`constants.BLOCKS_PER_BIT` size. A bit set to :code:`True`
+    :const:`constants.BLOCKS_PER_BIT` size. A bit set to ``True``
     means that events for the chunk were already fetched.
 
     As a storage optimistaion :code:`start_block` parameter is used.
-    It is the first block that has :code:`True` entries after it.
+    It is the first block that has ``True`` entries after it.
     Obviously, it must be a multiple of :const:`constants.BLOCKS_PER_BIT`.
     However, there's an additional restriction of :code:`start_block` being
     a multiple of 8 * :const:`constants.BLOCKS_PER_BIT` (for performance
@@ -45,7 +45,7 @@ class EventsIndexData:
     def set_range(self, start_block: int, end_block: int, value: bool):
         """
         Set blocks range from :code:`start_block` (inclusive)
-        to :code:`end_block` (non-inclusive) to :code:`value`.
+        to :code:`end_block` (non-inclusive) to ``value``.
 
         Args:
             start_block: start of the range (inclusive)
@@ -128,7 +128,7 @@ class EventsIndexData:
             block: block number
 
         Returns:
-            :code:`True` if the block was fetched, :code:`False` otherwise
+            ``True`` if the block was fetched, ``False`` otherwise
         """
         if self._start_block is None:
             return False

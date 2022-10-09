@@ -106,7 +106,7 @@ class Event:
             filter: Event filter
 
         Returns:
-            :code:`True` if matches, :code:`False` otherwise
+            ``True`` if matches, ``False`` otherwise
         """
         if filter is None or filter == {}:
             return True

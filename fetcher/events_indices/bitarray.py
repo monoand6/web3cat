@@ -43,13 +43,13 @@ class BitArray:
 
     def __getitem__(self, pos: int) -> bool:
         """
-        Get the bit value at :code:`pos`
+        Get the bit value at ``pos``
 
         Args:
             pos: The position of the bit
 
         Returns:
-            Bit value (:code:`False` or :code:`True`)
+            Bit value (``False`` or ``True``)
         """
         byte_idx = pos // 8
         if byte_idx >= len(self._data):
@@ -59,11 +59,11 @@ class BitArray:
 
     def __setitem__(self, pos: int, value: bool):
         """
-        Set the bit value at :code:`pos`
+        Set the bit value at ``pos``
 
         Args:
             pos: The position of the bit
-            value: Bit value (:code:`False` or :code:`True`)
+            value: Bit value (``False`` or ``True``)
         """
         self._ensure_length(pos)
         if value:
@@ -76,7 +76,7 @@ class BitArray:
 
     def prepend_empty_bytes(self, num_bytes: int):
         """
-        Adds zero bytes (8 * num_bytes :code:`False` values) before the bitarray.
+        Adds zero bytes (8 * num_bytes ``False`` values) before the bitarray.
 
         Args:
             num_bytes: Number of bytes to add
@@ -88,15 +88,15 @@ class BitArray:
 
     def set_range(self, start: int, end: int, value: bool):
         """
-        Set value for bits starting at :code:`start` (inclusive) and ending
-        at :code:`end` (non-inclusive).
+        Set value for bits starting at ``start`` (inclusive) and ending
+        at ``end`` (non-inclusive).
 
         Args:
             start: start of the range (inclusive)
             end: end of the range (non-inclusive)
 
         Exceptions:
-            Both values should be >= 0 and :code:`end` >= :code:`start`.
+            Both values should be >= 0 and ``end`` >= ``start``.
             Otherwise :class:`IndexError` is raised.
 
         """
