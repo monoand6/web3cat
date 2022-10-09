@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import numbers
+from typing import List
 from fetcher.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
@@ -8,7 +10,10 @@ from web3.auto import w3 as w3auto
 
 from fetcher.blocks.block import Block
 from fetcher.db import connection_from_path
-from fetcher.utils import json_response
+from fetcher.utils import json_response, print_progress
+
+
+DEFAULT_BLOCK_TIMESTAMP_GRID = 1000
 
 
 class BlocksService:
@@ -127,6 +132,43 @@ class BlocksService:
                 left_block = block
         return right_block
 
+    def get_block_timestamps(
+        self, block_numbers: List[int], grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID
+    ) -> List[int]:
+        blocks_index = {}
+        for bn in block_numbers:
+            if grid_step == 0 or bn % grid_step == 0:
+                blocks_index[bn] = None
+                continue
+            rounded = bn - bn % grid_step
+            blocks_index[rounded] = None
+            blocks_index[rounded + grid_step] = None
+
+        cached_blocks: List[Block] = self._blocks_db.find(
+            self._chain_id, list(blocks_index.keys())
+        )
+        for b in cached_blocks:
+            blocks_index[b.number] = b.timestamp
+        block_numbers_for_fetch = []
+        for bn in blocks_index.keys():
+            if blocks_index[bn] is None:
+                block_numbers_for_fetch.append(bn)
+        fetched_blocks = self._fetch_many_blocks_and_save(block_numbers_for_fetch)
+        for b in fetched_blocks:
+            blocks_index[b.number] = b.timestamp
+        res = []
+        for bn in block_numbers:
+            if grid_step == 0 or bn % grid_step == 0:
+                res.append(blocks_index[bn])
+                continue
+            rounded = bn - bn % grid_step
+            w = (bn % grid_step) / grid_step
+            ts = int(
+                blocks_index[rounded] * (1 - w) + blocks_index[rounded + grid_step] * w
+            )
+            res.append(ts)
+        return res
+
     def get_block(self, number: int | None = None) -> Block | None:
         """
         Get block with a specific number.
@@ -141,21 +183,7 @@ class BlocksService:
             blocks = self._blocks_db.find(self._chain_id, number)
             if len(blocks) > 0:
                 return blocks[0]
-        raw_block = None
-        try:
-            raw_block = self._w3.eth.get_block(number or "latest")
-            raw_block = json.loads(json_response(raw_block))
-        except BlockNotFound:
-            return None
-
-        block = Block(
-            chain_id=self._chain_id,
-            hash=raw_block["hash"],
-            number=raw_block["number"],
-            timestamp=raw_block["timestamp"],
-        )
-        self._blocks_db.save([block])
-        self._blocks_db.commit()
+        block = self._fetch_block_and_save(number)
         return block
 
     def clear_cache(self):
@@ -164,3 +192,38 @@ class BlocksService:
         """
         self._blocksRepo.purge()
         self._blocksRepo.commit()
+
+    def _fetch_many_blocks_and_save(self, numbers: List[int]) -> List[Block]:
+        if len(numbers) == 0:
+            return []
+        prefix = f"Fetching {len(numbers)} blocks"
+        blocks = []
+        for i, n in enumerate(numbers):
+            print_progress(i, len(numbers), prefix=prefix)
+            block = self._fetch_block(n)
+            blocks.append(block)
+            self._blocks_db.save([block])
+            self._blocks_db.commit()
+        print_progress(len(numbers), len(numbers), prefix=prefix)
+        return blocks
+
+    def _fetch_block_and_save(self, number: int | None) -> Block | None:
+        block = self._fetch_block(number)
+        self._blocks_db.save([block])
+        self._blocks_db.commit()
+        return block
+
+    def _fetch_block(self, number: int | None) -> Block | None:
+        block_id = "lasest" if number is None else number
+        try:
+            raw_block = self._w3.eth.get_block(block_id)
+            block = json.loads(json_response(raw_block))
+            return Block(
+                chain_id=self._chain_id,
+                hash=block["hash"],
+                number=block["number"],
+                timestamp=block["timestamp"],
+            )
+
+        except BlockNotFound:
+            return None

@@ -2,6 +2,7 @@
 Utility functions.
 """
 
+import sys
 from typing import Any, Dict, Union
 from hexbytes import HexBytes
 from eth_typing.encoding import HexStr
@@ -79,3 +80,41 @@ def calldata(call: ContractFunction) -> str:
     """
     bytes_calldata = w3.codec.encode(get_abi_input_types(call.abi), call.args)
     return HexBytes(bytes_calldata).hex()
+
+
+last_progress_bar_length = 0
+
+
+def print_progress(
+    iteration: int,
+    total: int,
+    prefix: str = "",
+    suffix: str = "",
+    decimals: int = 1,
+    bar_length: int = 20,
+) -> int:
+    """
+    Call in a loop to create terminal progress bar.
+
+    Args:
+        iteration: current iteration
+        total: total iterations
+        prefix: prefix string
+        suffix: suffix string
+        decimals: positive number of decimals in percent complete
+        bar_length: character length of bar
+    """
+    global last_progress_bar_length
+
+    str_format = "{0:." + str(decimals) + "f}"
+    percents = str_format.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar = "█" * filled_length + "-" * (bar_length - filled_length)
+    text = "%s |%s| %s%s %s\r" % (prefix, bar, percents, "%", suffix)
+    sys.stdout.write("%s\r" % (" " * last_progress_bar_length)),
+    sys.stdout.write(text),
+    last_progress_bar_length = len(text)
+
+    if iteration == total:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
