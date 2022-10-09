@@ -138,13 +138,43 @@ class BlocksService:
         """
         Get timestamps for block numbers.
 
-        Note that by default these timestamps are not 100% accurate.
-        The use case for this function is to provide timestamps for
-        events. However, fetching a block for every events might demand
+        Note that by default, these timestamps are not 100% accurate.
+        Why's that?
+
+        Consider the primary use case for this function: providing timestamps
+        for events. Fetching a block for every event might demand
         a fair amount of rpc calls.
 
-        That's why the following algorithm is proposed. We make a block
-        number grid with width specified by the ``grid_step`` parameter.
+        That's why the following algorithm is proposed:
+
+            1. We make a block number grid with a width specified by the ``grid_step`` parameter.
+            2. For each block number, we take the two closest grid blocks (below and above).
+            3. Fetch the grid blocks
+            4. Assume :math:`a_n` and :math:`a_t` is a number and a timestamp for the block above
+            5. Assume :math:`b_n` and :math:`b_t` is a number and a timestamp for the block below
+            6. Assume :math:`c_n` and :math:`c_t` is a number and a timestamp for the block we're looking for
+            7. :math:`w = (c_n - b_n) / (a_n - b_n)`
+            8. Then :math:`c_t = b_t \cdot (1-w) + a_t * w`
+
+        This algorithm gives a reasonably good approximation for the block
+        timestamp and considerably reduces the number of fetches.
+        For example, if we have 500 events happening in the 1000 - 2000
+        block range, then we fetch only two blocks instead of 500.
+
+        If you still want the exact precision, use
+        ``grid_step = 0``.
+
+        Warning:
+            It's highly advisable to use a single ``grid_step`` for all data.
+            Otherwise (in theory) the happens-before relationship might
+            be violated for the data points.
+
+        Args:
+            block_numbers: the block numbers for resolving timestamps
+            grid_step: the step of the block grid (see above for explanation)
+
+        Returns:
+            A list of block timestamps
         """
         blocks_index = {}
         for bn in block_numbers:
