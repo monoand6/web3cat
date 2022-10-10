@@ -79,7 +79,7 @@ class ERC20Data:
     _chain_id: int
 
     _meta: ERC20Meta | None
-    _data: ERC20DataFrame | None
+    _transfers: pl.DataFrame | None
 
     def __init__(
         self,
@@ -104,7 +104,7 @@ class ERC20Data:
         self._grid_step = grid_step
 
         self._meta = None
-        self._data = None
+        self._transfers = None
 
     @staticmethod
     def create(
@@ -161,15 +161,45 @@ class ERC20Data:
         return self._meta
 
     @property
-    def data(self) -> ERC20DataFrame:
-        if not self._data:
-            self._data = ERC20DataFrame(
-                self._w3,
-                self._events_service,
-                self._blocks_service,
-                self.meta,
-                self._from_block,
-                self._to_block,
-                self._grid_step,
-            )
-        return self._data
+    def transfers(self) -> pl.DataFrame:
+        if not self._transfers:
+            self._build_transfers()
+        return self._transfers
+
+    def _build_transfers(self):
+        current_folder = os.path.realpath(os.path.dirname(__file__))
+        erc20_abi = None
+        with open(f"{current_folder}/erc20_abi.json", "r") as f:
+            erc20_abi = json.load(f)
+        chain_id = self._w3.eth.chain_id
+        token: Contract = self._w3.eth.contract(
+            address=self._w3.toChecksumAddress(self.meta.address), abi=erc20_abi
+        )
+        events = self._events_service.get_events(
+            chain_id, token.events.Transfer, self._from_block, self._to_block
+        )
+        block_numbers = [e.block_number for e in events]
+        timestamps = self._blocks_service.get_block_timestamps(
+            block_numbers, self._grid_step
+        )
+        ts_index = {
+            block_number: timestamp
+            for block_number, timestamp in zip(block_numbers, timestamps)
+        }
+        factor = 10**self.meta.decimals
+        self._transfers = pl.from_dicts(
+            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
+        )
+
+    def _event_to_row(self, e: Event, ts: int, val_factor: int) -> Dict[str, Any]:
+        fr, to, val = list(e.args.values())
+        return {
+            "timestamp": ts,
+            "date": datetime.fromtimestamp(ts),
+            "block_number": e.block_number,
+            "transaction_hash": e.transaction_hash,
+            "log_index": e.log_index,
+            "from": fr,
+            "to": to,
+            "amount": val / val_factor,
+        }

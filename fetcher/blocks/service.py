@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 import json
 import numbers
@@ -7,6 +8,7 @@ from fetcher.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
 from web3.auto import w3 as w3auto
+from math import log
 
 from fetcher.blocks.block import Block
 from fetcher.db import connection_from_path
@@ -120,16 +122,26 @@ class BlocksService:
         # Time stamp is before the chain genesis
         if left_block.timestamp >= timestamp:
             return left_block
+        if right_block.number - left_block.number <= 1:
+            return right_block
 
+        estimated_hops = int(log(right_block.number - left_block.number, 2))
+        hops = 0
+        prefix = f"Finding block for {datetime.fromtimestamp(timestamp).isoformat(sep='T',timespec='auto')}"
         # initial esitmates for blocks are set
         # invariant: left_block.timestamp < timestamp <= right_block.timestamp
         while right_block.number - left_block.number > 1:
+            print_progress(hops, estimated_hops, prefix)
+            hops += 1
+            hops = min(hops, estimated_hops)
             num = (right_block.number + left_block.number) // 2
             block = self.get_block(num)
             if block.timestamp >= timestamp:
                 right_block = block
             else:
                 left_block = block
+        if hops < estimated_hops:
+            print_progress(estimated_hops, estimated_hops, prefix)
         return right_block
 
     def get_block_timestamps(
