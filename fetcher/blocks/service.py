@@ -255,7 +255,7 @@ class BlocksService:
         return block
 
     def _fetch_block(self, number: int | None) -> Block | None:
-        block_id = "lasest" if number is None else number
+        block_id = "latest" if number is None else number
         try:
             raw_block = self._w3.eth.get_block(block_id)
             block = json.loads(json_response(raw_block))
