@@ -127,21 +127,27 @@ class BlocksService:
 
         estimated_hops = int(log(right_block.number - left_block.number, 2))
         hops = 0
-        prefix = f"Finding block for {datetime.fromtimestamp(timestamp).isoformat(sep='T',timespec='auto')}"
+        prefix = f"Finding block for {datetime.fromtimestamp(timestamp).isoformat()}"
         # initial esitmates for blocks are set
         # invariant: left_block.timestamp < timestamp <= right_block.timestamp
         while right_block.number - left_block.number > 1:
-            print_progress(hops, estimated_hops, prefix)
+            print_progress(min(hops - 1, estimated_hops), estimated_hops, prefix)
             hops += 1
-            hops = min(hops, estimated_hops)
-            num = (right_block.number + left_block.number) // 2
+            w = (timestamp - left_block.timestamp) / (
+                right_block.timestamp - left_block.timestamp
+            )
+            num = int(left_block.number * (1 - w) + right_block.number * w)
+
+            if num == left_block.number:
+                num += 1
+            elif num == right_block.number:
+                num -= 1
             block = self.get_block(num)
             if block.timestamp >= timestamp:
                 right_block = block
             else:
                 left_block = block
-        if hops < estimated_hops:
-            print_progress(estimated_hops, estimated_hops, prefix)
+        print_progress(estimated_hops, estimated_hops, prefix)
         return right_block
 
     def get_block_timestamps(
