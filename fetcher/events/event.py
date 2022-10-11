@@ -19,8 +19,7 @@ class Event:
     _address: str
     #: Event name
     event: str
-    #: Event data
-    args: Dict[str, Any]
+    _args: Dict[str, Any]
 
     def __init__(
         self,
@@ -149,6 +148,7 @@ class Event:
     def address(self) -> str:
         """
         The contract address this event appeared in.
+
         The convention is this address is always stored in lowercase.
         """
         return self._address
@@ -156,6 +156,32 @@ class Event:
     @address.setter
     def address(self, val: str) -> str:
         self._address = val.lower()
+
+    @property
+    def args(self) -> Dict[str, Any]:
+        """
+        Event arguments.
+
+        The convention is all hex are always stored in lowercase.
+        """
+        return self._args
+
+    @args.setter
+    def args(self, val: Dict[str, Any] | None):
+        self._args = self._lower(val)
+
+    def _lower(self, val: Any) -> Dict[str, Any]:
+        if val is None:
+            return None
+        if isinstance(val, list):
+            for i in range(len(val)):
+                val[i] = self._lower(val[i])
+        if isinstance(val, dict):
+            for k in val.keys():
+                val[k] = self._lower(val[k])
+        if isinstance(val, str) and val.startswith("0x"):
+            val = val.lower()
+        return val
 
     def __eq__(self, other):
         if type(other) is type(self):

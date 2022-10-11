@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.erc20_metas import erc20_meta
@@ -30,6 +30,7 @@ class ERC20Data:
     _events_service: EventsService
     _w3: Web3
     _grid_step: int
+    _address_filter: List[str]
 
     _meta: ERC20Meta | None
     _transfers: pl.DataFrame | None
@@ -41,12 +42,14 @@ class ERC20Data:
         events_service: EventsService,
         blocks_service: BlocksService,
         token: str,
+        address_filter: List[str] | None,
         start: int | datetime,
         end: int | datetime,
         grid_step: int,
     ):
         self._w3 = w3
         self._token = token
+        self._address_filter = address_filter or []
         if type(start) is datetime:
             self._from_date = start
         else:
@@ -68,6 +71,7 @@ class ERC20Data:
         token: str,
         start: int | datetime,
         end: int | datetime,
+        address_filter: List[str] | None = None,
         grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
         cache_path: str = "cache.sqlite3",
         rpc: str | None = None,
@@ -98,6 +102,7 @@ class ERC20Data:
             events_service=events_service,
             blocks_service=blocks_service,
             token=token,
+            address_filter=address_filter,
             start=start,
             end=end,
             grid_step=grid_step,
@@ -105,13 +110,13 @@ class ERC20Data:
 
     @property
     def meta(self) -> ERC20Meta:
-        if not self._meta:
+        if self._meta is None:
             self._meta = self._erc20_metas_service.get(self._token)
         return self._meta
 
     @property
     def transfers(self) -> pl.DataFrame:
-        if not self._transfers:
+        if self._transfers is None:
             self._build_transfers()
         return self._transfers
 
@@ -142,9 +147,17 @@ class ERC20Data:
         token: Contract = self._w3.eth.contract(
             address=self._w3.toChecksumAddress(self.meta.address), abi=erc20_abi
         )
-        events = self._events_service.get_events(
-            chain_id, token.events.Transfer, self.from_block, self.to_block
-        )
+        events = []
+        for filters in self._build_argument_filters():
+            fetched_events = self._events_service.get_events(
+                chain_id,
+                token.events.Transfer,
+                self.from_block,
+                self.to_block,
+                argument_filters=filters,
+            )
+            events += fetched_events
+
         block_numbers = [e.block_number for e in events]
         timestamps = self._blocks_service.get_block_timestamps(
             block_numbers, self._grid_step
@@ -158,6 +171,13 @@ class ERC20Data:
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
         )
 
+    def _build_argument_filters(
+        self,
+    ) -> List[Dict[str, Any] | None, Dict[str, Any] | None]:
+        if len(self._address_filter) == 0:
+            return [None]
+        return [{"from": self._address_filter}, {"to": self._address_filter}]
+
     def _event_to_row(self, e: Event, ts: int, val_factor: int) -> Dict[str, Any]:
         fr, to, val = list(e.args.values())
         return {
@@ -166,7 +186,7 @@ class ERC20Data:
             "block_number": e.block_number,
             "transaction_hash": e.transaction_hash,
             "log_index": e.log_index,
-            "from": fr,
-            "to": to,
-            "amount": val / val_factor,
+            "from": fr.lower(),
+            "to": to.lower(),
+            "value": val / val_factor,
         }
