@@ -39,6 +39,7 @@ autodoc_default_options = {
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "web3": ("https://web3py.readthedocs.io/en/stable", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
 }
 
 templates_path = ["_templates"]

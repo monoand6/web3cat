@@ -18,3 +18,4 @@ Web3Cat
    :caption: Api
 
    api.fetcher
+   api.data

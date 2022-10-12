@@ -23,6 +23,12 @@ from fetcher.db import connection_from_path
 
 
 class ERC20Data:
+    """
+    Data for a specific ERC20 token.
+
+    See :mod:`data.erc20s` for examples and details.
+    """
+
     _from_block: int | None
     _to_block: int | None
     _from_date: datetime | None
@@ -92,13 +98,15 @@ class ERC20Data:
 
         Args:
             token: Token symbol or address
-            start: start of the erc20 data - block number or datetime (inclusive)
-            end: end of the erc20 data - block number or datetime (non-inclusive)
+            start: Start of the erc20 data - block number or datetime (inclusive)
+            end: End of the erc20 data - block number or datetime (non-inclusive)
+            address_filter: Limit erc20 transfers data to only these addresses. If ``None``, all transfers are fetched
+            grid_step: A grid step for resolving block timestamps. See :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
             cache_path: path for the cache database
             rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
-            An instance of :class:`BlocksService`
+            An instance of :class:`ERC20Data`
         """
         w3 = w3auto
         if rpc:
@@ -123,18 +131,52 @@ class ERC20Data:
 
     @property
     def meta(self) -> ERC20Meta:
+        """
+        Metadata for tokens (like name, symbol and decimals)
+        """
         if self._meta is None:
             self._meta = self._erc20_metas_service.get(self._token)
         return self._meta
 
     @property
     def transfers(self) -> pl.DataFrame:
+        """
+        Dataframe with transfers data
+        (see `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_)
+
+        **Fields**
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
+        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
+        |                      |                            | for details)                                                                 |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :attr:`numpy.int64`        | Block number for this transfer                                               |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``transaction_hash`` | :class:`str`               | Transaction hash for this transfer                                           |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``log_index``        | :attr:`numpy.int64`        | Log index inside the transaction for this transfer                           |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``from``             | :class:`str`               | The address from which erc20 token was sent                                  |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``to``               | :class:`str`               | The address to which erc20 token was sent                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``value``            | :attr:`numpy.float64`      | Transfer value in natural token units (e.g. eth for weth, not wei)           |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        """
         if self._transfers is None:
             self._build_transfers()
         return self._transfers
 
     @property
     def from_block(self):
+        """
+        Start block for the data.
+        """
         if not hasattr(self, "_from_block"):
             ts = time.mktime(self._from_date.timetuple())
             self._from_block = self._blocks_service.get_block_right_after_timestamp(
@@ -144,6 +186,9 @@ class ERC20Data:
 
     @property
     def to_block(self):
+        """
+        End block for the data.
+        """
         if not hasattr(self, "_to_block"):
             ts = time.mktime(self._to_date.timetuple())
             self._to_block = self._blocks_service.get_block_right_after_timestamp(
@@ -153,54 +198,57 @@ class ERC20Data:
 
     @property
     def volumes(self) -> pl.DataFrame:
-        df1 = (
-            self.transfers[["from", "value"]]
-            .groupby("from")
-            .agg(pl.col("value").sum())
-            .rename({"from": "address"})
-        )
-        df2 = (
-            self.transfers[["to", "value"]]
-            .groupby("to")
-            .agg(pl.col("value").sum())
-            .rename({"to": "address"})
-        )
-        return (
-            df1.extend(df2)
-            .groupby("address")
-            .agg(pl.col("value").sum())
-            .sort(pl.col("value"), reverse=True)
-        )
+        """
+        Dataframe with transfer volumes and balance changes by address
+        (see `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_).
 
-    @property
-    def net_volumes(self) -> pl.DataFrame:
+        **Fields**
+
+        +-------------+-----------------------+----------------------------------------------+
+        | Name        | Type                  | Description                                  |
+        +=============+=======================+==============================================+
+        | ``address`` | :class:`str`          | Address                                      |
+        +-------------+-----------------------+----------------------------------------------+
+        | ``volume``  | :attr:`numpy.float64` | Volume in natural token units                |
+        +-------------+-----------------------+----------------------------------------------+
+        | ``change``  | :attr:`numpy.float64` | Change for the period in natural token units |
+        +-------------+-----------------------+----------------------------------------------+
+        """
         df1 = (
             self.transfers[["from", "value"]]
             .groupby("from")
             .agg(pl.col("value").sum())
-            .rename({"from": "address"})
+            .rename({"from": "address", "value": "volume"})
+            .with_column((pl.col("volume") * (-1)).alias("change"))
         )
         df2 = (
             self.transfers[["to", "value"]]
             .groupby("to")
             .agg(pl.col("value").sum())
-            .rename({"to": "address"})
-        ).with_column((pl.col("value") * (-1)).alias("value"))
+            .rename({"to": "address", "value": "volume"})
+            .with_column(pl.col("volume").alias("change"))
+        )
         return (
             df1.extend(df2)
             .groupby("address")
-            .agg(pl.col("value").sum())
-            .sort(pl.col("value"), reverse=True)
+            .agg([pl.col("volume").sum(), pl.col("change").sum()])
+            .sort(pl.col("volume"), reverse=True)
         )
 
     @property
     def chain_id(self) -> int:
+        """
+        Ethereum chain_id
+        """
         if self._chain_id is None:
             self._chain_id = self._w3.eth.chain_id
         return self._chain_id
 
     @property
     def token_contract(self) -> Contract:
+        """
+        :class:`web3.contracts.Contract` for this token
+        """
         current_folder = os.path.realpath(os.path.dirname(__file__))
         if self._token_contract is None:
             with open(f"{current_folder}/erc20_abi.json", "r") as f:
@@ -216,6 +264,30 @@ class ERC20Data:
         timestamps: List[int | datetime],
         initial_balance: int | None = None,
     ) -> pl.DataFrame:
+        """
+        Get `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_ with
+        balances over time for a specific address.
+
+        Args:
+            address: The address for balances
+            timestamps: A series of timestamps or datetimes to fetch balances for. Not that timestamps are not exact, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
+            initial_balance: Initial balance of the address (at the :class:`ERC20Data` start). If ``None``, the balance is fetched from the blockchain.
+
+        Returns a Dataframe with fields
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
+        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
+        |                      |                            | for details)                                                                 |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``balance``          | :attr:`numpy.float64`      | Balance in natural token units (e.g. eth for weth, not wei)                  |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+
+        """
         if initial_balance is None:
             first_block = self.transfers["block_number"][0]
             initial_balance_wei = self._calls_service.get_call(
