@@ -48,7 +48,7 @@ class EventsIndicesRepo(Repo):
             args: Argument filters
 
         Returns:
-            List of matched indices
+            Iterator of matched indices
         """
         rows = self._connection.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",

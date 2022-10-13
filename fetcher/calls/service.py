@@ -25,7 +25,7 @@ class CallsService:
                 +---------------+                 +-------+ +-----------+
                 | CallsService  |                 | Web3  | | CallsRepo |
                 +---------------+                 +-------+ +-----------+
-        ---------------\ |                             |           |
+        ---------------  |                             |           |
         | Request call |-|                             |           |
         |--------------| |                             |           |
                          |                             |           |
@@ -37,7 +37,7 @@ class CallsService:
                          |                             |           |
                          | Save response               |           |
                          |---------------------------------------->|
-            -----------\ |                             |           |
+            -----------  |                             |           |
             | Response |-|                             |           |
             |----------| |                             |           |
                          |                             |           |
@@ -86,8 +86,10 @@ class CallsService:
         """
 
         data = calldata(call)
-        calls = self._calls_repo.find(
-            chain_id, call.address, data, block_number, block_number + 1
+        calls = list(
+            self._calls_repo.find(
+                chain_id, call.address, data, block_number, block_number + 1
+            )
         )
         if len(calls) > 0:
             return calls[0]
@@ -97,8 +99,10 @@ class CallsService:
         self._calls_repo.save([call_item])
         self._calls_repo.commit()
 
-        calls = self._calls_repo.find(
-            chain_id, call.address, data, block_number, block_number + 1
+        calls = list(
+            self._calls_repo.find(
+                chain_id, call.address, data, block_number, block_number + 1
+            )
         )
         return calls[0]
 

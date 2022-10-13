@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 from fetcher.calls.call import Call
 from fetcher.db import Repo
 
@@ -15,7 +15,7 @@ class CallsRepo(Repo):
         calldata: str,
         from_block: int = 0,
         to_block: int = 2**32 - 1,
-    ) -> List[Call]:
+    ) -> Iterator[Call]:
         """
         Find all calls in the database.
 
@@ -29,13 +29,11 @@ class CallsRepo(Repo):
         Returns:
             List of found calls
         """
-        cursor = self._connection.cursor()
-        cursor.execute(
+        rows = self._connection.execute(
             "SELECT * FROM calls WHERE chain_id = ? AND address = ? AND calldata = ? AND block_number >= ? AND block_number < ?",
             (chain_id, address.lower(), calldata, from_block, to_block),
         )
-        rows = cursor.fetchall()
-        return [Call.from_tuple(r) for r in rows]
+        return (Call.from_tuple(r) for r in rows)
 
     def save(self, calls: List[Call]):
         """
