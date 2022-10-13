@@ -50,13 +50,13 @@ def test_find_db_cursor(events_repo: EventsRepo):
     )
     events_repo.save([e1, e2, e3, e4])
     events1 = events_repo.find(
-        args_filters={"from": "0x1234"},
+        argument_filters={"from": "0x1234"},
         chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
     events2 = events_repo.find(
-        args_filters={"from": "0x5678"},
+        argument_filters={"from": "0x5678"},
         chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
@@ -64,13 +64,13 @@ def test_find_db_cursor(events_repo: EventsRepo):
     assert (list(events1) + list(events2)) == [e1, e3, e2]
 
     events1 = events_repo.find(
-        args_filters={"from": "0x1234"},
+        argument_filters={"from": "0x1234"},
         chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
     events2 = events_repo.find(
-        args_filters={"from": "0x5678"},
+        argument_filters={"from": "0x5678"},
         chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
@@ -101,7 +101,7 @@ def test_find(events_repo: EventsRepo):
     events_repo.save([e1, e2, e3, e4])
     assert list(
         events_repo.find(
-            args_filters=None,
+            argument_filters=None,
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -109,7 +109,7 @@ def test_find(events_repo: EventsRepo):
     ) == [e1, e2, e3, e4]
     assert list(
         events_repo.find(
-            args_filters={},
+            argument_filters={},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -118,7 +118,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"from": "0x1234"},
+            argument_filters={"from": "0x1234"},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -127,7 +127,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"to": "0x1234"},
+            argument_filters={"to": "0x1234"},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -136,7 +136,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"from": "0x5678"},
+            argument_filters={"from": "0x5678"},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -144,7 +144,7 @@ def test_find(events_repo: EventsRepo):
     ) == [e2]
     assert list(
         events_repo.find(
-            args_filters={"from": ["0x1234", "0x5678"]},
+            argument_filters={"from": ["0x1234", "0x5678"]},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -153,7 +153,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"from": ["0x1234", "0x5678"], "to": "0x1234"},
+            argument_filters={"from": ["0x1234", "0x5678"], "to": "0x1234"},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -162,7 +162,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"from": ["0x1234", "0x5678"], "to": ["0x1234", "0x9090"]},
+            argument_filters={"from": ["0x1234", "0x5678"], "to": ["0x1234", "0x9090"]},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -171,7 +171,7 @@ def test_find(events_repo: EventsRepo):
 
     assert list(
         events_repo.find(
-            args_filters={"value": 30},
+            argument_filters={"value": 30},
             chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
@@ -181,7 +181,7 @@ def test_find(events_repo: EventsRepo):
     assert (
         list(
             events_repo.find(
-                args_filters={"some": 30},
+                argument_filters={"some": 30},
                 chain_id=defaults["chain_id"],
                 event="Transfer",
                 address=defaults["address"],
@@ -193,7 +193,7 @@ def test_find(events_repo: EventsRepo):
     assert (
         list(
             events_repo.find(
-                args_filters={"some": 30, "from": "0x1234"},
+                argument_filters={"some": 30, "from": "0x1234"},
                 chain_id=defaults["chain_id"],
                 event="Transfer",
                 address=defaults["address"],

@@ -13,7 +13,7 @@ class EventsRepo(Repo):
         chain_id: int,
         event: str,
         address: str,
-        args_filters: Dict[str, Any] | None = None,
+        argument_filters: Dict[str, Any] | None = None,
         from_block: int = 0,
         to_block: int = 2**32 - 1,
     ) -> Iterator[Event]:
@@ -24,7 +24,7 @@ class EventsRepo(Repo):
             chain_id: Ethereum chain_id
             event: Event name
             address: Contract address
-            args_filters: an additional filter with keys being event fieds (AND query) and values are filter values (tuples of values for OR query)
+            argument_filters: an additional filter with keys being event fieds (AND query) and values are filter values (tuples of values for OR query)
             from_block: starting from this block (inclusive)
             to_block: ending with this block (non-inclusive)
 
@@ -32,7 +32,7 @@ class EventsRepo(Repo):
             Iterator over found events
         """
         cursor = self._connection.cursor()
-        args_query, args_values = self._convert_filter_to_sql(args_filters)
+        args_query, args_values = self._convert_filter_to_sql(argument_filters)
         statement = f"SELECT * FROM events WHERE chain_id = ? AND event = ? AND address = ? AND block_number >= ? AND block_number < ?{args_query}"
         cursor.execute(
             statement,

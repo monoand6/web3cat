@@ -109,8 +109,9 @@ class EventsService:
             event.address,
             from_block=from_block,
             to_block=to_block,
+            argument_filters=argument_filters,
         )
-        return [e for e in all_events if e.matches_filter(argument_filters)]
+        return list(all_events)
 
     def prefetch_events(
         self,
