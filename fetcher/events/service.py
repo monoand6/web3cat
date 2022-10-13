@@ -141,8 +141,10 @@ class EventsService:
             :const:`fetcher.events_indices.constants.BLOCKS_PER_BIT`,
             :class:`RuntimeError` is raised.
         """
-        read_indices = self._events_indices_repo.find_indices(
-            chain_id, event.address, event.event_name, argument_filters
+        read_indices = list(
+            self._events_indices_repo.find_indices(
+                chain_id, event.address, event.event_name, argument_filters
+            )
         )
         write_index = self._events_indices_repo.get_index(
             chain_id, event.address, event.event_name, argument_filters

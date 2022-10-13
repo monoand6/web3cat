@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 
 import json
 from fetcher.events_indices.index import EventsIndex
@@ -16,7 +16,7 @@ class EventsIndicesRepo(Repo):
         address: str,
         event: str,
         args: Dict[str, Any] | None = None,
-    ) -> List[EventsIndex]:
+    ) -> Iterator[EventsIndex]:
         """
         Find all indices that match :code:`chain_id`, ``address``,
         ``event``, and ``args``.
@@ -50,14 +50,12 @@ class EventsIndicesRepo(Repo):
         Returns:
             List of matched indices
         """
-        cursor = self._connection.cursor()
-        cursor.execute(
+        rows = self._connection.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
             (chain_id, address, event),
         )
-        rows = cursor.fetchall()
-        indices = [EventsIndex.from_tuple(r) for r in rows]
-        return [i for i in indices if is_softer_filter_than(i.args, args)]
+        indices = (EventsIndex.from_tuple(r) for r in rows)
+        return (i for i in indices if is_softer_filter_than(i.args, args))
 
     def get_index(
         self,
