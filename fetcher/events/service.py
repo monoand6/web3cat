@@ -104,7 +104,11 @@ class EventsService:
         """
         self.prefetch_events(chain_id, event, from_block, to_block, argument_filters)
         all_events = self._events_repo.find(
-            chain_id, event.event_name, event.address, from_block, to_block
+            chain_id,
+            event.event_name,
+            event.address,
+            from_block=from_block,
+            to_block=to_block,
         )
         return [e for e in all_events if e.matches_filter(argument_filters)]
 
