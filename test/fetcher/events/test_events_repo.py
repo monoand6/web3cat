@@ -28,6 +28,56 @@ def test_read_write(event: Event, events_repo: EventsRepo):
     events_repo.rollback()
 
 
+def test_find_db_cursor(events_repo: EventsRepo):
+    defaults = {
+        "chain_id": 1,
+        "block_number": 1,
+        "transaction_hash": "0x1234",
+        "address": "0xaddd",
+        "event": "Transfer",
+    }
+    e1 = Event(
+        args={"from": "0x1234", "to": "0x5678", "value": 10}, log_index=1, **defaults
+    )
+    e2 = Event(
+        args={"from": "0x5678", "to": "0x1234", "value": 20}, log_index=2, **defaults
+    )
+    e3 = Event(
+        args={"from": "0x1234", "to": "0x9090", "value": 30}, log_index=3, **defaults
+    )
+    e4 = Event(
+        args={"from": "0x1010", "to": "0x2020", "value": 30}, log_index=4, **defaults
+    )
+    events_repo.save([e1, e2, e3, e4])
+    events1 = events_repo.find(
+        args_filters={"from": "0x1234"},
+        chain_id=defaults["chain_id"],
+        event="Transfer",
+        address=defaults["address"],
+    )
+    events2 = events_repo.find(
+        args_filters={"from": "0x5678"},
+        chain_id=defaults["chain_id"],
+        event="Transfer",
+        address=defaults["address"],
+    )
+    assert (list(events1) + list(events2)) == [e1, e3, e2]
+
+    events1 = events_repo.find(
+        args_filters={"from": "0x1234"},
+        chain_id=defaults["chain_id"],
+        event="Transfer",
+        address=defaults["address"],
+    )
+    events2 = events_repo.find(
+        args_filters={"from": "0x5678"},
+        chain_id=defaults["chain_id"],
+        event="Transfer",
+        address=defaults["address"],
+    )
+    assert (list(events2) + list(events1)) == [e2, e1, e3]
+
+
 def test_find(events_repo: EventsRepo):
     defaults = {
         "chain_id": 1,
