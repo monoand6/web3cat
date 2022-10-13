@@ -26,7 +26,11 @@ class ERC20Data:
     """
     Data for a specific ERC20 token.
 
-    See :mod:`data.erc20s` for examples and details.
+    When the instance of the class is created, no data is
+    fetched. The class has lazy properties like :attr:`transfers`
+    and :attr:`volumes` that are fetched only when accessed.
+
+    See :mod:`data.erc20s` for examples.
     """
 
     _from_block: int | None
