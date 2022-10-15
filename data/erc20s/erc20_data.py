@@ -352,7 +352,7 @@ class ERC20Data:
         return res
 
     def _build_transfers(self):
-        events = []
+        events: List[Event] = []
         for filters in self._build_argument_filters():
             fetched_events = self._events_service.get_events(
                 self.chain_id,
@@ -374,6 +374,9 @@ class ERC20Data:
         factor = 10**self.meta.decimals
         self._transfers = pl.from_dicts(
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
+        )
+        self._transfers = self._transfers.unique(
+            subset=["transaction_hash", "log_index"]
         ).sort(pl.col("timestamp"))
 
     def _build_argument_filters(
