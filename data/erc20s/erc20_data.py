@@ -181,7 +181,7 @@ class ERC20Data:
 
     @property
     def mints_burns(self) -> pl.DataFrame:
-        if self._mints_burns:
+        if not (self._mints_burns is None):
             return self._mints_burns
 
         if ADDRESS_ZERO in self._address_filter and self._transfers:
@@ -279,6 +279,31 @@ class ERC20Data:
             )
         return self._token_contract
 
+    def total_supplies(
+        self,
+        timestamps: List[int | datetime],
+        initial_total_supply: int | None = None,
+    ):
+        if initial_total_supply is None:
+            first_block = self.mints_burns["block_number"][0]
+            initial_balance_wei = self._calls_service.get_call(
+                self.chain_id,
+                self.token_contract.functions.totalSupply(),
+                first_block - 1,
+            ).response
+            initial_total_supply = initial_balance_wei / 10**self.meta.decimals
+        timestamps = sorted(self._resolve_timetamps(timestamps))
+        bs = self._zero_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
+        res = [
+            {
+                "timestamp": ts,
+                "date": datetime.fromtimestamp(ts),
+                "total_supply": initial_total_supply - balance,
+            }
+            for ts, balance in zip(timestamps, bs)
+        ]
+        return pl.DataFrame(res)
+
     def balances(
         self,
         address: str,
@@ -319,15 +344,9 @@ class ERC20Data:
                 first_block - 1,
             ).response
             initial_balance = initial_balance_wei / 10**self.meta.decimals
-        timestamps = [*timestamps]
-        for i in range(len(timestamps)):
-            ts = timestamps[i]
-            # resolve datetimes to timestamps
-            if isinstance(ts, datetime):
-                timestamps[i] = int(time.mktime(ts.timetuple()))
-        timestamps = sorted(timestamps)
+        timestamps = sorted(self._resolve_timetamps(timestamps))
 
-        bs = self._zero_balances(address, timestamps)
+        bs = self._zero_balances(address, timestamps, self.transfers)
         res = [
             {
                 "timestamp": ts,
@@ -338,17 +357,25 @@ class ERC20Data:
         ]
         return pl.DataFrame(res)
 
+    def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
+        resolved = []
+        for i, ts in enumerate(timestamps):
+            # resolve datetimes to timestamps
+            if isinstance(ts, datetime):
+                resolved.append(int(time.mktime(ts.timetuple())))
+            else:
+                resolved.append(ts)
+        return resolved
+
     def _zero_balances(
-        self, address: str, timestamps: List[int | datetime]
+        self, address: str, timestamps: List[int], events: pl.DataFrame
     ) -> List[np.float64]:
         if len(timestamps) == 0:
             return []
 
         address = address.lower()
         transfers = (
-            self.transfers.filter(
-                (pl.col("from") == address) | (pl.col("to") == address)
-            )
+            events.filter((pl.col("from") == address) | (pl.col("to") == address))
             .filter((pl.col("from") != address) | (pl.col("to") != address))
             .with_column(
                 pl.when(pl.col("from") == address)
