@@ -12,6 +12,7 @@ from fetcher.blocks import BlocksService
 from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
+from web3.constants import ADDRESS_ZERO
 from web3 import Web3
 from datetime import datetime
 import time
@@ -50,6 +51,7 @@ class ERC20Data:
 
     _meta: ERC20Meta | None
     _transfers: pl.DataFrame | None
+    _mints_burns: pl.DataFrame | None
     _token_contract: Contract | None
 
     def __init__(
@@ -84,6 +86,7 @@ class ERC20Data:
 
         self._meta = None
         self._transfers = None
+        self._mints_burns = None
         self._token_contract = None
         self._chain_id = None
 
@@ -173,8 +176,22 @@ class ERC20Data:
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
         if self._transfers is None:
-            self._build_transfers()
+            self._transfers = self._build_transfers(self._address_filter)
         return self._transfers
+
+    @property
+    def mints_burns(self) -> pl.DataFrame:
+        if self._mints_burns:
+            return self._mints_burns
+
+        if ADDRESS_ZERO in self._address_filter and self._transfers:
+            self._mints_burns = self._transfers.filter(
+                pl.col("from") == ADDRESS_ZERO | pl.col("to") == ADDRESS_ZERO
+            )
+            return self._mints_burns
+
+        self._mints_burns = self._build_transfers([ADDRESS_ZERO])
+        return self._mints_burns
 
     @property
     def from_block(self):
@@ -351,9 +368,9 @@ class ERC20Data:
             res.append(balance)
         return res
 
-    def _build_transfers(self):
+    def _build_transfers(self, address_filter: List[str]) -> pl.DataFrame:
         events: List[Event] = []
-        for filters in self._build_argument_filters():
+        for filters in self._build_argument_filters(address_filter):
             fetched_events = self._events_service.get_events(
                 self.chain_id,
                 self.token_contract.events.Transfer,
@@ -372,19 +389,19 @@ class ERC20Data:
             for block_number, timestamp in zip(block_numbers, timestamps)
         }
         factor = 10**self.meta.decimals
-        self._transfers = pl.from_dicts(
+        transfers = pl.from_dicts(
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
         )
-        self._transfers = self._transfers.unique(
-            subset=["transaction_hash", "log_index"]
-        ).sort(pl.col("timestamp"))
+        return transfers.unique(subset=["transaction_hash", "log_index"]).sort(
+            pl.col("timestamp")
+        )
 
     def _build_argument_filters(
-        self,
+        self, address_filter: List[str]
     ) -> List[Dict[str, Any] | None, Dict[str, Any] | None]:
-        if len(self._address_filter) == 0:
+        if len(address_filter) == 0:
             return [None]
-        return [{"from": self._address_filter}, {"to": self._address_filter}]
+        return [{"from": address_filter}, {"to": address_filter}]
 
     def _event_to_row(self, e: Event, ts: int, val_factor: int) -> Dict[str, Any]:
         fr, to, val = list(e.args.values())
