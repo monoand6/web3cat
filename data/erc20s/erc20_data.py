@@ -302,7 +302,7 @@ class ERC20Data:
                 first_block - 1,
             ).response
             initial_balance = initial_balance_wei / 10**self.meta.decimals
-
+        timestamps = [*timestamps]
         for i in range(len(timestamps)):
             ts = timestamps[i]
             # resolve datetimes to timestamps
