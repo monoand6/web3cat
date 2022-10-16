@@ -3,10 +3,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Set
 from bokeh.plotting import Figure, figure, show
-from bokeh.models import Range1d, LinearAxis, DatetimeAxis
+from bokeh.models import Range1d, LinearAxis, DatetimeAxis, NumeralTickFormatter
 from bokeh.palettes import Category10, Pastel1
 from data.erc20s.erc20_data import ERC20Data
 from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
+from fetcher.utils import short_address
 
 
 class XAxis(Enum):
@@ -39,7 +40,6 @@ class YAxis:
 class DataView:
     _figure: Figure | None
     _x_axis: XAxis | None
-    _y_axes: Set(YAxis)
     _fig_args: Dict[str, Any]
     _numplots: int
     _colors: List[Any]
@@ -64,6 +64,7 @@ class DataView:
         end: int | datetime | None = None,
         erc20_data: ERC20Data | None = None,
         num_points: int = 100,
+        **kwargs,
     ) -> DataView:
         if erc20_data is None and (start is None or end is None or token is None):
             raise ValueError(
@@ -80,7 +81,7 @@ class DataView:
 
         balances = erc20_data.balances(address, timestamps)["balance"].to_list()
         x_axis = XAxis.TIMESERIES
-        y_axis = YAxis("balance", erc20_data.meta.symbol)
+        y_axis = YAxis("Balance", erc20_data.meta.symbol.upper())
         self._update_axes(x_axis, y_axis, min(balances), max(balances))
         self._figure.line(
             timestamps,
@@ -88,6 +89,8 @@ class DataView:
             color=self._get_color(),
             line_width=2,
             y_range_name=str(y_axis),
+            legend_label=f"{erc20_data.meta.symbol.upper()} balance of {short_address(address)}{self._get_right_axis_label(y_axis)}",
+            **kwargs,
         )
         return self
 
@@ -98,6 +101,7 @@ class DataView:
         end: int | datetime | None = None,
         erc20_data: ERC20Data | None = None,
         num_points: int = 100,
+        **kwargs,
     ) -> DataView:
         if erc20_data is None and (start is None or end is None or token is None):
             raise ValueError(
@@ -114,7 +118,7 @@ class DataView:
 
         balances = erc20_data.total_supplies(timestamps)["total_supply"].to_list()
         x_axis = XAxis.TIMESERIES
-        y_axis = YAxis("total_supply", erc20_data.meta.symbol)
+        y_axis = YAxis("Total Supply", erc20_data.meta.symbol.upper())
         self._update_axes(x_axis, y_axis, min(balances), max(balances))
         self._figure.line(
             timestamps,
@@ -122,6 +126,8 @@ class DataView:
             color=self._get_color(),
             y_range_name=str(y_axis),
             line_width=2,
+            legend_label=f"{erc20_data.meta.symbol.upper()} total supply{self._get_right_axis_label(y_axis)}",
+            **kwargs,
         )
         return self
 
@@ -133,16 +139,22 @@ class DataView:
         self._numplots += 1
         return color
 
+    def _get_right_axis_label(self, axis: YAxis) -> str:
+        range_names = [a.y_range_name for a in self._figure.yaxis]
+        idx = range_names.index(str(axis))
+        return "" if idx % 2 == 0 else " (right)"
+
     def _update_axes(
         self, x_axis: XAxis, y_axis: YAxis, miny: float, maxy: float
     ) -> Dict[str, Any]:
+        formatter = NumeralTickFormatter(format="0.0a")
         y_axis_name = str(y_axis)
         defaults = {
             "toolbar_location": "above",
-            "tools": "pan,wheel_zoom,reset",
+            "tools": "pan,wheel_zoom,hover,reset,save",
             "x_axis_type": x_axis.bokeh_type(),
             "height": 400,
-            "width": int(400 * 2),
+            "width": int(400 * 2.3),
         }
         args = {**defaults, **self._fig_args}
         if not self._figure:
@@ -152,6 +164,7 @@ class DataView:
             self._figure.extra_y_ranges = {y_axis_name: Range1d(miny, maxy)}
             self._figure.yaxis[0].y_range_name = y_axis_name
             self._figure.yaxis[0].axis_label = f"{y_axis.kind} ({y_axis.type})"
+            self._figure.yaxis[0].formatter = formatter
 
         if self._x_axis != x_axis:
             raise ValueError(
@@ -169,6 +182,7 @@ class DataView:
                 LinearAxis(
                     y_range_name=y_axis_name,
                     axis_label=f"{y_axis.kind} ({y_axis.type})",
+                    formatter=formatter,
                 ),
                 loc,
             )
