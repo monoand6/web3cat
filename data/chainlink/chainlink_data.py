@@ -15,6 +15,7 @@ from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
 from web3.auto import w3 as w3auto
+from web3.constants import ADDRESS_ZERO
 import numpy as np
 
 RESOLVER_MAPPING = {"weth": "eth", "wbtc": "btc"}
@@ -435,6 +436,24 @@ class ChainlinkData:
         )
         return token1_price / token0_price
 
+    @property
+    def chain_id(self) -> int:
+        if self._token0_data:
+            return self._token0_data.chain_id
+        return self._token1_data.chain_id
+
+    @property
+    def token0_meta(self):
+        if self._token0_data is None:
+            return ERC20Meta(self.chain_id, ADDRESS_ZERO, "USD", "USD", 6)
+        return self._token0_data.meta
+
+    @property
+    def token1_meta(self):
+        if self._token1_data is None:
+            return ERC20Meta(self.chain_id, ADDRESS_ZERO, "USD", "USD", 6)
+        return self._token1_data.meta
+
     def prices(self, timestamps: List[int | datetime]) -> pl.DataFrame:
         timestamps = self._resolve_timetamps(timestamps)
         timestamps = sorted(timestamps)
@@ -463,11 +482,9 @@ class ChainlinkData:
 
     def _build_updates(self) -> pl.DataFrame:
         if self._token0_data is None:
-            print("1111")
             return self._token1_data.updates
 
         if self._token1_data is None:
-            print("00000")
             df = self._token0_data.updates.clone()
             df = df.with_column((1 / pl.col("price")).alias("price"))
             return df

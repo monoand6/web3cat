@@ -3,11 +3,19 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Set
 from bokeh.plotting import Figure, figure, show
-from bokeh.models import Range1d, LinearAxis, DatetimeAxis, NumeralTickFormatter
+from bokeh.models import (
+    Range1d,
+    LinearAxis,
+    DatetimeAxis,
+    NumeralTickFormatter,
+    BasicTickFormatter,
+)
 from bokeh.palettes import Category10, Pastel1
+from data.chainlink.chainlink_data import ChainlinkData
 from data.erc20s.erc20_data import ERC20Data
 from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
 from fetcher.utils import short_address
+import numpy as np
 
 
 class XAxis(Enum):
@@ -131,6 +139,47 @@ class DataView:
         )
         return self
 
+    def with_chainlink_prices(
+        self,
+        token0: str | None = None,
+        token1: str | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        chainlink_data: ChainlinkData | None = None,
+        num_points: int = 100,
+        **kwargs,
+    ) -> DataView:
+        if chainlink_data is None and (
+            start is None or end is None or token0 is None or token1 is None
+        ):
+            raise ValueError(
+                "chainlink_data or all: start, end, token0 and token1 should be specified"
+            )
+        if start is not None:
+            chainlink_data = ChainlinkData.create(token0, token1, start, end)
+        start = chainlink_data.updates["timestamp"][0]
+        end = chainlink_data.updates["timestamp"][-1]
+        step = (end - start) // num_points
+        timestamps = [datetime.fromtimestamp(ts) for ts in range(start, end, step)]
+
+        prices = chainlink_data.prices(timestamps)["price"].to_list()
+        x_axis = XAxis.TIMESERIES
+        y_axis = YAxis(
+            "Price",
+            f"{chainlink_data.token0_meta.symbol} / {chainlink_data.token1_meta.symbol}",
+        )
+        self._update_axes(x_axis, y_axis, min(prices), max(prices))
+        self._figure.line(
+            timestamps,
+            prices,
+            color=self._get_color(),
+            y_range_name=str(y_axis),
+            line_width=2,
+            legend_label=f"Price {chainlink_data.token0_meta.symbol.upper()} / {chainlink_data.token1_meta.symbol.upper()}{self._get_right_axis_label(y_axis)}",
+            **kwargs,
+        )
+        return self
+
     def show(self):
         show(self._figure)
 
@@ -147,7 +196,19 @@ class DataView:
     def _update_axes(
         self, x_axis: XAxis, y_axis: YAxis, miny: float, maxy: float
     ) -> Dict[str, Any]:
-        formatter = NumeralTickFormatter(format="0.0a")
+        formatter = BasicTickFormatter()
+        order = int(np.log((miny + maxy) / 2) / np.log(10))
+        if order <= 0:
+            zeroes = -order + 2
+        if order > 0:
+            zeroes = 3
+        if order > 3:
+            zeroes = 2
+        if order > 6:
+            zeroes = 3
+        format = f"0.{''.join(['0'] * zeroes)}a"
+        formatter = NumeralTickFormatter(format=format)
+
         y_axis_name = str(y_axis)
         defaults = {
             "toolbar_location": "above",
