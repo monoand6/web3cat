@@ -17,7 +17,7 @@ from web3.contract import Contract
 from web3.auto import w3 as w3auto
 import numpy as np
 
-RESOLVER_MAPPING = {"WETH": "ETH", "WBTC": "BTC"}
+RESOLVER_MAPPING = {"weth": "eth", "wbtc": "btc"}
 
 
 class ChainlinkUSDData:
@@ -182,7 +182,6 @@ class ChainlinkUSDData:
             with open(f"{current_folder}/oracle_proxy.abi.json", "r") as f:
                 abi = json.load(f)
             oracle_address = self._resolve_chainlink_address(self.meta.symbol.lower())
-            print(oracle_address)
             if oracle_address is None:
                 raise LookupError(
                     f"Chainlink oracle for token `{self.meta.symbol.lower()}` on chain with id `{self.chain_id}` is not found"
@@ -313,6 +312,188 @@ class ChainlinkUSDData:
         if not token in oracles:
             return None
         return oracles[token]["address"]
+
+    def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
+        resolved = []
+        for ts in timestamps:
+            # resolve datetimes to timestamps
+            if isinstance(ts, datetime):
+                resolved.append(int(time.mktime(ts.timetuple())))
+            else:
+                resolved.append(ts)
+        return resolved
+
+
+class ChainlinkData:
+    _token0_data: ChainlinkUSDData
+    _token1_data: ChainlinkUSDData
+
+    _updates: pl.DataFrame | None
+
+    def __init__(
+        self, token0_data: ChainlinkUSDData, token1_data: ChainlinkUSDData | None
+    ):
+        self._token0_data = token0_data
+        self._token1_data = token1_data
+        self._updates = None
+
+    @staticmethod
+    def create(
+        token0: str,
+        token1: str,
+        start: int | datetime,
+        end: int | datetime,
+        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
+        cache_path: str = "cache.sqlite3",
+        rpc: str | None = None,
+    ) -> ChainlinkUSDData:
+        """
+        Create an instance of :class:`ChainlinkData`
+
+        Args:
+            token0: Numerator token in (token0 / token1) price
+            token1: Denominator token in (token0 / token1) price
+            start: Start of the erc20 data - block number or datetime (inclusive)
+            end: End of the erc20 data - block number or datetime (non-inclusive)
+            grid_step: A grid step for resolving block timestamps. See :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
+            cache_path: path for the cache database
+            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+
+        Returns:
+            An instance of :class:`ChainlinkUSDData`
+        """
+
+        token0_data = ChainlinkUSDData.create(
+            token=token0,
+            start=start,
+            end=end,
+            grid_step=grid_step,
+            cache_path=cache_path,
+            rpc=rpc,
+        )
+        token0_data = None
+        token1_data = None
+        if token0.lower() != "usd":
+            token0_data = ChainlinkUSDData.create(
+                token=token0,
+                start=start,
+                end=end,
+                grid_step=grid_step,
+                cache_path=cache_path,
+                rpc=rpc,
+            )
+
+        if token1.lower() != "usd":
+            token1_data = ChainlinkUSDData.create(
+                token=token1,
+                start=start,
+                end=end,
+                grid_step=grid_step,
+                cache_path=cache_path,
+                rpc=rpc,
+            )
+
+        return ChainlinkData(token0_data, token1_data)
+
+    @property
+    def updates(self) -> pl.DataFrame:
+        if self._updates is None:
+            self._updates = self._build_updates()
+        return self._updates
+
+    @property
+    def from_block(self):
+        """
+        Start block for the data.
+        """
+        if not hasattr(self, "_from_block"):
+            ts = time.mktime(self._from_date.timetuple())
+            self._from_block = self._blocks_service.get_block_right_after_timestamp(
+                ts
+            ).number
+        return self._from_block
+
+    @property
+    def to_block(self):
+        """
+        End block for the data.
+        """
+        if not hasattr(self, "_to_block"):
+            ts = time.mktime(self._to_date.timetuple())
+            self._to_block = self._blocks_service.get_block_right_after_timestamp(
+                ts
+            ).number
+        return self._to_block
+
+    @property
+    def initial_price(self):
+        token0_price = (
+            1 if self._token0_data is None else self._token0_data.initial_price
+        )
+        token1_price = (
+            1 if self._token1_data is None else self._token1_data.initial_price
+        )
+        return token1_price / token0_price
+
+    def prices(self, timestamps: List[int | datetime]) -> pl.DataFrame:
+        timestamps = self._resolve_timetamps(timestamps)
+        timestamps = sorted(timestamps)
+        updates = self.updates[["timestamp", "price"]].to_dicts()
+        i = 0
+        price_list = []
+        while timestamps[i] < updates[0]["timestamp"]:
+            price_list.append(self.initial_price)
+            i += 1
+        j = 0
+        for ts in timestamps[i:]:
+            while j < len(updates) and updates[j]["timestamp"] <= ts:
+                j += 1
+            # now ts < updates[j]
+            idx = max([j - 1, 0])
+            price_list.append(updates[idx]["price"])
+        out = [
+            {
+                "timestamp": ts,
+                "date": datetime.fromtimestamp(ts),
+                "price": price,
+            }
+            for ts, price in zip(timestamps, price_list)
+        ]
+        return pl.DataFrame(out)
+
+    def _build_updates(self) -> pl.DataFrame:
+        if self._token0_data is None:
+            print("1111")
+            return self._token1_data.updates
+
+        if self._token1_data is None:
+            print("00000")
+            df = self._token0_data.updates.clone()
+            df = df.with_column((1 / pl.col("price")).alias("price"))
+            return df
+
+        i = 0
+        j = 0
+        t0_data = self._token0_data.updates
+        t1_data = self._token1_data.updates
+        out = []
+        last0_price = self._token0_data.initial_price
+        last1_price = self._token1_data.initial_price
+        while i < len(t0_data) and j < len(t1_data):
+            t0_item = t0_data[i].to_dicts()[0]
+            t1_item = t1_data[j].to_dicts()[0]
+            if t0_item["block_number"] < t1_item["block_number"]:
+                i += 1
+                last0_price = t0_item["price"]
+                t0_item["price"] = last1_price / t0_item["price"]
+                out.append(t0_item)
+            else:
+                j += 1
+                last1_price = t1_item["price"]
+                t1_item["price"] = t1_item["price"] / last0_price
+                out.append(t1_item)
+
+        return pl.DataFrame(out)
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []

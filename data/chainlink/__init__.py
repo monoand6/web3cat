@@ -1,1 +1,1 @@
-from data.chainlink.chainlink_data import ChainlinkUSDData
+from data.chainlink.chainlink_data import ChainlinkUSDData, ChainlinkData
