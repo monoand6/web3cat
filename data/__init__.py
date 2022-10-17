@@ -6,3 +6,4 @@ curdoc().theme = "dark_minimal"
 
 from data.views import DataView
 from data.erc20s import ERC20Data
+from data.chainlink.chainlink_data import ChainlinkUSDData

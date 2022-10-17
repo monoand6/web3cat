@@ -9,6 +9,7 @@ from eth_typing.encoding import HexStr
 from web3.datastructures import AttributeDict
 from web3.contract import ContractFunction, get_abi_input_types
 from web3.auto import w3
+from eth_utils import function_abi_to_4byte_selector
 
 import json
 
@@ -78,8 +79,11 @@ def calldata(call: ContractFunction) -> str:
     Returns:
         Hex data (starting with 0x, lowercase)
     """
-    bytes_calldata = w3.codec.encode(get_abi_input_types(call.abi), call.args)
-    return HexBytes(bytes_calldata).hex()
+
+    selector = HexBytes(function_abi_to_4byte_selector(call.abi)).hex()
+    abi_types = get_abi_input_types(call.abi)
+    bytes_calldata = w3.codec.encode(abi_types, call.args)
+    return selector + HexBytes(bytes_calldata).hex()[2:]
 
 
 last_progress_bar_length = 0

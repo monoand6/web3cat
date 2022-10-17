@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 import os
-from time import time
+import time
 from typing import Any, Dict, List
 from web3 import Web3
 from datetime import datetime
@@ -15,6 +15,8 @@ from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
 from web3.auto import w3 as w3auto
+
+RESOLVER_MAPPING = {"WETH": "ETH", "WBTC": "BTC"}
 
 
 class ChainlinkUSDData:
@@ -43,9 +45,11 @@ class ChainlinkUSDData:
     _chain_id: int | None
 
     _meta: ERC20Meta | None
+    _oracle_decimals: int | None
     _updates: pl.DataFrame | None
     _oracle_proxy_contract: Contract | None
     _oracle_aggregator_contract: Contract | None
+    _index: Dict[str, Any] | None
 
     def __init__(
         self,
@@ -55,14 +59,12 @@ class ChainlinkUSDData:
         blocks_service: BlocksService,
         calls_service: CallsService,
         token: str,
-        address_filter: List[str] | None,
         start: int | datetime,
         end: int | datetime,
         grid_step: int,
     ):
         self._w3 = w3
         self._token = token
-        self._address_filter = address_filter or []
         if type(start) is datetime:
             self._from_date = start
         else:
@@ -79,9 +81,11 @@ class ChainlinkUSDData:
 
         self._meta = None
         self._updates = None
+        self._oracle_decimals = None
         self._oracle_proxy_contract = None
         self._oracle_aggregator_contract = None
         self._chain_id = None
+        self._index = None
 
     @staticmethod
     def create(
@@ -172,18 +176,15 @@ class ChainlinkUSDData:
     def oracle_proxy_contract(self) -> Contract:
         if self._oracle_proxy_contract is None:
             current_folder = os.path.realpath(os.path.dirname(__file__))
-            with open(f"{current_folder}/oracle_proxy_abi.json", "r") as f:
+            with open(f"{current_folder}/oracle_proxy.abi.json", "r") as f:
                 abi = json.load(f)
-            with open(f"{current_folder}/oracles.json", "r") as f:
-                oracles = json.load(f)
-            if (
-                not self.chain_id in oracles
-                or not self.meta.symbol.lower() in oracles[self.chain_id]
-            ):
+            oracle_address = self._resolve_chainlink_address(self.meta.symbol.lower())
+            print(oracle_address)
+            if oracle_address is None:
                 raise LookupError(
                     f"Chainlink oracle for token `{self.meta.symbol.lower()}` on chain with id `{self.chain_id}` is not found"
                 )
-            oracle_address = oracles[self.chain_id][self.meta.symbol.lower()]
+
             self._oracle_proxy_contract = self._w3.eth.contract(
                 address=self._w3.toChecksumAddress(oracle_address), abi=abi
             )
@@ -198,8 +199,8 @@ class ChainlinkUSDData:
             oracle_address = self._calls_service.get_call(
                 self.chain_id,
                 self.oracle_proxy_contract.functions.aggregator(),
-                self.from_block,
-            )
+                self.to_block,
+            ).response
             self._oracle_aggregator_contract = self._w3.eth.contract(
                 address=self._w3.toChecksumAddress(oracle_address), abi=abi
             )
@@ -207,11 +208,21 @@ class ChainlinkUSDData:
 
     @property
     def oracle_decimals(self) -> int:
-        return self._calls_service.get_call(
-            self.chain_id,
-            self.oracle_proxy_contract.functions.decimals(),
-            self.from_block,
-        )
+        if self._oracle_decimals is None:
+            self._oracle_decimals = int(
+                self._calls_service.get_call(
+                    self.chain_id,
+                    self.oracle_proxy_contract.functions.decimals(),
+                    self.to_block,
+                ).response
+            )
+        return self._oracle_decimals
+
+    @property
+    def updates(self) -> pl.DataFrame:
+        if not self._updates:
+            self._updates = self._build_updates()
+        return self._updates
 
     def _build_updates(self) -> pl.DataFrame:
         events: List[Event] = self._events_service.get_events(
@@ -229,7 +240,7 @@ class ChainlinkUSDData:
             block_number: timestamp
             for block_number, timestamp in zip(block_numbers, timestamps)
         }
-        factor = 10 ** (self.meta.decimals - self.oracle_decimals)
+        factor = 10**self.oracle_decimals
         return pl.from_dicts(
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
         ).sort(pl.col("timestamp"))
@@ -245,3 +256,20 @@ class ChainlinkUSDData:
             "updated_at": e.args["updatedAt"],
             "price": e.args["current"] / val_factor,
         }
+
+    def _resolve_chainlink_address(self, token: str) -> str | None:
+        if not self._index:
+            current_folder = os.path.realpath(os.path.dirname(__file__))
+            with open(f"{current_folder}/oracles.json", "r") as f:
+                self._index = json.load(f)
+        cid = str(self.chain_id)
+        if not cid in self._index:
+            return None
+        oracles = self._index[cid]
+        if token in oracles:
+            return oracles[token]["address"]
+        if token in RESOLVER_MAPPING:
+            token = RESOLVER_MAPPING[token]
+        if not token in oracles:
+            return None
+        return oracles[token]["address"]
