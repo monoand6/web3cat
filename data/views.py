@@ -48,6 +48,7 @@ class YAxis:
 class DataView:
     _figure: Figure | None
     _x_axis: XAxis | None
+    _y_axes: List[YAxis]
     _fig_args: Dict[str, Any]
     _numplots: int
     _colors: List[Any]
@@ -189,8 +190,7 @@ class DataView:
         return color
 
     def _get_right_axis_label(self, axis: YAxis) -> str:
-        range_names = [a.y_range_name for a in self._figure.yaxis]
-        idx = range_names.index(str(axis))
+        idx = self._y_axes.index(axis)
         return "" if idx % 2 == 0 else " (right)"
 
     def _update_axes(
@@ -226,6 +226,7 @@ class DataView:
             self._figure.yaxis[0].y_range_name = y_axis_name
             self._figure.yaxis[0].axis_label = f"{y_axis.kind} ({y_axis.type})"
             self._figure.yaxis[0].formatter = formatter
+            self._y_axes.append(y_axis)
 
         if self._x_axis != x_axis:
             raise ValueError(
@@ -237,6 +238,7 @@ class DataView:
             new_range = Range1d(min(miny, old_range.start), max(maxy, old_range.end))
             self._figure.extra_y_ranges[y_axis_name] = new_range
         else:
+            self._y_axes.append(y_axis)
             self._figure.extra_y_ranges[y_axis_name] = Range1d(miny, maxy)
             loc = "left" if len(self._figure.yaxis) % 2 == 0 else "right"
             self._figure.add_layout(
