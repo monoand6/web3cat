@@ -153,14 +153,14 @@ class BitArray:
             self._data.append(0)
 
     def __repr__(self):
-        res = ""
+        out = ""
         for b in self._data:
             for i in range(8):
                 if b & (1 << i) > 0:
-                    res += "1"
+                    out += "1"
                 else:
-                    res += "0"
-        return f"BitArray({res})"
+                    out += "0"
+        return f"BitArray({out})"
 
     def __eq__(self, other):
         if type(other) is type(self):

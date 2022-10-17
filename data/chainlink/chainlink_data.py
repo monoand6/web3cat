@@ -15,6 +15,7 @@ from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
 from web3.auto import w3 as w3auto
+import numpy as np
 
 RESOLVER_MAPPING = {"WETH": "ETH", "WBTC": "BTC"}
 
@@ -50,6 +51,7 @@ class ChainlinkUSDData:
     _oracle_proxy_contract: Contract | None
     _oracle_aggregator_contract: Contract | None
     _index: Dict[str, Any] | None
+    _initial_price: np.float64 | None
 
     def __init__(
         self,
@@ -86,6 +88,7 @@ class ChainlinkUSDData:
         self._oracle_aggregator_contract = None
         self._chain_id = None
         self._index = None
+        self._initial_price = None
 
     @staticmethod
     def create(
@@ -219,6 +222,24 @@ class ChainlinkUSDData:
         return self._oracle_decimals
 
     @property
+    def initial_price(self) -> np.float64:
+        if self._initial_price is None:
+            price = self._calls_service.get_call(
+                self.chain_id,
+                self._oracle_aggregator_contract.functions.latestRoundData(),
+                self.from_block,
+            ).response[1]
+            self._initial_price = price / 10**self.oracle_decimals
+        return self._initial_price
+
+    def prices(self, timestamps: List[int | datetime]) -> List[np.float64]:
+        timestamps = self._resolve_timetamps(timestamps)
+        timestamps = sorted(timestamps)
+        j = 0
+        out = []
+        # while timestamps[j] <
+
+    @property
     def updates(self) -> pl.DataFrame:
         if not self._updates:
             self._updates = self._build_updates()
@@ -273,3 +294,13 @@ class ChainlinkUSDData:
         if not token in oracles:
             return None
         return oracles[token]["address"]
+
+    def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
+        resolved = []
+        for ts in timestamps:
+            # resolve datetimes to timestamps
+            if isinstance(ts, datetime):
+                resolved.append(int(time.mktime(ts.timetuple())))
+            else:
+                resolved.append(ts)
+        return resolved

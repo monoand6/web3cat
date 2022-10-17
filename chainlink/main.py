@@ -18,11 +18,11 @@ chain_ids_map = {
     137: "polygon",
 }
 
-res = {}
+out = {}
 
 for chain_id, chain_name in chain_ids_map.items():
     with open(f"{current_folder}/inputs/{chain_name}_chainlink.csv", "r") as f:
-        res[chain_id] = {}
+        out[chain_id] = {}
         for row in f.readlines():
             entries = row.split(",")
             if len(entries) < 6:
@@ -37,7 +37,7 @@ for chain_id, chain_name in chain_ids_map.items():
                 continue
 
             ticker = quote.split("/")[0][:-1].lower()
-            res[chain_id][ticker] = {"address": address.lower()}
+            out[chain_id][ticker] = {"address": address.lower()}
 
 with open(f"{current_folder}/outputs/result.json", "w") as f:
-    json.dump(res, f)
+    json.dump(out, f)

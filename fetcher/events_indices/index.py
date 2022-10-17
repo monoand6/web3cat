@@ -94,13 +94,13 @@ class EventsIndex:
         """
         if args is None:
             return {}
-        res = {}
+        out = {}
         for k in sorted(args.keys()):
             v = args[k]
             if type(v) is list:
                 v = sorted(v)
-            res[k] = v
-        return res
+            out[k] = v
+        return out
 
     def step(self) -> int:
         """
@@ -123,13 +123,13 @@ class EventsIndex:
     def _dump_args(self) -> str:
         if self.args is None:
             return json.dumps({})
-        res = {}
+        out = {}
         for k in sorted(self.args.keys()):
             v = self.args[k]
             if type(v) is list:
                 v = sorted(v)
-            res[k] = v
-        return json.dumps(res)
+            out[k] = v
+        return json.dumps(out)
 
     def __repr__(self) -> str:
         return f"EventsIndex(chain_id: {self.chain_id}, address: {self.address}, event: {self.event}, args: {self.args}, data: {self.data})"

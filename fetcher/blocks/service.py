@@ -215,18 +215,18 @@ class BlocksService:
         fetched_blocks = self._fetch_many_blocks_and_save(block_numbers_for_fetch)
         for b in fetched_blocks:
             blocks_index[b.number] = b.timestamp
-        res = []
+        out = []
         for bn in block_numbers:
             if grid_step == 0 or bn % grid_step == 0:
-                res.append(blocks_index[bn])
+                out.append(blocks_index[bn])
                 continue
             rounded = bn - bn % grid_step
             w = (bn % grid_step) / grid_step
             ts = int(
                 blocks_index[rounded] * (1 - w) + blocks_index[rounded + grid_step] * w
             )
-            res.append(ts)
-        return res
+            out.append(ts)
+        return out
 
     def get_block(self, number: int | None = None) -> Block | None:
         """

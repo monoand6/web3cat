@@ -293,7 +293,7 @@ class ERC20Data:
             initial_total_supply = initial_balance_wei / 10**self.meta.decimals
         timestamps = sorted(self._resolve_timetamps(timestamps))
         bs = self._zero_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
-        res = [
+        out = [
             {
                 "timestamp": ts,
                 "date": datetime.fromtimestamp(ts),
@@ -301,7 +301,7 @@ class ERC20Data:
             }
             for ts, balance in zip(timestamps, bs)
         ]
-        return pl.DataFrame(res)
+        return pl.DataFrame(out)
 
     def balances(
         self,
@@ -346,7 +346,7 @@ class ERC20Data:
         timestamps = sorted(self._resolve_timetamps(timestamps))
 
         bs = self._zero_balances(address, timestamps, self.transfers)
-        res = [
+        out = [
             {
                 "timestamp": ts,
                 "date": datetime.fromtimestamp(ts),
@@ -354,11 +354,11 @@ class ERC20Data:
             }
             for ts, balance in zip(timestamps, bs)
         ]
-        return pl.DataFrame(res)
+        return pl.DataFrame(out)
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []
-        for i, ts in enumerate(timestamps):
+        for ts in timestamps:
             # resolve datetimes to timestamps
             if isinstance(ts, datetime):
                 resolved.append(int(time.mktime(ts.timetuple())))
@@ -386,13 +386,13 @@ class ERC20Data:
         )
         j = 0
         balance = 0
-        res = []
+        out = []
         for ts in timestamps:
             while j < len(transfers) and transfers[j]["timestamp"] <= ts:
                 balance += transfers[j]["cash_flow"]
                 j += 1
-            res.append(balance)
-        return res
+            out.append(balance)
+        return out
 
     def _build_transfers(self, address_filter: List[str]) -> pl.DataFrame:
         events: List[Event] = []
