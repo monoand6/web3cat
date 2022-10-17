@@ -232,16 +232,35 @@ class ChainlinkUSDData:
             self._initial_price = price / 10**self.oracle_decimals
         return self._initial_price
 
-    def prices(self, timestamps: List[int | datetime]) -> List[np.float64]:
+    def prices(self, timestamps: List[int | datetime]) -> pl.DataFrame:
         timestamps = self._resolve_timetamps(timestamps)
         timestamps = sorted(timestamps)
+        updates = self.updates[["timestamp", "price"]].to_dicts()
+        i = 0
+        price_list = []
+        while timestamps[i] < updates[0]["timestamp"]:
+            price_list.append(self.initial_price)
+            i += 1
         j = 0
-        out = []
-        # while timestamps[j] <
+        for ts in timestamps[i:]:
+            while j < len(updates) and updates[j]["timestamp"] <= ts:
+                j += 1
+            # now ts < updates[j]
+            idx = max([j - 1, 0])
+            price_list.append(updates[idx]["price"])
+        out = [
+            {
+                "timestamp": ts,
+                "date": datetime.fromtimestamp(ts),
+                "price": price,
+            }
+            for ts, price in zip(timestamps, price_list)
+        ]
+        return pl.DataFrame(out)
 
     @property
     def updates(self) -> pl.DataFrame:
-        if not self._updates:
+        if self._updates is None:
             self._updates = self._build_updates()
         return self._updates
 
