@@ -112,7 +112,6 @@ def _init_db(conn: Connection):
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_blocks_id
             ON blocks(chain_id,block_hash,block_number)"""
     )
-    conn.commit()
 
     # Event indices table
 
@@ -150,3 +149,16 @@ def _init_db(conn: Connection):
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_id
             ON calls(chain_id,address,calldata,block_number)"""
     )
+
+    # Balances table
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS balances
+                (chain_id integer, block_number integer, address text, balance integer)"""
+    )
+    cursor.execute(
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_balances_id 
+    ON balances(chain_id,block_number,address)
+    """
+    )
+
+    conn.commit()
