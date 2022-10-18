@@ -51,7 +51,6 @@ class CallsService:
 
     def __init__(self, calls_repo: CallsRepo):
         self._calls_repo = calls_repo
-        self._last_progress_bar_length = 0
 
     @staticmethod
     def create(cache_path: str = "cache.sqlite3") -> CallsService:
