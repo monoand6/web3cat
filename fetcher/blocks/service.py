@@ -3,7 +3,8 @@ from datetime import datetime
 
 import json
 import numbers
-from typing import List
+from turtle import left
+from typing import List, Tuple
 from fetcher.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
@@ -92,7 +93,9 @@ class BlocksService:
         """
         return self.get_block()
 
-    def get_block_right_after_timestamp(self, timestamp: int) -> Block | None:
+    def get_block_right_after_timestamp(
+        self, timestamp: int, grid_step: int = 1
+    ) -> Block | None:
         """
         Get the first block after a timestamp.
 
@@ -106,11 +109,15 @@ class BlocksService:
 
         # right_block is guaranteed to be after the timestamp
         right_block = self._blocks_db.get_block_after_timestamp(self._chain_id, ts)
+
+        # snapping right block to grid (either multiple of grid_step or latest block)
         if right_block is None:
             right_block = self.get_block()
 
         if right_block.timestamp < timestamp:  # no blocks exist after the timestamp
             return None
+
+        right_block = self._get_closest_right_grid_block(right_block, grid_step)
 
         left_block = self._blocks_db.get_block_before_timestamp(self._chain_id, ts)
         if left_block is None:
@@ -121,34 +128,60 @@ class BlocksService:
 
         # Time stamp is before the chain genesis
         if left_block.timestamp >= timestamp:
-            return left_block
-        if right_block.number - left_block.number <= 1:
-            return right_block
+            return None
 
-        estimated_hops = int(log(right_block.number - left_block.number, 2))
+        left_block = self._get_closest_left_grid_block(left_block, grid_step)
+
+        if right_block.number - left_block.number <= grid_step:
+            return self._get_interpolated_block_number_right_after_timestamp(
+                timestamp, left_block, right_block
+            )
+
+        estimated_hops = int(
+            log((right_block.number - left_block.number) / grid_step, 2)
+        )
         hops = 0
         prefix = f"Finding block for {datetime.fromtimestamp(timestamp).isoformat()}"
         # initial esitmates for blocks are set
         # invariant: left_block.timestamp < timestamp <= right_block.timestamp
-        while right_block.number - left_block.number > 1:
+        while right_block.number - left_block.number > grid_step:
             print_progress(min(hops - 1, estimated_hops), estimated_hops, prefix)
             hops += 1
             w = (timestamp - left_block.timestamp) / (
                 right_block.timestamp - left_block.timestamp
             )
-            num = int(left_block.number * (1 - w) + right_block.number * w)
+            num = (
+                int(left_block.number * (1 - w) + right_block.number * w)
+                // grid_step
+                * grid_step
+            )
 
             if num == left_block.number:
-                num += 1
+                num += grid_step
             elif num == right_block.number:
-                num -= 1
+                num -= grid_step
             block = self.get_block(num)
             if block.timestamp >= timestamp:
                 right_block = block
             else:
                 left_block = block
         print_progress(estimated_hops, estimated_hops, prefix)
-        return right_block
+        bn = self._get_interpolated_block_number_right_after_timestamp(
+            timestamp, left_block, right_block
+        )
+        return self.get_block(bn)
+
+    def get_block_numbers(
+        self, block_timestamps: List[int], grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID
+    ) -> List[int]:
+        out = []
+        for ts in block_timestamps:
+            block = self.get_block_right_after_timestamp(ts)
+            b_left = block.number // grid_step * grid_step
+            b_right = b_left + grid_step
+            w = (block.number - b_left) / (b_right - b_left)
+            out.append(int(b_left + w * (b_right - b_left)))
+        return out
 
     def get_block_timestamps(
         self, block_numbers: List[int], grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID
@@ -251,6 +284,38 @@ class BlocksService:
         """
         self._blocksRepo.purge()
         self._blocksRepo.commit()
+
+    def _get_interpolated_block_number_right_after_timestamp(
+        self, timestamp: int, left_block: Block, right_block: Block
+    ) -> int:
+        """
+        Invariant: left_block.timestamp <= timestamp < right_block.timestamp
+        """
+        w = (timestamp - left_block.timestamp) / (
+            right_block.timestamp - left_block.timestamp
+        )
+        return int(left_block.number * (1 - w) + right_block.number * w) + 1
+
+    def _get_closest_right_grid_block(self, block: Block, grid_step: int) -> Block:
+        mod = block.number % grid_step
+        # if we're on the grid, we're good, otherwise get nearest grid block:
+        if mod == 0:
+            return block
+
+        right_block_number = block.number - mod + grid_step
+        right_block = self.get_block(right_block_number)
+        if right_block is None:
+            right_block = self.get_block()
+        return right_block
+
+    def _get_closest_left_grid_block(self, block: Block, grid_step: int) -> Block:
+        mod = block.number % grid_step
+        # if we're on the grid, we're good, otherwise get nearest grid block:
+        if mod == 0:
+            return block
+
+        left_block_number = max(block.number - mod, 1)
+        return self.get_block(left_block_number)
 
     def _fetch_many_blocks_and_save(self, numbers: List[int]) -> List[Block]:
         if len(numbers) == 0:
