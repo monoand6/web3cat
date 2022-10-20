@@ -106,11 +106,11 @@ def _init_db(conn: Connection):
     # Blocks table
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS blocks
-                (chain_id integer, block_hash text, block_number integer, timestamp integer)"""
+                (chain_id integer, block_number integer, timestamp integer)"""
     )
     cursor.execute(
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_blocks_id
-            ON blocks(chain_id,block_hash,block_number)"""
+            ON blocks(chain_id,block_number)"""
     )
 
     # Event indices table

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 from typing import Any, Dict, Tuple
 
 
@@ -9,20 +10,17 @@ class Block:
 
     #: Ethereum chain_id
     chain_id: int
-    #: Block hash
-    hash: str
     #: Block number
     number: int
     #: Block timestamp
     timestamp: int
 
-    def __init__(self, chain_id: int, hash: str, number: int, timestamp: int):
+    def __init__(self, chain_id: int, number: int, timestamp: int):
         self.chain_id = chain_id
-        self.hash = hash
         self.number = number
         self.timestamp = timestamp
 
-    def from_tuple(tuple: Tuple[int, str, int, int]) -> Block:
+    def from_tuple(tuple: Tuple[int, int, int]) -> Block:
         """
         Deserialize from database row
 
@@ -31,14 +29,25 @@ class Block:
         """
         return Block(*tuple)
 
-    def to_tuple(self) -> Tuple[int, str, int, int]:
+    def to_tuple(self) -> Tuple[int, int, int]:
         """
         Serialize to database row
 
         Returns:
             database row
         """
-        return (self.chain_id, self.hash, self.number, self.timestamp)
+        return (self.chain_id, self.number, self.timestamp)
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]):
+        """
+        Create :class:`Block` from dict
+        """
+        return Block(
+            chain_id=d["chainId"],
+            number=d["number"],
+            timestamp=d["timestamp"],
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -46,7 +55,6 @@ class Block:
         """
         return {
             "chainId": self.chain_id,
-            "hash": self.hash,
             "number": self.number,
             "timestamp": self.timestamp,
         }
@@ -57,4 +65,4 @@ class Block:
         return False
 
     def __repr__(self):
-        return f'Block({{"chain_id":{self.chain_id}, "hash": {self.hash}, "number":{self.number}, "timestamp":{self.timestamp}}})'
+        return f"Block({json.dumps(self.to_dict())})"
