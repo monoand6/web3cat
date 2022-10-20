@@ -26,11 +26,11 @@ def test_get_block_right_after_timestamp(
 ) -> int:
     try:
         service = BlocksService(blocks_repo, web3_blocks_mock, grid_step)
-        assert service.get_block_right_after_timestamp(
-            timestamp
-        ) == web3_blocks_mock.block_right_after_timestamp(timestamp)
+        block = service.get_block_right_after_timestamp(timestamp)
+        assert block == web3_blocks_mock.block_right_after_timestamp(timestamp)
     finally:
         service.clear_cache()
+        web3_blocks_mock.number_of_calls = 0
 
 
 # def test_get_block_right_after_timestamp(

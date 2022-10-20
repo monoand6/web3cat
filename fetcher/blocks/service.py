@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import json
-from typing import List, Literal, Tuple
+from typing import Dict, List, Literal, Tuple
 from fetcher.blocks.repo import BlocksRepo
 from web3 import Web3
 from web3.exceptions import BlockNotFound
@@ -86,9 +86,10 @@ class BlocksService:
 
     _blocks_repo: BlocksRepo
     _w3: Web3
-    _chain_id: int
+    _chain_id: int | None
     _grid_step: int
     _latest_block: Block | None
+    _block_cache: Dict[int, Block]
 
     def __init__(
         self,
@@ -98,9 +99,10 @@ class BlocksService:
     ):
         self._blocks_repo = blocks_repo
         self._w3 = w3
-        self._chain_id = w3.eth.chain_id
         self._grid_step = grid_step
         self._latest_block = None
+        self._block_cache = {}
+        self._chain_id = None
 
     @staticmethod
     def create(
@@ -135,7 +137,16 @@ class BlocksService:
             self._latest_block = self.get_block()
         return self._latest_block
 
-    def get_block_right_after_timestamp(self, timestamp: int) -> Tuple[int, int] | None:
+    @property
+    def chain_id(self) -> int:
+        """
+        Ethereum chain_id
+        """
+        if self._chain_id is None:
+            self._chain_id = self._w3.eth.chain_id
+        return self._chain_id
+
+    def get_block_right_after_timestamp(self, timestamp: int) -> Block | None:
         """
         Get the first block after a timestamp.
 
@@ -145,51 +156,59 @@ class BlocksService:
         Returns:
             First block after timestamp, ``None`` if the block doesn't exist
         """
-        ts = timestamp
-
-        # right_block is guaranteed to be after the timestamp
-        right_block = self._blocks_repo.get_block_after_timestamp(self._chain_id, ts)
+        # get the best initial approximation for grid blocks around timestamp
+        right_block = self._blocks_repo.get_block_after_timestamp(
+            self.chain_id, timestamp
+        )
+        if right_block is None:
+            right_block = self.latest_block
+            if timestamp >= right_block.timestamp:
+                return right_block
         right_block_number = self._snap_to_grid(right_block.number, direction="right")
         right_block = self.get_block(right_block_number)
-        left_block = self._blocks_repo.get_block_before_timestamp(self._chain_id, ts)
+        left_block = self._blocks_repo.get_block_before_timestamp(
+            self.chain_id, timestamp
+        )
+        if left_block is None:
+            left_block = self.get_block(1)
+            if timestamp < left_block.timestamp:
+                return left_block
         left_block_number = self._snap_to_grid(left_block.number, direction="left")
         left_block = self.get_block(left_block_number)
-        if right_block_number - left_block_number <= self._grid_step:
-            return self._get_block_from_grid(
-                left_block, right_block, timestamp=timestamp
-            )
+        # if right_block_number - left_block_number <= self._grid_step:
+        #     block = self._get_block_from_grid(
+        #         left_block, right_block, timestamp=timestamp
+        #     )
+        #     return self.get_block(block.number + 1)
 
         # initial esitmates for blocks are set
         # invariant: left_block.timestamp < timestamp <= right_block.timestamp
-        while right_block_number - left_block_number > self._grid_step:
-            number, timestamp = self._get_block_from_grid()
-            w = (timestamp - left_block.timestamp) / (
-                right_block.timestamp - left_block.timestamp
-            )
-            # snapped to grid
-            num = (
-                int(left_block.number * (1 - w) + right_block.number * w)
-                // self._grid_step
-                * self._grid_step
-            )
-            # we don't query 0 block, the minimal block is 1
-            if num == 0:
-                num = 1
-            if num == left_block.number:
-                num += self._grid_step
-            elif num == right_block.number:
-                num -= self._grid_step
-            block = self.get_block(num)
-            if block.timestamp >= timestamp:
-                right_block = block
-            else:
-                left_block = block
+        while True:
 
-        # print_progress(estimated_hops, estimated_hops, prefix)
-        bn = self._get_interpolated_block_number_right_after_timestamp(
-            timestamp, left_block, right_block
-        )
-        return self.get_block(bn)
+            if right_block.number - left_block.number <= self._grid_step:
+                # latest block as of timestamp
+                block = self._get_block_from_grid(
+                    left_block, right_block, timestamp=timestamp
+                )
+                if block.timestamp <= timestamp:
+                    return self.get_block(block.number + 1)
+                else:
+                    return block
+            # technically this is not supposed to be called like that
+            # but we just reuse for algorithm of interpolation is the same
+            new_block_num = self._get_block_from_grid(
+                left_block, right_block, timestamp=timestamp
+            ).number
+            new_block_num = self._snap_to_grid(new_block_num, direction="left")
+            # we can only hit left block here as we're snapping to the left
+            if new_block_num == left_block.number:
+                new_block_num = self._snap_to_grid(new_block_num + 1, direction="right")
+
+            new_block = self.get_block(new_block_num)
+            if new_block.timestamp > timestamp:
+                right_block = new_block
+            else:
+                left_block = new_block
 
     def get_block_numbers(self, block_timestamps: List[int]) -> List[int]:
         out = []
@@ -231,7 +250,7 @@ class BlocksService:
 
         # Fetching existing blocks from db
         cached_blocks: List[Block] = self._blocks_repo.find(
-            self._chain_id, list(blocks_index.keys())
+            self.chain_id, list(blocks_index.keys())
         )
         for b in cached_blocks:
             blocks_index[b.number] = b.timestamp
@@ -265,9 +284,17 @@ class BlocksService:
             Block with this number. ``None`` if the block doesn't exist.
         """
         if not number is None:
-            blocks = self._blocks_repo.find(self._chain_id, number)
+            if number < 1:
+                number = 1
+            if number > self.latest_block.number:
+                return self.latest_block
+            if number in self._block_cache:
+                return self._block_cache[number]
+            blocks = self._blocks_repo.find(self.chain_id, number)
             if len(blocks) > 0:
-                return blocks[0]
+                block = blocks[0]
+                self._block_cache[block.number] = block
+                return block
         block = self._fetch_block_and_save(number)
         return block
 
@@ -284,14 +311,14 @@ class BlocksService:
         right_block: Block,
         timestamp: int | None = None,
         number: int | None = None,
-    ) -> Tuple[int, int]:
+    ) -> Block:
         if timestamp is None and number is None:
             raise ValueError("Either timestamp or number should be set")
         if not timestamp is None and not number is None:
             raise ValueError("Either timestamp or number should be set")
 
         if left_block == right_block:
-            return (left_block.number, left_block.timestamp)
+            return Block(self.chain_id, left_block.number, left_block.timestamp)
         w = 0
         if not timestamp is None:
             w = (timestamp - left_block.timestamp) / (
@@ -299,14 +326,17 @@ class BlocksService:
             )
         else:
             w = (number - left_block.number) / (right_block.number - left_block.number)
-        number = (1 - w) * left_block.number + w * left_block.number
-        timestamp = (1 - w) * left_block.timestamp + w * left_block.timestamp
-        return (number, timestamp)
+        number = int((1 - w) * left_block.number + w * right_block.number)
+        timestamp = int((1 - w) * left_block.timestamp + w * right_block.timestamp)
+        return Block(self.chain_id, number, timestamp)
 
     def _snap_to_grid(
         self, block_number: int, direction=Literal["left"] | Literal["right"]
     ) -> int:
-        mod = block_number % self.grid_step
+        # this doesn't fit in the logic below because of the small grid_step
+        if block_number == 1 and self._grid_step == 1 and direction == "right":
+            return 2
+        mod = block_number % self._grid_step
         snapped = block_number
         if mod != 0:
             if direction == "left":
@@ -341,9 +371,13 @@ class BlocksService:
     def _fetch_block_and_save(self, number: int | None) -> Block | None:
         block = self._fetch_block(number)
         if block is None:
-            return None
+            if number < 1:
+                block = self._fetch_block(1)
+            else:
+                block = self.latest_block
         self._blocks_repo.save([block])
         self._blocks_repo.commit()
+        self._block_cache[block.number] = block
         return block
 
     def _fetch_block(self, number: int | None) -> Block | None:
@@ -351,12 +385,7 @@ class BlocksService:
         try:
             raw_block = self._w3.eth.get_block(block_id)
             block = json.loads(json_response(raw_block))
-            return Block(
-                chain_id=self._chain_id,
-                hash=block["hash"],
-                number=block["number"],
-                timestamp=block["timestamp"],
-            )
+            return Block.from_dict({"chainId": self.chain_id, **block})
 
         except BlockNotFound:
             return None
