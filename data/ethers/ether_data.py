@@ -8,6 +8,7 @@ from fetcher.erc20_metas import ERC20MetasService
 from fetcher.erc20_metas import erc20_meta
 from fetcher.events import EventsService, Event
 from fetcher.balances import BalancesService
+from fetcher.blocks import BlocksService
 from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
@@ -34,19 +35,19 @@ class EtherData:
     """
 
     _balances_service: BalancesService
+    _blocks_service: BlocksService
     _w3: Web3
-    _grid_step: int
     _chain_id: int | None
 
     def __init__(
         self,
         w3: Web3,
         balances_service: BalancesService,
-        grid_step: int,
+        blocks_service: BalancesService,
     ):
         self._w3 = w3
         self._balances_service = balances_service
-        self._grid_step = grid_step
+        self._blocks_service = blocks_service
         self._chain_id = None
 
     @staticmethod
@@ -74,11 +75,10 @@ class EtherData:
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))
         balances_service = BalancesService.create(cache_path, rpc)
+        blocks_service = BlocksService.create(grid_step, cache_path, rpc)
 
         return EtherData(
-            w3=w3,
-            balances_service=balances_service,
-            grid_step=grid_step,
+            w3=w3, balances_service=balances_service, blocks_service=blocks_service
         )
 
     @property
@@ -94,17 +94,12 @@ class EtherData:
         self, addresses: List[str], timestamps: List[int | datetime]
     ) -> pl.DataFrame:
         timestamps = sorted(self._resolve_timetamps(timestamps))
-
-        bs = self._zero_balances(address, timestamps, self.transfers)
-        out = [
-            {
-                "timestamp": ts,
-                "date": datetime.fromtimestamp(ts),
-                "balance": balance + initial_balance,
-            }
-            for ts, balance in zip(timestamps, bs)
+        blocks = [
+            b.number for b in self._blocks_service.get_blocks_by_timestamps(timestamps)
         ]
-        return pl.DataFrame(out)
+        balances = self._balances_service.get_balances(addresses, blocks)
+        balances = [b.to_dict() for b in balances]
+        return pl.DataFrame(balances)
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []
