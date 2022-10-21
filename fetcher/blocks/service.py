@@ -197,6 +197,7 @@ class BlocksService:
         for i, ts in enumerate(block_timestamps):
             if len(block_timestamps) > 5:
                 print_progress(
+                    "Blocks.get_blocks_by_timestamps",
                     i,
                     len(block_timestamps),
                     f"Resolving {len(block_timestamps)} block numbers",
@@ -206,6 +207,7 @@ class BlocksService:
 
         if len(block_timestamps) > 5:
             print_progress(
+                "Blocks.get_blocks_by_timestamps",
                 len(block_timestamps),
                 len(block_timestamps),
                 f"Resolving {len(block_timestamps)} block numbers",
@@ -230,6 +232,7 @@ class BlocksService:
         for i, num in enumerate(numbers):
             if len(numbers) > 5:
                 print_progress(
+                    "Blocks.get_blocks",
                     i,
                     len(numbers),
                     f"Resolving {len(numbers)} block numbers",
@@ -242,6 +245,7 @@ class BlocksService:
 
         if len(numbers) > 5:
             print_progress(
+                "Blocks.get_blocks",
                 len(numbers),
                 len(numbers),
                 f"Resolving {len(numbers)} block numbers",

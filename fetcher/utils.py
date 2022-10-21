@@ -10,6 +10,7 @@ from web3.datastructures import AttributeDict
 from web3.contract import ContractFunction, get_abi_input_types
 from web3.auto import w3
 from eth_utils import function_abi_to_4byte_selector
+from datetime import datetime
 
 import json
 
@@ -87,9 +88,13 @@ def calldata(call: ContractFunction) -> str:
 
 
 last_progress_bar_length = 0
+current_id = None
+start_timestamp = None
+last_percent = 0
 
 
 def print_progress(
+    id: str,
     iteration: int,
     total: int,
     prefix: str = "",
@@ -109,7 +114,22 @@ def print_progress(
         bar_length: character length of bar
     """
     global last_progress_bar_length
+    global current_id
+    global start_timestamp
+    global last_percent
 
+    if current_id is None or id != current_id:
+        start_timestamp = datetime.now()
+        current_id = id
+        last_percent = iteration / total
+
+    if (datetime.now() - start_timestamp).total_seconds() <= 1:
+        return
+
+    if iteration / total - last_percent < 0.01:
+        return
+
+    last_percent = iteration / total
     str_format = "{0:." + str(decimals) + "f}"
     percents = str_format.format(100 * (iteration / float(total)))
     filled_length = int(round(bar_length * iteration / float(total)))
@@ -122,3 +142,6 @@ def print_progress(
     if iteration == total:
         sys.stdout.write("\n")
         sys.stdout.flush()
+        current_id = None
+        start_timestamp = None
+        last_percent = 0

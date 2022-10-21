@@ -52,7 +52,6 @@ def test_block_numbers_and_timestamps(
     try:
         service = BlocksService(blocks_repo, web3_blocks_mock, grid_step)
         blocks = service.get_blocks(numbers)
-        # print(blocks)
         tss = [b.timestamp for b in blocks]
         blocks = service.get_blocks_by_timestamps(tss)
         nums = [b.number for b in blocks]
