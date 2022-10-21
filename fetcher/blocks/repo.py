@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Iterator, List, Tuple
 from fetcher.blocks.block import Block
 from fetcher.db import Repo
 
@@ -75,6 +75,14 @@ class BlocksRepo(Repo):
             out = cursor.fetchall()
         out = [Block.from_tuple(b) for b in out]
         # unique
+        out = list({(b.number): b for b in out}.values())
+        return sorted(out, key=lambda x: x.number)
+
+    def all(self, chain_id: int) -> List[Block]:
+        blocks = self._connection.execute(
+            "SELECT * FROM blocks WHERE chain_id = ?", (chain_id,)
+        )
+        out = [Block.from_tuple(b) for b in blocks]
         out = list({(b.number): b for b in out}.values())
         return sorted(out, key=lambda x: x.number)
 

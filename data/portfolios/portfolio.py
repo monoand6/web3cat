@@ -37,6 +37,7 @@ class PortfolioData:
     _end: int | datetime
     _step: int
     _tokens: List[str]
+    _base_tokens: List[str]
     _addresses: List[str]
 
     _erc20_datas: List[ERC20Data]
@@ -50,6 +51,7 @@ class PortfolioData:
     def __init__(
         self,
         tokens: List[str],
+        base_tokens: List[str],
         addresses: List[str],
         erc20_datas: List[ERC20Data],
         chainlink_datas: List[ChainlinkData],
@@ -70,6 +72,7 @@ class PortfolioData:
         self._data = None
         self._addresses = addresses
         self._tokens = tokens
+        self._base_tokens = base_tokens
 
     @staticmethod
     def create(
@@ -98,6 +101,7 @@ class PortfolioData:
             An instance of :class:`ChainlinkUSDData`
         """
         tokens = [t.lower() for t in tokens]
+        base_tokens = [t.lower() for t in base_tokens]
         erc20_datas = [
             ERC20Data.create(t, start, end, addresses, grid_step, cache_path, rpc)
             for t in tokens
@@ -118,6 +122,7 @@ class PortfolioData:
         ]
         return PortfolioData(
             tokens=tokens,
+            base_tokens=base_tokens,
             addresses=addresses,
             erc20_datas=erc20_datas,
             chainlink_datas=chainlink_datas,
@@ -128,11 +133,48 @@ class PortfolioData:
             end=end,
         )
 
+    def breakdown_by_address(self, base_token: str) -> pl.DataFrame:
+        base_token = base_token.lower()
+        data = self._with_total_in(self.data, base_token)[
+            ["timestamp", "date", "address", f"total {base_token}"]
+        ]
+        dfs = data.partition_by("address", True)
+        addr = dfs[0]["address"][0]
+        out = dfs[0].rename({f"total {base_token}": addr})[["timestamp", "date", addr]]
+        for df in dfs[1:]:
+            addr = df["address"][0]
+            df = df.rename({f"total {base_token}": addr})[["timestamp", addr]]
+            out = out.join(df, on="timestamp", how="left")
+        out = out.with_column(pl.col(self._addresses[0]).alias("total"))
+        for addr in self._addresses[1:]:
+            out = out.with_column(pl.col("total") + pl.col(addr).alias("total"))
+        return out
+
     @property
     def data(self) -> pl.DataFrame:
         if self._data is None:
             self._data = self._build_data()
         return self._data
+
+    def _with_total_in(self, data: pl.DataFrame, base_token: str) -> pl.DataFrame:
+        name = f"total {base_token}"
+        data = data.with_column(
+            (
+                pl.col(self._tokens[0])
+                * pl.col(f"{self._tokens[0]} / usd")
+                / pl.col(f"{base_token} / usd (base)")
+            ).alias(name)
+        )
+        for token in self._tokens[1:]:
+            data = data.with_column(
+                (
+                    pl.col(name)
+                    + pl.col(token)
+                    * pl.col(f"{token} / usd")
+                    / pl.col(f"{base_token} / usd (base)")
+                ).alias(name)
+            )
+        return data
 
     def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []
@@ -168,7 +210,7 @@ class PortfolioData:
             prices = (
                 self._base_chainlink_datas[i]
                 .prices(timestamps)[["timestamp", "price"]]
-                .rename({"price": f"{self._tokens[i]} / usd (base)"})
+                .rename({"price": f"{self._base_tokens[i]} / usd (base)"})
             )
             data = data.join(prices, on=["timestamp"], how="left")
 

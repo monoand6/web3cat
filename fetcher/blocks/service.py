@@ -101,7 +101,7 @@ class BlocksService:
         self._w3 = w3
         self._grid_step = grid_step
         self._latest_block = None
-        self._block_cache = {}
+        self._block_cache = None
         self._chain_id = None
 
     @staticmethod
@@ -127,6 +127,15 @@ class BlocksService:
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))
         return BlocksService(blocks_repo, w3, grid_step)
+
+    @property
+    def block_cache(self) -> Dict[int, Block]:
+        if self._block_cache is None:
+            self._block_cache = {}
+            blocks = self._blocks_repo.all(self._chain_id)
+            for b in blocks:
+                self._block_cache[b.number] = b
+        return self._block_cache
 
     @property
     def latest_block(self) -> Block:
@@ -329,19 +338,19 @@ class BlocksService:
 
         return self._snap_to_grid(num + 1, direction="right")
 
-    def _get_grid_block(self, number: int | None):
+    def _get_grid_block(self, number: int | None) -> Block:
         if number is None:
             return self.latest_block
         snapped_num = self._snap_to_grid(number, direction="left")
         if number != snapped_num:
             raise ValueError("API call for blocks out of grid are prohibited")
 
-        if number in self._block_cache:
-            return self._block_cache[number]
+        if number in self.block_cache:
+            return self.block_cache[number]
 
         block = next(iter(self._blocks_repo.find(self.chain_id, number)), None)
         if not block is None:
-            self._block_cache[number] = block
+            self.block_cache[number] = block
             return block
 
         block = self._fetch_block_from_rpc(number)
@@ -352,7 +361,7 @@ class BlocksService:
                 block = self.latest_block
         self._blocks_repo.save([block])
         self._blocks_repo.commit()
-        self._block_cache[block.number] = block
+        self.block_cache[block.number] = block
 
         return block
 
