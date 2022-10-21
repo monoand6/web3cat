@@ -46,11 +46,17 @@ class Web3BlocksMock:
             raise ValueError("Should never query block 0")
         return self.get_raw_block(num)
 
-    def block_right_after_timestamp(self, ts: int) -> Block:
+    def latest_block_at_timestamp(self, ts: int) -> Block:
         if ts >= self._data[LATEST_BLOCK]:
             bn = LATEST_BLOCK
             return Block(self.chain_id, bn, self._data[bn])
+        if ts < self._data[1]:
+            return None
         bn = bisect(self._data, ts)
+        while self._data[bn] > ts:
+            bn -= 1
+        while bn < LATEST_BLOCK and self._data[bn + 1] <= ts:
+            bn += 1
         if bn < 2:
             bn = 1
         return Block(self.chain_id, bn, self._data[bn])
