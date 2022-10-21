@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, Iterator, List
 from web3 import Web3
 from datetime import datetime
+from data.ethers.ether_data import EtherData
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
 from fetcher.erc20_metas import ERC20MetasService
@@ -39,6 +40,7 @@ class PortfolioData:
     _erc20_datas: List[ERC20Data]
     _chainlink_datas: List[ChainlinkUSDData]
     _base_chainlink_datas: List[ChainlinkUSDData]
+    _ether_data: EtherData | None
     _num_points: int
 
     _balances: pl.DataFrame | None
@@ -48,6 +50,7 @@ class PortfolioData:
         erc20_datas: List[ERC20Data],
         chainlink_datas: List[ChainlinkData],
         base_chainlink_datas: List[ChainlinkData],
+        ether_data: EtherData | None,
         start: datetime,
         end: datetime,
         step: int,
@@ -58,6 +61,7 @@ class PortfolioData:
         self._erc20_datas = erc20_datas
         self._chainlink_datas = chainlink_datas
         self._base_chainlink_datas = base_chainlink_datas
+        self._ether_data = ether_data
 
     @staticmethod
     def create(
@@ -85,10 +89,17 @@ class PortfolioData:
         Returns:
             An instance of :class:`ChainlinkUSDData`
         """
+        tokens = [t.lower() for t in tokens]
         erc20_datas = [
             ERC20Data.create(t, start, end, addresses, grid_step, cache_path, rpc)
             for t in tokens
+            if t != "eth"
         ]
+
+        ether_data = None
+        if "eth" in tokens:
+            ether_data = EtherData.create(grid_step, cache_path, rpc)
+            
         chainlink_datas = [
             ChainlinkUSDData.create(t, start, end, grid_step, cache_path, rpc)
             for t in tokens
@@ -101,6 +112,7 @@ class PortfolioData:
             erc20_datas=erc20_datas,
             chainlink_datas=chainlink_datas,
             base_chainlink_datas=base_chainlink_datas,
+            ether_datas=ether_data
             step=step,
             start=start,
             end=end,

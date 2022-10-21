@@ -34,6 +34,13 @@ class Web3BalanceMock:
     def eth(self):
         return self
 
+    @property
+    def chain_id(self):
+        return 1
+
+    def toChecksumAddress(self, addr: str):
+        return Web3.toChecksumAddress(addr)
+
     def get_balance(self, address: str, block_identifier: int) -> str:
         self.number_of_balances += 1
         block_identifier = block_identifier // 100 * 100

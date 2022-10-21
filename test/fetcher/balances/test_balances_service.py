@@ -21,10 +21,10 @@ def test_balances_service_basic_cache(
     try:
         assert web3_balances_mock.number_of_balances == 0
         for b in blocks:
-            balances_service.get_balance(1, address, b)
+            balances_service.get_balance(address, b)
         assert web3_balances_mock.number_of_balances == len(blocks)
         for b in blocks:
-            balances_service.get_balance(1, address, b)
+            balances_service.get_balance(address, b)
         assert web3_balances_mock.number_of_balances == len(blocks)
     finally:
         balances_service.clear_cache()
