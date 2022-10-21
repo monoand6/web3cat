@@ -150,6 +150,36 @@ class PortfolioData:
             out = out.with_column(pl.col("total") + pl.col(addr).alias("total"))
         return out
 
+    def breakdown_by_token(self, base_token: str) -> pl.DataFrame:
+        base_token = base_token.lower()
+        data = self.data.with_column(
+            (
+                pl.col(self._tokens[0])
+                * pl.col(f"{self._tokens[0]} / usd")
+                / pl.col(f"{base_token} / usd (base)")
+            ).alias(f"{self._tokens[0]}")
+        )
+        for token in self._tokens[1:]:
+            data = data.with_column(
+                (
+                    pl.col(token)
+                    * pl.col(f"{token} / usd")
+                    / pl.col(f"{base_token} / usd (base)")
+                ).alias(f"{token}")
+            )
+        column_names = ["timestamp", "date"]
+        column_names += [pl.col(f"{t}") for t in self._tokens]
+        agg_column_names = [pl.col(f"{t}").sum() for t in self._tokens]
+        data = (
+            data.groupby(["timestamp", "date", "address"])
+            .agg(agg_column_names)
+            .sort(["timestamp", "address"])
+        )
+        data = data.with_column(pl.col(f"{self._tokens[0]}").alias("total"))
+        for t in self._tokens[1:]:
+            data = data.with_column((pl.col("total") + pl.col(f"{t}")).alias("total"))
+        return data
+
     @property
     def data(self) -> pl.DataFrame:
         if self._data is None:
