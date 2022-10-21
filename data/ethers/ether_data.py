@@ -98,7 +98,10 @@ class EtherData:
             b.number for b in self._blocks_service.get_blocks_by_timestamps(timestamps)
         ]
         balances = self._balances_service.get_balances(addresses, blocks)
-        balances = [b.to_dict() for b in balances]
+        balances = [
+            {"timestamp": timestamps[i % len(timestamps)], **b.to_dict()}
+            for i, b in enumerate(balances)
+        ]
         return pl.DataFrame(balances)
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:

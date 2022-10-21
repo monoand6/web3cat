@@ -55,10 +55,11 @@ class PortfolioData:
         chainlink_datas: List[ChainlinkData],
         base_chainlink_datas: List[ChainlinkData],
         ether_data: EtherData | None,
-        start: datetime,
-        end: datetime,
+        start: int | datetime,
+        end: int | datetime,
         step: int,
     ):
+        start, end = self._resolve_timestamps([start, end])
         self._start = start
         self._end = end
         self._step = step
@@ -121,7 +122,7 @@ class PortfolioData:
             erc20_datas=erc20_datas,
             chainlink_datas=chainlink_datas,
             base_chainlink_datas=base_chainlink_datas,
-            ether_datas=ether_data,
+            ether_data=ether_data,
             step=step,
             start=start,
             end=end,
@@ -129,13 +130,52 @@ class PortfolioData:
 
     @property
     def data(self) -> pl.DataFrame:
-        if not self._data:
+        if self._data is None:
             self._data = self._build_data()
         return self._data
 
+    def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
+        resolved = []
+        for ts in timestamps:
+            # resolve datetimes to timestamps
+            if isinstance(ts, datetime):
+                resolved.append(int(time.mktime(ts.timetuple())))
+            else:
+                resolved.append(ts)
+        return resolved
+
     def _build_data(self) -> pl.DataFrame:
         timestamps = list(range(self._start, self._end, self._step))
-        data = self._erc20_datas[0].balances_for_addresses(self._addresses, timestamps)
-        for erc20 in self._erc20_datas:
-            data = data.join_asof(erc20, on="timestamp")
+        data = (
+            self._erc20_datas[0]
+            .balances_for_addresses(self._addresses, timestamps)
+            .rename({"balance": self._tokens[0]})
+        )
+        for i in range(1, len(self._erc20_datas)):
+            erc20 = self._erc20_datas[i]
+            balances = erc20.balances_for_addresses(self._addresses, timestamps)[
+                ["timestamp", "address", "balance"]
+            ].rename({"balance": self._tokens[i]})
+            data = data.join(balances, on=["timestamp", "address"], how="left")
+        for i in range(0, len(self._chainlink_datas)):
+            prices = (
+                self._chainlink_datas[i]
+                .prices(timestamps)[["timestamp", "price"]]
+                .rename({"price": f"{self._tokens[i]} / usd"})
+            )
+            data = data.join(prices, on=["timestamp"], how="left")
+        for i in range(0, len(self._base_chainlink_datas)):
+            prices = (
+                self._base_chainlink_datas[i]
+                .prices(timestamps)[["timestamp", "price"]]
+                .rename({"price": f"{self._tokens[i]} / usd (base)"})
+            )
+            data = data.join(prices, on=["timestamp"], how="left")
+
+        if self._ether_data:
+            balances = self._ether_data.balances(self._addresses, timestamps)[
+                ["timestamp", "address", "balance"]
+            ].rename({"balance": "eth"})
+            data = data.join(balances, on=["timestamp", "address"], how="left")
+
         return data
