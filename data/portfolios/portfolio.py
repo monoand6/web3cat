@@ -171,9 +171,9 @@ class PortfolioData:
         column_names += [pl.col(f"{t}") for t in self._tokens]
         agg_column_names = [pl.col(f"{t}").sum() for t in self._tokens]
         data = (
-            data.groupby(["timestamp", "date", "address"])
+            data.groupby(["timestamp", "date"])
             .agg(agg_column_names)
-            .sort(["timestamp", "address"])
+            .sort(["timestamp"])
         )
         data = data.with_column(pl.col(f"{self._tokens[0]}").alias("total"))
         for t in self._tokens[1:]:
