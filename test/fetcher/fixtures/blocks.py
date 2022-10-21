@@ -75,8 +75,7 @@ def web3_blocks_mock() -> Web3BlocksMock:
     initial_time = 1438200000
     for i in range(LATEST_BLOCK + 1):
         data.append(initial_time)
-        # initial_time += randint(10, 20)
-        initial_time += 15
+        initial_time += randint(10, 20)
 
     return Web3BlocksMock(data)
 
