@@ -36,6 +36,8 @@ class PortfolioData:
     _start: int | datetime
     _end: int | datetime
     _step: int
+    _tokens: List[str]
+    _addresses: List[str]
 
     _erc20_datas: List[ERC20Data]
     _chainlink_datas: List[ChainlinkUSDData]
@@ -43,10 +45,12 @@ class PortfolioData:
     _ether_data: EtherData | None
     _num_points: int
 
-    _balances: pl.DataFrame | None
+    _data: pl.DataFrame | None
 
     def __init__(
         self,
+        tokens: List[str],
+        addresses: List[str],
         erc20_datas: List[ERC20Data],
         chainlink_datas: List[ChainlinkData],
         base_chainlink_datas: List[ChainlinkData],
@@ -62,6 +66,9 @@ class PortfolioData:
         self._chainlink_datas = chainlink_datas
         self._base_chainlink_datas = base_chainlink_datas
         self._ether_data = ether_data
+        self._data = None
+        self._addresses = addresses
+        self._tokens = tokens
 
     @staticmethod
     def create(
@@ -99,7 +106,7 @@ class PortfolioData:
         ether_data = None
         if "eth" in tokens:
             ether_data = EtherData.create(grid_step, cache_path, rpc)
-            
+
         chainlink_datas = [
             ChainlinkUSDData.create(t, start, end, grid_step, cache_path, rpc)
             for t in tokens
@@ -109,20 +116,26 @@ class PortfolioData:
             for t in base_tokens
         ]
         return PortfolioData(
+            tokens=tokens,
+            addresses=addresses,
             erc20_datas=erc20_datas,
             chainlink_datas=chainlink_datas,
             base_chainlink_datas=base_chainlink_datas,
-            ether_datas=ether_data
+            ether_datas=ether_data,
             step=step,
             start=start,
             end=end,
         )
 
-    def _build_timestamps(self) -> Iterator[int]:
-        return range(self._start, self._end, self._step)
+    @property
+    def data(self) -> pl.DataFrame:
+        if not self._data:
+            self._data = self._build_data()
+        return self._data
 
-    def _build_balances(self) -> pl.DataFrame:
-        pass
-
-    def _get_eth_balances(self, timestamps: List[int]) -> List[np.float64]:
-        pass
+    def _build_data(self) -> pl.DataFrame:
+        timestamps = list(range(self._start, self._end, self._step))
+        data = self._erc20_datas[0].balances_for_addresses(self._addresses, timestamps)
+        for erc20 in self._erc20_datas:
+            data = data.join_asof(erc20, on="timestamp")
+        return data

@@ -289,7 +289,7 @@ class ERC20Data:
                 first_block - 1,
             ).response
             initial_total_supply = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timetamps(timestamps))
+        timestamps = sorted(self._resolve_timestamps(timestamps))
         bs = self._zero_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
         out = [
             {
@@ -341,7 +341,7 @@ class ERC20Data:
                 first_block - 1,
             ).response
             initial_balance = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timetamps(timestamps))
+        timestamps = sorted(self._resolve_timestamps(timestamps))
 
         bs = self._zero_balances(address, timestamps, self.transfers)
         out = [
@@ -354,7 +354,26 @@ class ERC20Data:
         ]
         return pl.DataFrame(out)
 
-    def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
+    def balances_for_addresses(
+        self, addresses: List[str], timestamps: List[int | datetime]
+    ):
+        out = []
+        for addr in addresses:
+            balances = self.balances(addr, timestamps).to_dicts()
+            balances = [
+                {
+                    "timestamp": b["timestamp"],
+                    "date": b["date"],
+                    "address": addr,
+                    "balance": b["balance"],
+                }
+                for b in balances
+            ]
+            out += balances
+
+        return pl.DataFrame(out).sort(pl.col("timestamp"))
+
+    def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []
         for ts in timestamps:
             # resolve datetimes to timestamps
