@@ -13,10 +13,10 @@ Example:
         latest_block = service.get_latest_block()
 
         new_year = datetime(2022, 1, 1, tzinfo=timezone.utc)
-        new_year_block = service.get_block_right_after_timestamp(int(new_year.timestamp()))
+        new_year_block = service.get_blocks_by_timestamps(int(new_year.timestamp()))[0]
         # => block 13916166
 
-        new_year_block = service.get_block_right_after_timestamp(int(new_year.timestamp()))
+        new_year_block = service.get_blocks_by_timestamps(int(new_year.timestamp()))[0]
         # cached result
 
         new_year_block = service.get_block(new_year_block.number)

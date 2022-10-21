@@ -118,7 +118,7 @@ class ERC20Data:
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))
         events_service = EventsService.create(cache_path)
-        blocks_service = BlocksService.create(cache_path, rpc)
+        blocks_service = BlocksService.create(grid_step, cache_path, rpc)
         calls_service = CallsService.create(cache_path)
         erc20_metas_service = ERC20MetasService.create(cache_path, rpc)
 
@@ -199,9 +199,9 @@ class ERC20Data:
         """
         if not hasattr(self, "_from_block"):
             ts = time.mktime(self._from_date.timetuple())
-            self._from_block = self._blocks_service.get_block_right_after_timestamp(
-                ts
-            ).number
+            self._from_block = self._blocks_service.get_blocks_by_timestamps(ts)[
+                0
+            ].number
         return self._from_block
 
     @property
@@ -211,9 +211,7 @@ class ERC20Data:
         """
         if not hasattr(self, "_to_block"):
             ts = time.mktime(self._to_date.timetuple())
-            self._to_block = self._blocks_service.get_block_right_after_timestamp(
-                ts
-            ).number
+            self._to_block = self._blocks_service.get_blocks_by_timestamps(ts)[0].number
         return self._to_block
 
     @property
@@ -407,9 +405,8 @@ class ERC20Data:
             events += fetched_events
 
         block_numbers = [e.block_number for e in events]
-        timestamps = self._blocks_service.get_block_timestamps(
-            block_numbers, self._grid_step
-        )
+        blocks = self._blocks_service.get_blocks(block_numbers)
+        timestamps = [b.timestamp for b in blocks]
         ts_index = {
             block_number: timestamp
             for block_number, timestamp in zip(block_numbers, timestamps)

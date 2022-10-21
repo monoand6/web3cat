@@ -184,7 +184,12 @@ class BlocksService:
 
         return self._synthesize_block_from_timestamp(left_block, right_block, timestamp)
 
-    def get_blocks_by_timestamps(self, block_timestamps: List[int]) -> List[Block]:
+    def get_blocks_by_timestamps(
+        self, block_timestamps: int | List[int]
+    ) -> List[Block]:
+        if not isinstance(block_timestamps, list):
+            block_timestamps = [block_timestamps]
+
         if len(block_timestamps) == 0:
             return []
 
