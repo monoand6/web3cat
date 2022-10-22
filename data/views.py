@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, time
 from enum import Enum
 from typing import Any, Dict, List, Set
 from bokeh.plotting import Figure, figure, show
@@ -10,9 +10,10 @@ from bokeh.models import (
     NumeralTickFormatter,
     BasicTickFormatter,
 )
-from bokeh.palettes import Category10, Pastel1
+from bokeh.palettes import Category10, Pastel1, Category20
 from data.chainlink.chainlink_data import ChainlinkData
 from data.erc20s.erc20_data import ERC20Data
+from data.portfolios.portfolio import PortfolioData
 from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
 from fetcher.utils import short_address
 import numpy as np
@@ -181,8 +182,80 @@ class DataView:
         )
         return self
 
+    def with_portfolio_by_token(
+        self,
+        tokens: List[str],
+        addresses: List[str],
+        base_token: str,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        num_points: int = 100,
+        portfolio_data: PortfolioData | None = None,
+        **kwargs,
+    ):
+        if portfolio_data is None and (
+            start is None
+            or end is None
+            or tokens is None
+            or addresses is None
+            or base_token is None
+        ):
+            raise ValueError(
+                "chainlink_data or all: start, end, token0 and token1 should be specified"
+            )
+        if start is not None:
+            start, end = self._resolve_timestamps(start, end)
+            step = (start - end) // num_points
+            portfolio_data = PortfolioData.create(
+                start=start,
+                end=end,
+                tokens=tokens,
+                base_tokens=[base_token],
+                addresses=addresses,
+                step=step,
+            )
+        base_token_normalized = (
+            portfolio_data._base_chainlink_datas[0]
+            ._erc20_metas_service.get(base_token)
+            .symbol
+        )
+        start = portfolio_data.data["timestamp"][0]
+        end = portfolio_data.data["timestamp"][-1]
+        step = (end - start) // num_points
+
+        df = portfolio_data.breakdown_by_token(base_token)
+        x_axis = XAxis.TIMESERIES
+        y_axis = YAxis(
+            "Balance",
+            f"{base_token_normalized.upper()}",
+        )
+        self._update_axes(x_axis, y_axis, df["total"].min(), df["total"].max())
+        num_series = len(portfolio_data._tokens)
+        colors = Category20[20] * (1 + num_series // len(Category20[20]))
+        colors = colors[:num_series]
+        self._figure.varea_stack(
+            stackers=portfolio_data._tokens,
+            x="date",
+            color=colors,
+            legend_label=portfolio_data._tokens,
+            source=df.to_dict(),
+            alpha=0.8,
+            **kwargs,
+        )
+        return self
+
     def show(self):
         show(self._figure)
+
+    def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
+        resolved = []
+        for ts in timestamps:
+            # resolve datetimes to timestamps
+            if isinstance(ts, datetime):
+                resolved.append(int(time.mktime(ts.timetuple())))
+            else:
+                resolved.append(ts)
+        return resolved
 
     def _get_color(self):
         color = self._colors[self._numplots % len(self._colors)]

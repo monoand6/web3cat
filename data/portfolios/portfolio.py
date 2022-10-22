@@ -133,6 +133,9 @@ class PortfolioData:
             end=end,
         )
 
+    def base_metas(self) -> List[ERC20Meta]:
+        return [chainlink_data.meta for chainlink_data in self._chainlink_datas]
+
     def breakdown_by_address(self, base_token: str) -> pl.DataFrame:
         base_token = base_token.lower()
         data = self._with_total_in(self.data, base_token)[
