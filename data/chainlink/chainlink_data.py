@@ -34,6 +34,23 @@ class ChainlinkUSDData:
     See :mod:`data.chainlink` for examples.
     """
 
+    UPDATE_SCHEMA = {
+        "timestamp": pl.UInt64,
+        "date": pl.Datetime,
+        "block_number": pl.UInt64,
+        "transaction_hash": pl.Utf8,
+        "log_index": pl.UInt64,
+        "round": pl.UInt64,
+        "updated_at": pl.UInt64,
+        "price": pl.Float64,
+    }
+
+    PRICE_SCHEMA = {
+        "timestamp": pl.UInt64,
+        "date": pl.Datetime,
+        "price": pl.Float64,
+    }
+
     _from_block: int | None
     _to_block: int | None
     _from_date: datetime | None
@@ -241,6 +258,8 @@ class ChainlinkUSDData:
         while timestamps[i] < updates[0]["timestamp"]:
             price_list.append(self.initial_price)
             i += 1
+            if i == len(timestamps):
+                break
         j = 0
         for ts in timestamps[i:]:
             while j < len(updates) and updates[j]["timestamp"] <= ts:
@@ -256,7 +275,7 @@ class ChainlinkUSDData:
             }
             for ts, price in zip(timestamps, price_list)
         ]
-        return pl.DataFrame(out)
+        return pl.DataFrame(out, ChainlinkUSDData.PRICE_SCHEMA)
 
     @property
     def updates(self) -> pl.DataFrame:
@@ -280,8 +299,9 @@ class ChainlinkUSDData:
             for block_number, timestamp in zip(block_numbers, timestamps)
         }
         factor = 10**self.oracle_decimals
-        return pl.from_dicts(
-            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
+        return pl.DataFrame(
+            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
+            ChainlinkUSDData.UPDATE_SCHEMA,
         ).sort(pl.col("timestamp"))
 
     def _event_to_row(self, e: Event, ts: int, val_factor: int) -> Dict[str, Any]:
@@ -435,9 +455,10 @@ class ChainlinkData:
         updates = self.updates[["timestamp", "price"]].to_dicts()
         i = 0
         price_list = []
-        while timestamps[i] < updates[0]["timestamp"]:
-            price_list.append(self.initial_price)
-            i += 1
+        if len(updates) > 0:
+            while timestamps[i] < updates[0]["timestamp"]:
+                price_list.append(self.initial_price)
+                i += 1
         j = 0
         for ts in timestamps[i:]:
             while j < len(updates) and updates[j]["timestamp"] <= ts:
@@ -453,7 +474,7 @@ class ChainlinkData:
             }
             for ts, price in zip(timestamps, price_list)
         ]
-        return pl.DataFrame(out)
+        return pl.DataFrame(out, ChainlinkUSDData.PRICE_SCHEMA)
 
     def _build_updates(self) -> pl.DataFrame:
         if self._token0_data is None:
@@ -485,7 +506,7 @@ class ChainlinkData:
                 t1_item["price"] = t1_item["price"] / last0_price
                 out.append(t1_item)
 
-        return pl.DataFrame(out)
+        return pl.DataFrame(out, ChainlinkUSDData.UPDATE_SCHEMA)
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []

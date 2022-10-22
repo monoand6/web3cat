@@ -34,6 +34,17 @@ class ERC20Data:
     See :mod:`data.erc20s` for examples.
     """
 
+    TRANSFER_SCHEMA = {
+        "timestamp": pl.UInt64,
+        "date": pl.Datetime,
+        "block_number": pl.UInt64,
+        "transaction_hash": pl.Utf8,
+        "log_index": pl.UInt64,
+        "from": pl.Utf8,
+        "to": pl.Utf8,
+        "value": pl.Float64,
+    }
+
     _from_block: int | None
     _to_block: int | None
     _from_date: datetime | None
@@ -432,8 +443,9 @@ class ERC20Data:
             for block_number, timestamp in zip(block_numbers, timestamps)
         }
         factor = 10**self.meta.decimals
-        transfers = pl.from_dicts(
-            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events]
+        transfers = pl.DataFrame(
+            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
+            ERC20Data.TRANSFER_SCHEMA,
         )
         return transfers.unique(subset=["transaction_hash", "log_index"]).sort(
             pl.col("timestamp")
