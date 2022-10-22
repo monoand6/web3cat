@@ -11,7 +11,7 @@ from math import log
 
 from fetcher.blocks.block import Block
 from fetcher.db import connection_from_path
-from fetcher.utils import json_response, print_progress
+from fetcher.utils import get_chain_id, json_response, print_progress
 
 
 DEFAULT_BLOCK_TIMESTAMP_GRID = 1000
@@ -152,7 +152,7 @@ class BlocksService:
         Ethereum chain_id
         """
         if self._chain_id is None:
-            self._chain_id = self._w3.eth.chain_id
+            self._chain_id = get_chain_id(self._w3)
         return self._chain_id
 
     def get_latest_block_at_timestamp(self, timestamp: int) -> Block | None:

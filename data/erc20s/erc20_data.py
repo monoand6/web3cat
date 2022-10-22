@@ -20,6 +20,7 @@ from web3.auto import w3 as w3auto
 
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 from fetcher.db import connection_from_path
+from fetcher.utils import get_chain_id
 
 
 class ERC20Data:
@@ -259,7 +260,7 @@ class ERC20Data:
         Ethereum chain_id
         """
         if self._chain_id is None:
-            self._chain_id = self._w3.eth.chain_id
+            self._chain_id = get_chain_id(self._w3)
         return self._chain_id
 
     @property

@@ -18,6 +18,8 @@ from web3.auto import w3 as w3auto
 from web3.constants import ADDRESS_ZERO
 import numpy as np
 
+from fetcher.utils import get_chain_id
+
 RESOLVER_MAPPING = {"weth": "eth", "wbtc": "btc"}
 
 
@@ -171,7 +173,7 @@ class ChainlinkUSDData:
         Ethereum chain_id
         """
         if self._chain_id is None:
-            self._chain_id = self._w3.eth.chain_id
+            self._chain_id = get_chain_id(self._w3)
         return self._chain_id
 
     @property

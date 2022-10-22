@@ -9,6 +9,7 @@ from eth_typing.encoding import HexStr
 from web3.datastructures import AttributeDict
 from web3.contract import ContractFunction, get_abi_input_types
 from web3.auto import w3
+from web3 import Web3
 from eth_utils import function_abi_to_4byte_selector
 from datetime import datetime
 
@@ -145,3 +146,16 @@ def print_progress(
         current_id = None
         start_timestamp = None
         last_percent = 0
+
+
+chain_id_cache = {}
+
+
+def get_chain_id(w3: Web3):
+    global chain_id_cache
+    uri = w3.HTTPProvider.endpoint_uri
+    if uri in chain_id_cache:
+        return chain_id_cache[uri]
+    chain_id = w3.eth.chain_id
+    chain_id_cache[uri] = chain_id
+    return chain_id
