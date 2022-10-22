@@ -15,6 +15,7 @@ from fetcher.utils import get_chain_id, json_response, print_progress
 
 
 DEFAULT_BLOCK_TIMESTAMP_GRID = 1000
+block_service_cache = {}
 
 
 class BlocksService:
@@ -120,13 +121,18 @@ class BlocksService:
         Returns:
             An instance of :class:`BlocksService`
         """
+        cache_key = f"{grid_step}|{cache_path}|{rpc}"
+        if cache_key in block_service_cache:
+            return block_service_cache[cache_key]
 
         conn = connection_from_path(cache_path)
         blocks_repo = BlocksRepo(conn)
         w3 = w3auto
         if rpc:
             w3 = Web3(Web3.HTTPProvider(rpc))
-        return BlocksService(blocks_repo, w3, grid_step)
+        service = BlocksService(blocks_repo, w3, grid_step)
+        block_service_cache[cache_key] = service
+        return service
 
     @property
     def block_cache(self) -> Dict[int, Block]:
