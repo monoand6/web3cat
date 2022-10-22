@@ -232,6 +232,12 @@ class PortfolioData:
                 ["timestamp", "address", "balance"]
             ].rename({"balance": self._tokens[i]})
             data = data.join(balances, on=["timestamp", "address"], how="left")
+        if self._ether_data:
+            balances = self._ether_data.balances(self._addresses, timestamps)[
+                ["timestamp", "address", "balance"]
+            ].rename({"balance": "eth"})
+            data = data.join(balances, on=["timestamp", "address"], how="left")
+
         for i in range(0, len(self._chainlink_datas)):
             prices = (
                 self._chainlink_datas[i]
@@ -246,11 +252,5 @@ class PortfolioData:
                 .rename({"price": f"{self._base_tokens[i]} / usd (base)"})
             )
             data = data.join(prices, on=["timestamp"], how="left")
-
-        if self._ether_data:
-            balances = self._ether_data.balances(self._addresses, timestamps)[
-                ["timestamp", "address", "balance"]
-            ].rename({"balance": "eth"})
-            data = data.join(balances, on=["timestamp", "address"], how="left")
 
         return data

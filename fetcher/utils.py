@@ -124,8 +124,8 @@ def print_progress(
         current_id = id
         last_percent = iteration / total
 
-    if (datetime.now() - start_timestamp).total_seconds() <= 1:
-        return
+    # if (datetime.now() - start_timestamp).total_seconds() <= 1:
+    #     return
 
     if iteration / total - last_percent < 0.01:
         return

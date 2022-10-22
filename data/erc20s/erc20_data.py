@@ -311,7 +311,10 @@ class ERC20Data:
             }
             for ts, balance in zip(timestamps, bs)
         ]
-        return pl.DataFrame(out)
+        return pl.DataFrame(
+            out,
+            {"timestamp": pl.UInt64, "date": pl.Datetime, "total_supply": pl.Float64},
+        )
 
     def balances(
         self,
@@ -344,7 +347,12 @@ class ERC20Data:
 
         """
         if initial_balance is None:
-            first_block = self.transfers["block_number"][0]
+            if len(self.transfers) > 0:
+                first_block = self.transfers["block_number"][0]
+            else:
+                first_block = self._blocks_service.get_blocks_by_timestamps(
+                    timestamps[0]
+                )[0].number
             initial_balance_wei = self._calls_service.get_call(
                 self.chain_id,
                 self.token_contract.functions.balanceOf(
@@ -364,7 +372,9 @@ class ERC20Data:
             }
             for ts, balance in zip(timestamps, bs)
         ]
-        return pl.DataFrame(out)
+        return pl.DataFrame(
+            out, {"timestamp": pl.UInt64, "date": pl.Datetime, "balance": pl.Float64}
+        )
 
     def balances_for_addresses(
         self, addresses: List[str], timestamps: List[int | datetime]
@@ -376,14 +386,22 @@ class ERC20Data:
                 {
                     "timestamp": b["timestamp"],
                     "date": b["date"],
-                    "address": addr,
+                    "address": addr.lower(),
                     "balance": b["balance"],
                 }
                 for b in balances
             ]
             out += balances
 
-        return pl.DataFrame(out).sort(pl.col("timestamp"))
+        return pl.DataFrame(
+            out,
+            {
+                "timestamp": pl.UInt64,
+                "date": pl.Datetime,
+                "address": pl.Utf8,
+                "balance": pl.Float64,
+            },
+        ).sort(pl.col("timestamp"))
 
     def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []

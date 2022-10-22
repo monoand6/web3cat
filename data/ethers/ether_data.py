@@ -103,7 +103,17 @@ class EtherData:
             {"timestamp": timestamps[i % len(timestamps)], **b.to_dict()}
             for i, b in enumerate(balances)
         ]
-        return pl.DataFrame(balances)
+        df = pl.DataFrame(
+            balances,
+            {
+                "timestamp": pl.UInt64,
+                "chainId": pl.UInt64,
+                "blockNumber": pl.UInt64,
+                "address": pl.Utf8,
+                "balance": pl.Float64,
+            },
+        )
+        return df
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
         resolved = []
