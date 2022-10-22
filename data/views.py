@@ -244,6 +244,68 @@ class DataView:
         )
         return self
 
+    def with_portfolio_by_address(
+        self,
+        tokens: List[str],
+        addresses: List[str],
+        base_token: str,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        num_points: int = 100,
+        portfolio_data: PortfolioData | None = None,
+        **kwargs,
+    ):
+        if portfolio_data is None and (
+            start is None
+            or end is None
+            or tokens is None
+            or addresses is None
+            or base_token is None
+        ):
+            raise ValueError(
+                "chainlink_data or all: start, end, token0 and token1 should be specified"
+            )
+        if start is not None:
+            start, end = self._resolve_timestamps(start, end)
+            step = (start - end) // num_points
+            portfolio_data = PortfolioData.create(
+                start=start,
+                end=end,
+                tokens=tokens,
+                base_tokens=[base_token],
+                addresses=addresses,
+                step=step,
+            )
+        base_token_normalized = (
+            portfolio_data._base_chainlink_datas[0]
+            ._erc20_metas_service.get(base_token)
+            .symbol
+        )
+        start = portfolio_data.data["timestamp"][0]
+        end = portfolio_data.data["timestamp"][-1]
+        step = (end - start) // num_points
+
+        df = portfolio_data.breakdown_by_address(base_token)
+        x_axis = XAxis.TIMESERIES
+        y_axis = YAxis(
+            "Balance",
+            f"{base_token_normalized.upper()}",
+        )
+        self._update_axes(x_axis, y_axis, df["total"].min(), df["total"].max())
+        num_series = len(portfolio_data._addresses)
+        colors = Category20[20] * (1 + num_series // len(Category20[20]))
+        colors = colors[:num_series]
+        self._figure.varea_stack(
+            stackers=portfolio_data._addresses,
+            x="date",
+            color=colors,
+            legend_label=[short_address(addr) for addr in portfolio_data._addresses],
+            source=df.to_dict(),
+            alpha=0.8,
+            **kwargs,
+        )
+        return self
+
     def show(self):
         show(self._figure)
 

@@ -67,7 +67,7 @@ def short_address(address: str) -> str:
             # 0x6B17...1d0F
 
     """
-    return f"{address[:6]}...{address[37:]}"
+    return f"{address[:6]}...{address[38:]}"
 
 
 def calldata(call: ContractFunction) -> str:
