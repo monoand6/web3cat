@@ -5,7 +5,7 @@ from fetcher.db import Repo
 
 class BalancesRepo(Repo):
     """
-    Reading and writing :class:`Balance` to database.
+    Reading and writing :class:`Balance` to database cache.
     """
 
     def find(
@@ -16,16 +16,16 @@ class BalancesRepo(Repo):
         to_block: int = 2**32 - 1,
     ) -> Iterator[Balance]:
         """
-        Find all balances in the database.
+        Find all balances in the database cache.
 
         Args:
             chain_id: Ethereum chain_id
-            address: Contract address
+            address: Contract / EOA address
             from_block: starting from this block (inclusive)
             to_block: ending with this block (non-inclusive)
 
         Returns:
-            List of found balances
+            An iterator over found balances
         """
         rows = self._connection.execute(
             "SELECT * FROM balances WHERE chain_id = ? AND address = ? AND block_number >= ? AND block_number < ?",
@@ -35,20 +35,18 @@ class BalancesRepo(Repo):
 
     def save(self, balances: List[Balance]):
         """
-        Save a set of balances into the database.
+        Save a list of balances into the database cache.
 
         Args:
             balances: List of balances to save
         """
-        cursor = self._connection.cursor()
         rows = [e.to_tuple() for e in balances]
-        cursor.executemany(
+        self._connection.executemany(
             "INSERT INTO balances VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
 
     def purge(self):
         """
-        Clean all database entries
+        Clean all balances entries from the database cache.
         """
-        cursor = self._connection.cursor()
-        cursor.execute("DELETE FROM balances")
+        self._connection.execute("DELETE FROM balances")
