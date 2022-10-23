@@ -12,6 +12,8 @@ There are several services that do exactly this:
 +------------------------------------------------+---------------------------+
 | :class:`fetcher.calls.CallsService`            | Static calls to Ethereum  |
 +------------------------------------------------+---------------------------+
+| :class:`fetcher.balances.BalancesService`      | ETH balances on Ethereum  |
++------------------------------------------------+---------------------------+
 | :class:`fetcher.blocks.BlocksService`          | Fetching blocks metadata  |
 +------------------------------------------------+---------------------------+
 | :class:`fetcher.erc20_metas.ERC20MetasService` | Fetching token metadata   |
