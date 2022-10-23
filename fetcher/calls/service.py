@@ -32,7 +32,7 @@ class CallsService:
                          | Find response               |           |
                          |---------------------------------------->|
                          |                             |           |
-                         | If not found: call web3     |           |
+                         | If not found: call Web3     |           |
                          |---------------------------->|           |
                          |                             |           |
                          | Save response               |           |

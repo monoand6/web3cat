@@ -15,15 +15,41 @@ from fetcher.utils import get_chain_id, json_response, print_progress, short_add
 
 class BalancesService:
     """
-    Service for web3 balances.
+    Service for getting and caching Web3 ETH balances.
 
-    The sole purpose of this service is to cache web 3 balances and
-    serve them on subsequent balances.
+    Since there's no easy way of getting ETH balance deltas from
+    Web3, this service literally queries and caches ETH balance
+    for every desired date and address. Hence it's not as effective as
+    querying token balances, based on fetching Transfer events (deltas)
+    in batches.
 
+    **Request - Response flow**
 
+    ::
+
+                +-----------------+                +-------+ +---------------+
+                | BalancesService |                | Web3  | | BalancesRepo  |
+                +-----------------+                +-------+ +---------------+
+        ---------------  |                             |             |
+        | Request call |-|                             |             |
+        |--------------| |                             |             |
+                         |                             |             |
+                         | Find Balance                |             |
+                         |------------------------------------------>|
+                         |                             |             |
+                         | If not found: call Web3     |             |
+                         |---------------------------->|             |
+                         |                             |             |
+                         | Save response               |             |
+                         |------------------------------------------>|
+            -----------  |                             |             |
+            | Response |-|                             |             |
+            |----------| |                             |             |
+                         |                             |             |
 
     Args:
-        balances_repo: Repo of balances
+        balances_repo: An instance of :class:`BalancesRepo`
+        w3: An instance of :class:`web3.Web3`
     """
 
     _w3: Web3
@@ -44,6 +70,7 @@ class BalancesService:
 
         Args:
             cache_path: path for the cache database
+            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
 
         Returns:
             An instance of :class:`BalancesService`
@@ -66,6 +93,17 @@ class BalancesService:
         return self._chain_id
 
     def get_balances(self, addresses: List[str], blocks: List[int]) -> List[Balance]:
+        """
+        Get ETH balances for a list of blocks and addresses.
+
+        Args:
+            addresses: a list of addresses for ETH balances
+            blocks: a list of blocks for ETH balances
+
+        Returns:
+            A list of :class:`Balance` for addresses and blocks. The size of a list = ``len(addresses) * len(blocks)``
+        """
+        addresses = [addr.lower() for addr in addresses]
         total_number = len(addresses) * len(blocks)
         if total_number == 0:
             return []
@@ -88,6 +126,17 @@ class BalancesService:
         return out
 
     def get_balance(self, address: str, block_number: int) -> Balance:
+        """
+        Get ETH balance for a block and an address.
+
+        Args:
+            address: The address for the ETH balance
+            block: The block for which the ETH balance is fetched
+
+        Returns:
+            ETH balance
+        """
+        address = address.lower()
         balances = list(
             self._balances_repo.find(
                 self.chain_id, address, block_number, block_number + 1
@@ -116,7 +165,7 @@ class BalancesService:
 
     def clear_cache(self):
         """
-        Delete all cached entries
+        Delete all cached ETH balances
         """
         self._balances_repo.purge()
         self._balances_repo.commit()
