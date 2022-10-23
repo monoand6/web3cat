@@ -34,9 +34,12 @@ class EventsRepo(Repo):
         cursor = self._connection.cursor()
         args_query, args_values = self._convert_filter_to_sql(argument_filters)
         statement = f"SELECT * FROM events WHERE chain_id = ? AND event = ? AND address = ? AND block_number >= ? AND block_number < ?{args_query}"
+        args = tuple(
+            [chain_id, event, address.lower(), from_block, to_block, *args_values]
+        )
         cursor.execute(
             statement,
-            [chain_id, event, address.lower(), from_block, to_block, *args_values],
+            args,
         )
         rows = cursor.fetchall()
         return (Event.from_tuple(r) for r in rows)

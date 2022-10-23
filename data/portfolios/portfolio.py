@@ -70,7 +70,7 @@ class PortfolioData:
         self._base_chainlink_datas = base_chainlink_datas
         self._ether_data = ether_data
         self._data = None
-        self._addresses = addresses
+        self._addresses = [addr.lower() for addr in addresses]
         self._tokens = tokens
         self._base_tokens = base_tokens
 
@@ -102,8 +102,17 @@ class PortfolioData:
         """
         tokens = [t.lower() for t in tokens]
         base_tokens = [t.lower() for t in base_tokens]
+        addresses = [addr.lower() for addr in addresses]
         erc20_datas = [
-            ERC20Data.create(t, start, end, addresses, grid_step, cache_path, rpc)
+            ERC20Data.create(
+                token=t,
+                start=start,
+                end=end,
+                address_filter=addresses,
+                grid_step=grid_step,
+                cache_path=cache_path,
+                rpc=rpc,
+            )
             for t in tokens
             if t != "eth"
         ]
