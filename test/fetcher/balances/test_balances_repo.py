@@ -11,11 +11,10 @@ def test_read_write(balance: Balance, balances_repo: BalancesRepo):
     c1 = balance
     c2 = Balance(
         chain_id=c1.chain_id,
-        block_number=c1.block_number,
+        block_number=c1.block_number + 10,
         address=c1.address,
         balance=c1.balance,
     )
-    c2.block_number += 10
     balances_repo.save([c1, c2])
     balances = list(
         balances_repo.find(c1.chain_id, c1.address, c1.block_number, c1.block_number)

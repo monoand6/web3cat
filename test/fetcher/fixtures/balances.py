@@ -7,6 +7,7 @@ from fixtures.general import Web3
 
 from fetcher.balances.repo import BalancesRepo
 from fetcher.balances.balance import Balance
+from fixtures.general import Web3Mock
 
 
 @pytest.fixture
@@ -22,24 +23,13 @@ BALANCES_END_BLOCK = 15642000
 BALANCES = {b: b * 1000 for b in range(BALANCES_START_BLOCK, BALANCES_END_BLOCK, 100)}
 
 
-class Web3BalanceMock:
+class Web3BalanceMock(Web3Mock):
     number_of_balances: int
 
     def __init__(self):
         self.number_of_balances = 0
         self.min_bn = min(BALANCES.keys())
         self.max_bn = max(BALANCES.keys())
-
-    @property
-    def eth(self):
-        return self
-
-    @property
-    def chain_id(self):
-        return 1
-
-    def toChecksumAddress(self, addr: str):
-        return Web3.toChecksumAddress(addr)
 
     def get_balance(self, address: str, block_identifier: int) -> str:
         self.number_of_balances += 1

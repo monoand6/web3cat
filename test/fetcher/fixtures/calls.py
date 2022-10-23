@@ -10,6 +10,7 @@ from web3.contract import Contract
 
 from fetcher.calls.repo import CallsRepo
 from fetcher.calls.service import CallsService
+from fixtures.general import Web3Mock
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def calls_service(calls_repo: CallsRepo) -> CallsService:
     return CallsService(calls_repo)
 
 
-class Web3ContractCallMock:
+class Web3ContractCallMock(Web3Mock):
     _calls: Dict[int, Call]
     number_of_calls: int
 

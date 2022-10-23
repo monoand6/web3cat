@@ -48,3 +48,24 @@ def w3() -> Web3:
             "To run test you need to setup web3 rpc url (TEST_WEB3_PROVIDER_URI env variable)"
         )
     return Web3(Web3.HTTPProvider(url))
+
+
+class Web3Mock:
+    @property
+    def eth(self):
+        return self
+
+    @property
+    def HTTPProvider(self):
+        return self
+
+    @property
+    def chain_id(self):
+        return 1
+
+    @property
+    def endpoint_uri(self):
+        return "http://localhost:3333"
+
+    def toChecksumAddress(self, addr: str):
+        return Web3.toChecksumAddress(addr)

@@ -1,6 +1,8 @@
 from bisect import bisect
+import os
 from random import randint
 from sqlite3 import Connection
+import sys
 from typing import Any, Dict, List
 import pytest
 from eth_typing.encoding import HexStr
@@ -10,6 +12,8 @@ from fetcher.blocks.service import BlocksService
 from fetcher.blocks.repo import BlocksRepo
 from fetcher.blocks.block import Block
 from web3.exceptions import BlockNotFound
+
+from fixtures.general import Web3Mock
 
 LATEST_BLOCK = 26789
 INTIAL_TIME = 1438200000
@@ -23,18 +27,13 @@ def blocks_repo(conn: Connection) -> BlocksRepo:
     return BlocksRepo(conn)
 
 
-class Web3BlocksMock:
+class Web3BlocksMock(Web3Mock):
     _data: List[int]
     number_of_calls: int
 
     def __init__(self, data: Dict[int, int]):
         self._data = data
         self.number_of_calls = 0
-        self.chain_id = 1
-
-    @property
-    def eth(self):
-        return self
 
     def get_block(self, num: int | str) -> Dict[str, Any]:
         self.number_of_calls += 1
