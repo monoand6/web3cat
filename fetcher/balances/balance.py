@@ -8,16 +8,20 @@ class Balance:
     Balance represents a snapshot of the ETH balance on Ethereum blockchain.
     """
 
-    _chain_id: int
-    _block_number: int
-    _address: str
-    _balance: int
+    #: Ethereum chain_id
+    chain_id: int
+    #: The block number of the balance snapshot
+    block_number: int
+    #: The address for the ETH balance (always stored lowercase)
+    address: str
+    #: ETH balance
+    balance: int
 
     def __init__(self, chain_id: int, block_number: int, address: str, balance: int):
-        self._chain_id = chain_id
-        self._block_number = block_number
-        self._address = address.lower()
-        self._balance = balance
+        self.chain_id = chain_id
+        self.block_number = block_number
+        self.address = address.lower()
+        self.balance = balance
 
     @staticmethod
     def from_tuple(tuple: Tuple[int, int, str, int]) -> Balance:
@@ -43,21 +47,10 @@ class Balance:
             self.balance,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert :class:`Event` to dict
-        """
-        return {
-            "chainId": self.chain_id,
-            "blockNumber": self.block_number,
-            "address": self.address,
-            "balance": self.balance,
-        }
-
     @staticmethod
     def from_dict(d: Dict[str, Any]):
         """
-        Create :class:`Event` from dict
+        Create :class:`Balance` from dict
         """
         return Balance(
             chain_id=d["chainId"],
@@ -66,35 +59,16 @@ class Balance:
             balance=d["balance"],
         )
 
-    @property
-    def chain_id(self) -> int:
+    def to_dict(self) -> Dict[str, Any]:
         """
-        Ethereum chain_id
+        Convert :class:`Balance` to dict
         """
-        return self._chain_id
-
-    @property
-    def block_number(self) -> int:
-        """
-        The block number of the balance snapshot
-        """
-        return self._block_number
-
-    @property
-    def address(self) -> str:
-        """
-        The address for the ETH balance.
-
-        The convention is this address is always stored in lowercase.
-        """
-        return self._address
-
-    @property
-    def balance(self) -> int:
-        """
-        The ETH balance
-        """
-        return self._balance
+        return {
+            "chainId": self.chain_id,
+            "blockNumber": self.block_number,
+            "address": self.address,
+            "balance": self.balance,
+        }
 
     def __eq__(self, other):
         if type(other) is type(self):
