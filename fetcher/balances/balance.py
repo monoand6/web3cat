@@ -76,4 +76,4 @@ class Balance:
         return False
 
     def __repr__(self):
-        return f"Balance(f{json.dumps(self.to_dict())})"
+        return f"Balance({json.dumps(self.to_dict())})"
