@@ -10,7 +10,6 @@ class BalancesRepo(Repo):
 
     def find(
         self,
-        chain_id: int,
         address: str,
         from_block: int = 0,
         to_block: int = 2**32 - 1,
@@ -19,7 +18,6 @@ class BalancesRepo(Repo):
         Find all balances in the database cache.
 
         Args:
-            chain_id: Ethereum chain_id
             address: Contract / EOA address
             from_block: starting from this block (inclusive)
             to_block: ending with this block (non-inclusive)
@@ -29,7 +27,7 @@ class BalancesRepo(Repo):
         """
         rows = self.conn.execute(
             "SELECT * FROM balances WHERE chain_id = ? AND address = ? AND block_number >= ? AND block_number < ?",
-            (chain_id, address.lower(), from_block, to_block),
+            (self.chain_id, address.lower(), from_block, to_block),
         )
         return (Balance.from_tuple(r) for r in rows)
 

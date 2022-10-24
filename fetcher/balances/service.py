@@ -3,6 +3,7 @@ from sqlite3 import Timestamp
 import sys
 import json
 from typing import Any, Dict, List, Tuple
+from fetcher.core import Core
 from fetcher.db import connection_from_path
 from fetcher.balances.balance import Balance
 from fetcher.balances.repo import BalancesRepo
@@ -13,7 +14,7 @@ from web3.auto import w3 as w3auto
 from fetcher.utils import get_chain_id, json_response, print_progress, short_address
 
 
-class BalancesService:
+class BalancesService(Core):
     """
     Service for getting and caching Web3 ETH balances.
 
@@ -49,22 +50,16 @@ class BalancesService:
 
     Args:
         balances_repo: An instance of :class:`BalancesRepo`
-        w3: An instance of :class:`web3.Web3`
     """
 
-    _w3: Web3
     _balances_repo: BalancesRepo
-    _chain_id: int | None
 
-    def __init__(self, balances_repo: BalancesRepo, w3: Web3):
+    def __init__(self, balances_repo: BalancesRepo, **kwargs):
+        super().__init__(**kwargs)
         self._balances_repo = balances_repo
-        self._w3 = w3
-        self._chain_id = None
 
     @staticmethod
-    def create(
-        cache_path: str = "cache.sqlite3", rpc: str | None = None
-    ) -> BalancesService:
+    def create(**kwargs) -> BalancesService:
         """
         Create an instance of :class:`BalancesService`
 
@@ -75,22 +70,8 @@ class BalancesService:
         Returns:
             An instance of :class:`BalancesService`
         """
-        w3 = w3auto
-        if rpc:
-            w3 = Web3(Web3.HTTPProvider(rpc))
-
-        conn = connection_from_path(cache_path)
-        balances_repo = BalancesRepo(conn)
-        return BalancesService(balances_repo, w3)
-
-    @property
-    def chain_id(self) -> int:
-        """
-        Ethereum chain_id
-        """
-        if self._chain_id is None:
-            self._chain_id = get_chain_id(self._w3)
-        return self._chain_id
+        balances_repo = BalancesRepo(**kwargs)
+        return BalancesService(balances_repo, **kwargs)
 
     def get_balances(self, addresses: List[str], blocks: List[int]) -> List[Balance]:
         """
@@ -138,17 +119,15 @@ class BalancesService:
         """
         address = address.lower()
         balances = list(
-            self._balances_repo.find(
-                self.chain_id, address, block_number, block_number + 1
-            )
+            self._balances_repo.find(address, block_number, block_number + 1)
         )
         if len(balances) > 0:
             return balances[0]
 
         resp = json.loads(
             json_response(
-                self._w3.eth.get_balance(
-                    self._w3.toChecksumAddress(address), block_identifier=block_number
+                self.w3.eth.get_balance(
+                    self.w3.toChecksumAddress(address), block_identifier=block_number
                 )
             )
         )
@@ -157,9 +136,7 @@ class BalancesService:
         self._balances_repo.commit()
 
         balances = list(
-            self._balances_repo.find(
-                self.chain_id, address, block_number, block_number + 1
-            )
+            self._balances_repo.find(address, block_number, block_number + 1)
         )
         return balances[0]
 

@@ -5,14 +5,14 @@ from typing import Any, Dict
 from web3 import Web3
 from web3.auto import w3 as w3auto
 from web3.contract import Contract
-from fetcher.core import Repo
+from fetcher.core import Core, Repo
 from fetcher.db import connection_from_path
 
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 from fetcher.erc20_metas.repo import ERC20MetasRepo
 
 
-class ERC20MetasService(Repo):
+class ERC20MetasService(Core):
     """
     Service for fetching ERC20 tokens metadata (name, symbol, decimals).
 
@@ -26,7 +26,7 @@ class ERC20MetasService(Repo):
                     +-------------------+                     +-------+ +---------------+ +-----------------+
                     | ERC20MetasService |                     | Web3  | | PreloadedData | | ERC20MetasRepo  |
                     +-------------------+                     +-------+ +---------------+ +-----------------+
-         -------------------\ |                                   |             |                  |
+         -------------------  |                                   |             |                  |
          | Metadata request |-|                                   |             |                  |
          |------------------| |                                   |             |                  |
                               |                                   |             |                  |
@@ -41,7 +41,7 @@ class ERC20MetasService(Repo):
                               |                                   |             |                  |
                               | Save metadata                     |             |                  |
                               |------------------------------------------------------------------->|
-        --------------------\ |                                   |             |                  |
+        --------------------  |                                   |             |                  |
         | Metadata response |-|                                   |             |                  |
         |-------------------| |                                   |             |                  |
                               |                                   |             |                  |
@@ -94,7 +94,7 @@ class ERC20MetasService(Repo):
         cached_token = self._get_from_cache(token)
         if cached_token:
             return cached_token
-        cached_token = self._erc20_metas_repo.find(self.chain_id, token)
+        cached_token = self._erc20_metas_repo.find(token)
         if cached_token:
             return cached_token
         if not token.startswith("0x"):

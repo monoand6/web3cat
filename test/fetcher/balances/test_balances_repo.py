@@ -16,13 +16,10 @@ def test_read_write(balance: Balance, balances_repo: BalancesRepo):
         balance=c1.balance,
     )
     balances_repo.save([c1, c2])
-    balances = list(
-        balances_repo.find(c1.chain_id, c1.address, c1.block_number, c1.block_number)
-    )
+    balances = list(balances_repo.find(c1.address, c1.block_number, c1.block_number))
     assert len(balances) == 0
     balances = list(
         balances_repo.find(
-            c1.chain_id,
             c1.address,
             c1.block_number,
             c1.block_number + 1,
@@ -31,7 +28,6 @@ def test_read_write(balance: Balance, balances_repo: BalancesRepo):
     assert balances == [c1]
     balances = list(
         balances_repo.find(
-            c1.chain_id,
             c1.address,
             c1.block_number + 10,
             c1.block_number + 11,
@@ -40,7 +36,6 @@ def test_read_write(balance: Balance, balances_repo: BalancesRepo):
     assert balances == [c2]
     balances = list(
         balances_repo.find(
-            c1.chain_id,
             c1.address,
             c1.block_number,
             c1.block_number + 11,

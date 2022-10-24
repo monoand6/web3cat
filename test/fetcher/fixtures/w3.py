@@ -26,11 +26,13 @@ class Web3EventFilterMock:
 
 class Web3Mock:
     _events: List[Event]
-    _data: List[int]
+    _block_numbers: List[int]
+    _balances: List[int]
 
     number_of_calls: int
     events_fetched: int
     event_name: str
+    number_of_balances: int
 
     def __init__(self):
         current_folder = os.path.realpath(os.path.dirname(__file__))
@@ -40,12 +42,17 @@ class Web3Mock:
         self.events_fetched = 0
         self.event_name = "Transfer"
 
-        self._data = []
+        self._block_numbers = []
         initial_time = 1438200000
         for i in range(LATEST_BLOCK + 1):
-            self._data.append(initial_time)
+            self._block_numbers.append(initial_time)
             initial_time += randint(10, 20)
         self.number_of_calls = 0
+
+        self._balances = {b: b * 1000 for b in range(15632000, 15642000, 100)}
+        self.number_of_balances = 0
+        self.min_bn = min(self._balances.keys())
+        self.max_bn = max(self._balances.keys())
 
     def createFilter(
         self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
@@ -74,8 +81,25 @@ class Web3Mock:
         return {
             "hash": HexStr(Web3.keccak(number)).hex(),
             "number": number,
-            "timestamp": self._data[number],
+            "timestamp": self._block_numbers[number],
         }
+
+    def get_balance(self, address: str, block_identifier: int) -> str:
+        self.number_of_balances += 1
+        block_identifier = block_identifier // 100 * 100
+        offset = self._address_offset(address)
+        if block_identifier in self._balances:
+            return self._balances[block_identifier] + offset
+        if block_identifier < self.min_bn:
+            return self._balances[self.min_bn] + offset
+
+        return self._balances[self.max_bn] + offset
+
+    def _address_offset(self, address: str) -> int:
+        return int(address[2:], 16) % 1000
+
+    def toChecksumAddress(self, addr: str) -> str:
+        return Web3.toChecksumAddress(addr)
 
     @property
     def eth(self):
