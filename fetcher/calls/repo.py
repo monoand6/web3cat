@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterator, List
 from fetcher.calls.call import Call
-from fetcher.db import Repo
+from fetcher.core import Repo
 
 
 class CallsRepo(Repo):
@@ -29,7 +29,7 @@ class CallsRepo(Repo):
         Returns:
             List of found calls
         """
-        rows = self._connection.execute(
+        rows = self.conn.execute(
             "SELECT * FROM calls WHERE chain_id = ? AND address = ? AND calldata = ? AND block_number >= ? AND block_number < ?",
             (chain_id, address.lower(), calldata, from_block, to_block),
         )
@@ -42,7 +42,7 @@ class CallsRepo(Repo):
         Args:
             calls: List of calls to save
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         rows = [e.to_tuple() for e in calls]
         cursor.executemany(
             "INSERT INTO calls VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING", rows
@@ -52,5 +52,5 @@ class CallsRepo(Repo):
         """
         Clean all database entries
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute("DELETE FROM calls")

@@ -1,6 +1,6 @@
 from typing import List
 from fetcher.events.event import Event
-from fetcher.db import Repo
+from fetcher.core import Repo
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
@@ -27,7 +27,7 @@ class ERC20MetasRepo(Repo):
                 repo.find("0x6B175474E89094C44Da98b954EedeAC495271d0F")
                 # => same results
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute(
             "SELECT * FROM erc20_metas WHERE chain_id = ? AND (symbol = ? OR address = ?)",
             (chain_id, token.lower(), token.lower()),
@@ -44,7 +44,7 @@ class ERC20MetasRepo(Repo):
         Args:
             erc20_metas: a list of :class:`ERC20Meta` to save
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         rows = [e.to_tuple() for e in erc20_metas]
         cursor.executemany(
             "INSERT INTO erc20_metas VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING", rows
@@ -54,5 +54,5 @@ class ERC20MetasRepo(Repo):
         """
         Clean all database entries
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute("DELETE FROM erc20_metas")

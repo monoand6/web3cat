@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterator, List
 from fetcher.balances.balance import Balance
-from fetcher.db import Repo
+from fetcher.core import Repo
 
 
 class BalancesRepo(Repo):
@@ -27,7 +27,7 @@ class BalancesRepo(Repo):
         Returns:
             An iterator over found balances
         """
-        rows = self._connection.execute(
+        rows = self.conn.execute(
             "SELECT * FROM balances WHERE chain_id = ? AND address = ? AND block_number >= ? AND block_number < ?",
             (chain_id, address.lower(), from_block, to_block),
         )
@@ -41,7 +41,7 @@ class BalancesRepo(Repo):
             balances: List of balances to save
         """
         rows = [e.to_tuple() for e in balances]
-        self._connection.executemany(
+        self.conn.executemany(
             "INSERT INTO balances VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
         )
 
@@ -49,4 +49,4 @@ class BalancesRepo(Repo):
         """
         Clean all balances entries from the database cache.
         """
-        self._connection.execute("DELETE FROM balances")
+        self.conn.execute("DELETE FROM balances")

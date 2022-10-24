@@ -1,12 +1,19 @@
 from string import ascii_letters
-from hypothesis.strategies import integers, text, dictionaries, builds, SearchStrategy
+from hypothesis.strategies import (
+    integers,
+    text,
+    dictionaries,
+    builds,
+    SearchStrategy,
+    just,
+)
 from fetcher.events.event import Event
 
 
 def event() -> SearchStrategy[Event]:
     return builds(
         Event,
-        integers(0, 10000),
+        just(1),
         integers(0, 10000),
         text(ascii_letters),
         integers(0, 10000),

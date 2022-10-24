@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterator, List
 
 import json
 from fetcher.events_indices.index import EventsIndex
-from fetcher.db import Repo
+from fetcher.core import Repo
 
 
 class EventsIndicesRepo(Repo):
@@ -12,7 +12,6 @@ class EventsIndicesRepo(Repo):
 
     def find_indices(
         self,
-        chain_id: int,
         address: str,
         event: str,
         args: Dict[str, Any] | None = None,
@@ -42,7 +41,6 @@ class EventsIndicesRepo(Repo):
         against the data that is really missing.
 
         Args:
-            chain_id: Ethereum chain_id
             address: Contract address
             event: Event name
             args: Argument filters
@@ -50,16 +48,15 @@ class EventsIndicesRepo(Repo):
         Returns:
             Iterator of matched indices
         """
-        rows = self._connection.execute(
+        rows = self.conn.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
-            (chain_id, address, event),
+            (self.chain_id, address, event),
         )
         indices = (EventsIndex.from_tuple(r) for r in rows)
         return (i for i in indices if is_softer_filter_than(i.args, args))
 
     def get_index(
         self,
-        chain_id: int,
         address: str,
         event: str,
         args: Dict[str, Any] | None = None,
@@ -79,10 +76,15 @@ class EventsIndicesRepo(Repo):
         """
 
         args = args or {}
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute(
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ? and args = ?",
-            (chain_id, address, event, json.dumps(EventsIndex.normalize_args(args))),
+            (
+                self.chain_id,
+                address,
+                event,
+                json.dumps(EventsIndex.normalize_args(args)),
+            ),
         )
         row = cursor.fetchone()
         if row is None:
@@ -96,7 +98,7 @@ class EventsIndicesRepo(Repo):
         Args:
             indices: a list of indices to save
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         rows = [i.to_tuple() for i in indices]
         cursor.executemany(
             "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO UPDATE SET data = excluded.data",
@@ -107,7 +109,7 @@ class EventsIndicesRepo(Repo):
         """
         Clean all database entries
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute("DELETE FROM events_indices")
 
 

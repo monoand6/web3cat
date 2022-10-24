@@ -7,54 +7,6 @@ from sqlite3 import Connection, connect
 from os.path import exists
 
 
-class Repo:
-    """
-    Base class for any repo used in the :mod:`fetcher` module.
-    This is a thin wrapper around `sqlite3.Connection <https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection>`_ so that
-    subclasses use has-a inheritance with a connection.
-
-    Important:
-        All the changes happening at the repo must be committed using
-        :meth:`commit` method or rolled back using :meth:`rollback` method. Otherwise
-        there's no guarantee that changes will be saved.
-
-    Args:
-        connection: Connection to an sqlite3 database
-
-    Examples:
-
-        ::
-
-            class Widgets(Repo):
-                def save(self, w: Widget):
-                    cursor = self._connection.cursor()
-                    cursor.execute("INSERT INTO widgets VALUES (...)", w)
-
-            ws = Widgets.from_path("cache.db")
-            w = Widget(...)
-            w.save() # Doesn't really save anything, changes are pending
-            w.commit() # Now everything is saved
-
-    """
-
-    _connection: Connection
-
-    def __init__(self, db: Connection):
-        self._connection = db
-
-    def commit(self):
-        """
-        Commits all changes pending on the database connection.
-        """
-        self._connection.commit()
-
-    def rollback(self):
-        """
-        Rollbacks all changes pending on the database connection.
-        """
-        self._connection.rollback()
-
-
 def connection_from_path(path: str) -> Connection:
     """
     Creates a connection to a database at ``path``.

@@ -9,9 +9,8 @@ from events_indices.strategies import args_subset_and_superset
 
 def test_read_write(events_indices_repo: EventsIndicesRepo):
     events_index_data = EventsIndexData(100)
-    chain_id = 1
     events_index = EventsIndex(
-        chain_id,
+        events_indices_repo.chain_id,
         "0x1234",
         "TestEvent",
         {"from": "0x1234"},
@@ -19,31 +18,26 @@ def test_read_write(events_indices_repo: EventsIndicesRepo):
     )
     events_indices_repo.save([events_index])
     list1 = list(
-        events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event
-        )
+        events_indices_repo.find_indices(events_index.address, events_index.event)
     )
     list2 = list(
-        events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, {}
-        )
+        events_indices_repo.find_indices(events_index.address, events_index.event, {})
     )
     assert len(list1) == 0
     assert len(list2) == 0
 
     list3 = list(
         events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, events_index.args
+            events_index.address, events_index.event, events_index.args
         )
     )
     list4 = list(
         events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, {"from": "0x1234"}
+            events_index.address, events_index.event, {"from": "0x1234"}
         )
     )
     list5 = list(
         events_indices_repo.find_indices(
-            chain_id,
             events_index.address,
             events_index.event,
             {"value": 1, "from": "0x1234"},
@@ -59,17 +53,17 @@ def test_read_write(events_indices_repo: EventsIndicesRepo):
 
     elist1 = list(
         events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, {"value": 2}
+            events_index.address, events_index.event, {"value": 2}
         )
     )
     elist2 = list(
         events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, {"some": 3}
+            events_index.address, events_index.event, {"some": 3}
         )
     )
     elist3 = list(
         events_indices_repo.find_indices(
-            chain_id, events_index.address, events_index.event, {"from": "0x12"}
+            events_index.address, events_index.event, {"from": "0x12"}
         )
     )
     assert len(elist1) == 0

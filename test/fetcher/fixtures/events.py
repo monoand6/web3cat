@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 import os
 import json
 import pytest
+from web3 import Web3
 
 from fetcher.events.repo import EventsRepo
 from fetcher.events.service import EventsService
@@ -49,11 +50,11 @@ class Web3ContractEventMock:
 
 
 @pytest.fixture
-def events_repo(conn: Connection) -> EventsRepo:
+def events_repo(cache_path: str, w3_mock: Web3) -> EventsRepo:
     """
     Instance of events.EventsRepo
     """
-    return EventsRepo(conn)
+    return EventsRepo(cache_path=cache_path, w3=w3_mock)
 
 
 @pytest.fixture
@@ -61,11 +62,3 @@ def events_service(
     events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo
 ) -> EventsService:
     return EventsService(events_repo, events_indices_repo)
-
-
-@pytest.fixture(scope="session")
-def web3_event_mock() -> Web3ContractEventMock:
-    """
-    Instance of web3 Transfer event mock
-    """
-    return Web3ContractEventMock()

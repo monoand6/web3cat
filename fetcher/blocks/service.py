@@ -10,15 +10,12 @@ from web3.auto import w3 as w3auto
 from math import log
 
 from fetcher.blocks.block import Block
+from fetcher.core import Core
 from fetcher.db import connection_from_path
 from fetcher.utils import get_chain_id, json_response, print_progress
 
 
-DEFAULT_BLOCK_TIMESTAMP_GRID = 1000
-block_service_cache = {}
-
-
-class BlocksService:
+class BlocksService(Core):
     """
     Service for fetching Ethereum block data.
 
@@ -86,31 +83,17 @@ class BlocksService:
     """
 
     _blocks_repo: BlocksRepo
-    _w3: Web3
-    _chain_id: int | None
-    _grid_step: int
     _latest_block: Block | None
     _block_cache: Dict[int, Block]
 
-    def __init__(
-        self,
-        blocks_repo: BlocksRepo,
-        w3: Web3,
-        grid_step: int,
-    ):
+    def __init__(self, blocks_repo: BlocksRepo, **kwargs):
+        super().__init__(**kwargs)
         self._blocks_repo = blocks_repo
-        self._w3 = w3
-        self._grid_step = grid_step
         self._latest_block = None
         self._block_cache = None
-        self._chain_id = None
 
     @staticmethod
-    def create(
-        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
-        cache_path: str = "cache.sqlite3",
-        rpc: str | None = None,
-    ) -> BlocksService:
+    def create(**kwargs) -> BlocksService:
         """
         Create an instance of :class:`BlocksService`
 
@@ -121,24 +104,15 @@ class BlocksService:
         Returns:
             An instance of :class:`BlocksService`
         """
-        cache_key = f"{grid_step}|{cache_path}|{rpc}"
-        if cache_key in block_service_cache:
-            return block_service_cache[cache_key]
-
-        conn = connection_from_path(cache_path)
-        blocks_repo = BlocksRepo(conn)
-        w3 = w3auto
-        if rpc:
-            w3 = Web3(Web3.HTTPProvider(rpc))
-        service = BlocksService(blocks_repo, w3, grid_step)
-        block_service_cache[cache_key] = service
+        blocks_repo = BlocksRepo(**kwargs)
+        service = BlocksService(blocks_repo)
         return service
 
     @property
     def block_cache(self) -> Dict[int, Block]:
         if self._block_cache is None:
             self._block_cache = {}
-            blocks = self._blocks_repo.all(self._chain_id)
+            blocks = self._blocks_repo.all()
             for b in blocks:
                 self._block_cache[b.number] = b
         return self._block_cache
@@ -151,15 +125,6 @@ class BlocksService:
         if self._latest_block is None:
             self._latest_block = self._fetch_block_from_rpc()
         return self._latest_block
-
-    @property
-    def chain_id(self) -> int:
-        """
-        Ethereum chain_id
-        """
-        if self._chain_id is None:
-            self._chain_id = get_chain_id(self._w3)
-        return self._chain_id
 
     def get_latest_block_at_timestamp(self, timestamp: int) -> Block | None:
         """
@@ -179,7 +144,7 @@ class BlocksService:
             return None
 
         # invariant: left_block.timestamp <= timestamp < right_block.timestamp
-        while right_block.number - left_block.number > self._grid_step:
+        while right_block.number - left_block.number > self.block_grid_step:
             w = (timestamp - left_block.timestamp) / (
                 right_block.timestamp - left_block.timestamp
             )
@@ -317,16 +282,16 @@ class BlocksService:
             return block_number
         if block_number <= 1:
             # this doesn't fit in the logic below because of the small grid_step
-            if block_number == 1 and self._grid_step == 1 and direction == "right":
+            if block_number == 1 and self.block_grid_step == 1 and direction == "right":
                 return 2
             return 1
-        mod = block_number % self._grid_step
+        mod = block_number % self.block_grid_step
         snapped = block_number
         if mod != 0:
             if direction == "left":
                 snapped = block_number - mod
             else:
-                snapped = block_number - mod + self._grid_step
+                snapped = block_number - mod + self.block_grid_step
 
         # the lower bound for the grid is block 1
         if snapped < 1:
@@ -339,7 +304,7 @@ class BlocksService:
     def _next_grid_block(self, num: int) -> int | None:
         if num == self.latest_block.number:
             return None
-        if self._grid_step == 1:
+        if self.block_grid_step == 1:
             return num + 1
 
         return self._snap_to_grid(num + 1, direction="right")
@@ -354,7 +319,7 @@ class BlocksService:
         if number in self.block_cache:
             return self.block_cache[number]
 
-        block = next(iter(self._blocks_repo.find(self.chain_id, number)), None)
+        block = next(iter(self._blocks_repo.find(number)), None)
         if not block is None:
             self.block_cache[number] = block
             return block
@@ -374,7 +339,7 @@ class BlocksService:
     def _fetch_block_from_rpc(self, number: int | None = None) -> Block | None:
         block_id = "latest" if number is None else number
         try:
-            raw_block = self._w3.eth.get_block(block_id)
+            raw_block = self.w3.eth.get_block(block_id)
             block = json.loads(json_response(raw_block))
             return Block.from_dict({"chainId": self.chain_id, **block})
 

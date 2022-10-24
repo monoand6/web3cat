@@ -1,6 +1,6 @@
 from typing import Any, Dict, Generator, Iterator, List, Tuple
 from fetcher.events.event import Event
-from fetcher.db import Repo
+from fetcher.core import Repo
 
 
 class EventsRepo(Repo):
@@ -10,7 +10,6 @@ class EventsRepo(Repo):
 
     def find(
         self,
-        chain_id: int,
         event: str,
         address: str,
         argument_filters: Dict[str, Any] | None = None,
@@ -21,7 +20,6 @@ class EventsRepo(Repo):
         Find all events in the database.
 
         Args:
-            chain_id: Ethereum chain_id
             event: Event name
             address: Contract address
             argument_filters: an additional filter with keys being event fieds (AND query) and values are filter values (tuples of values for OR query)
@@ -31,11 +29,11 @@ class EventsRepo(Repo):
         Returns:
             Iterator over found events
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         args_query, args_values = self._convert_filter_to_sql(argument_filters)
         statement = f"SELECT * FROM events WHERE chain_id = ? AND event = ? AND address = ? AND block_number >= ? AND block_number < ?{args_query}"
         args = tuple(
-            [chain_id, event, address.lower(), from_block, to_block, *args_values]
+            [self.chain_id, event, address.lower(), from_block, to_block, *args_values]
         )
         cursor.execute(
             statement,
@@ -51,7 +49,7 @@ class EventsRepo(Repo):
         Args:
             events: List of events to save
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         rows = [e.to_tuple() for e in events]
         cursor.executemany(
             "INSERT INTO events VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING", rows
@@ -61,7 +59,7 @@ class EventsRepo(Repo):
         """
         Clean all database entries
         """
-        cursor = self._connection.cursor()
+        cursor = self.conn.cursor()
         cursor.execute("DELETE FROM events")
 
     def _convert_filter_to_sql(

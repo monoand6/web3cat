@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import json
 from typing import Any, Dict, List, Tuple
+from fetcher.core import Core
 from fetcher.db import connection_from_path
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
@@ -15,7 +16,7 @@ from web3.auto import w3 as w3auto
 from fetcher.utils import json_response, print_progress, short_address
 
 
-class EventsService:
+class EventsService(Core):
     """
     Service for fetching web3 events.
 
@@ -57,13 +58,15 @@ class EventsService:
     _events_repo: EventsRepo
     _events_indices_repo: EventsIndicesRepo
 
-    def __init__(self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo):
+    def __init__(
+        self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, **kwargs
+    ):
+        super().__init__(**kwargs)
         self._events_repo = events_repo
         self._events_indices_repo = events_indices_repo
-        self._last_progress_bar_length = 0
 
     @staticmethod
-    def create(cache_path: str = "cache.sqlite3") -> EventsService:
+    def create(**kwargs) -> EventsService:
         """
         Create an instance of :class:`EventsService`
 
@@ -73,14 +76,12 @@ class EventsService:
         Returns:
             An instance of :class:`EventsService`
         """
-        conn = connection_from_path(cache_path)
-        events_repo = EventsRepo(conn)
-        events_indices_repo = EventsIndicesRepo(conn)
+        events_repo = EventsRepo(**kwargs)
+        events_indices_repo = EventsIndicesRepo(**kwargs)
         return EventsService(events_repo, events_indices_repo)
 
     def get_events(
         self,
-        chain_id: int,
         event: ContractEvent,
         from_block: int,
         to_block: int,
@@ -90,7 +91,6 @@ class EventsService:
         Get events specified by parameters.
 
         Args:
-            chain_id: Ethereum chain_id
             event: class:`web3.contract.ContractEvent` specifying contract and event_name.
             from_block: fetch events from this block (inclusive)
             to_block: fetch events from this block (non-inclusive)
@@ -102,9 +102,8 @@ class EventsService:
         Exceptions:
             See :meth:`prefetch_events`
         """
-        self.prefetch_events(chain_id, event, from_block, to_block, argument_filters)
+        self.prefetch_events(event, from_block, to_block, argument_filters)
         all_events = self._events_repo.find(
-            chain_id,
             event.event_name,
             event.address,
             from_block=from_block,
@@ -115,7 +114,6 @@ class EventsService:
 
     def prefetch_events(
         self,
-        chain_id: int,
         event: ContractEvent,
         from_block: int,
         to_block: int,
@@ -125,7 +123,6 @@ class EventsService:
         Fetch events specified by parameters and save them to cache.
 
         Args:
-            chain_id: Ethereum chain_id
             event: class:`web3.contract.ContractEvent` specifying contract and event_name.
             from_block: fetch events from this block (inclusive)
             to_block: fetch events from this block (non-inclusive)
@@ -144,15 +141,15 @@ class EventsService:
         """
         read_indices = list(
             self._events_indices_repo.find_indices(
-                chain_id, event.address, event.event_name, argument_filters
+                event.address, event.event_name, argument_filters
             )
         )
         write_index = self._events_indices_repo.get_index(
-            chain_id, event.address, event.event_name, argument_filters
+            event.address, event.event_name, argument_filters
         )
         if write_index is None:
             write_index = EventsIndex(
-                chain_id,
+                self.chain_id,
                 event.address,
                 event.event_name,
                 argument_filters,
@@ -172,7 +169,6 @@ class EventsService:
             try:
                 self._fetch_events_for_chunk_size(
                     current_chunk_size_in_steps,
-                    chain_id,
                     event,
                     argument_filters,
                     from_block,
@@ -199,7 +195,6 @@ class EventsService:
     def _fetch_events_for_chunk_size(
         self,
         chunk_size_in_steps: int,
-        chain_id: int,
         event: ContractEvent,
         argument_filters: Dict[str, Any] | None,
         from_block: int,
@@ -225,7 +220,6 @@ class EventsService:
                     prefix=prefix,
                 )
                 self._fetch_and_save_events_in_one_chunk(
-                    chain_id,
                     event,
                     argument_filters,
                     shinked_start,
@@ -276,7 +270,6 @@ class EventsService:
 
     def _fetch_and_save_events_in_one_chunk(
         self,
-        chain_id: int,
         event: ContractEvent,
         argument_filters: Dict[str, Any] | None,
         from_block: int,
@@ -284,7 +277,7 @@ class EventsService:
         write_index: EventsIndex,
     ) -> List[Event]:
         events = self._fetch_events_in_one_chunk(
-            chain_id, event, from_block, to_block, argument_filters
+            event, from_block, to_block, argument_filters
         )
         self._events_repo.save(events)
         write_index.data.set_range(from_block, to_block, True)
@@ -293,7 +286,6 @@ class EventsService:
 
     def _fetch_events_in_one_chunk(
         self,
-        chain_id: int,
         event: ContractEvent,
         from_block: int,
         to_block: int,
@@ -308,7 +300,7 @@ class EventsService:
         jsons = [json.loads(json_response(e)) for e in entries]
         events = [
             Event(
-                chain_id=chain_id,
+                chain_id=self.chain_id,
                 block_number=j["blockNumber"],
                 transaction_hash=j["transactionHash"],
                 log_index=j["logIndex"],

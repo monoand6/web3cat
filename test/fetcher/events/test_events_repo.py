@@ -10,7 +10,7 @@ from fetcher.events.event import Event
 def test_read_write(event: Event, events_repo: EventsRepo):
     e1 = event
     e2 = Event(
-        chain_id=e1.chain_id,
+        chain_id=events_repo.chain_id,
         block_number=e1.block_number,
         transaction_hash=e1.transaction_hash,
         log_index=e1.log_index,
@@ -21,7 +21,7 @@ def test_read_write(event: Event, events_repo: EventsRepo):
     e2.block_number += 10
     e2.log_index += 1
     events_repo.save([e1, e2])
-    events = events_repo.find(e1.chain_id, e1.event, e1.address)
+    events = events_repo.find(e1.event, e1.address)
     assert sorted(events, key=lambda x: x.block_number) == sorted(
         [e1, e2], key=lambda x: x.block_number
     )
@@ -51,13 +51,11 @@ def test_find_db_cursor(events_repo: EventsRepo):
     events_repo.save([e1, e2, e3, e4])
     events1 = events_repo.find(
         argument_filters={"from": "0x1234"},
-        chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
     events2 = events_repo.find(
         argument_filters={"from": "0x5678"},
-        chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
@@ -65,13 +63,11 @@ def test_find_db_cursor(events_repo: EventsRepo):
 
     events1 = events_repo.find(
         argument_filters={"from": "0x1234"},
-        chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
     events2 = events_repo.find(
         argument_filters={"from": "0x5678"},
-        chain_id=defaults["chain_id"],
         event="Transfer",
         address=defaults["address"],
     )
@@ -102,7 +98,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters=None,
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -110,7 +105,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -119,7 +113,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"from": "0x1234"},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -128,7 +121,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"to": "0x1234"},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -137,7 +129,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"from": "0x5678"},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -145,7 +136,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"from": ["0x1234", "0x5678"]},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -154,7 +144,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"from": ["0x1234", "0x5678"], "to": "0x1234"},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -163,7 +152,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"from": ["0x1234", "0x5678"], "to": ["0x1234", "0x9090"]},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -172,7 +160,6 @@ def test_find(events_repo: EventsRepo):
     assert list(
         events_repo.find(
             argument_filters={"value": 30},
-            chain_id=defaults["chain_id"],
             event="Transfer",
             address=defaults["address"],
         )
@@ -182,7 +169,6 @@ def test_find(events_repo: EventsRepo):
         list(
             events_repo.find(
                 argument_filters={"some": 30},
-                chain_id=defaults["chain_id"],
                 event="Transfer",
                 address=defaults["address"],
             )
@@ -194,7 +180,6 @@ def test_find(events_repo: EventsRepo):
         list(
             events_repo.find(
                 argument_filters={"some": 30, "from": "0x1234"},
-                chain_id=defaults["chain_id"],
                 event="Transfer",
                 address=defaults["address"],
             )
