@@ -82,9 +82,7 @@ class PortfolioData:
         start: int | datetime,
         end: int | datetime,
         step: int = 86400,
-        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
-        cache_path: str = "cache.sqlite3",
-        rpc: str | None = None,
+        **kwargs,
     ) -> PortfolioData:
         """
         Create an instance of :class:`ChainlinkUSDData`
@@ -105,13 +103,7 @@ class PortfolioData:
         addresses = [addr.lower() for addr in addresses]
         erc20_datas = [
             ERC20Data.create(
-                token=t,
-                start=start,
-                end=end,
-                address_filter=addresses,
-                grid_step=grid_step,
-                cache_path=cache_path,
-                rpc=rpc,
+                token=t, start=start, end=end, address_filter=addresses, **kwargs
             )
             for t in tokens
             if t != "eth"
@@ -119,15 +111,13 @@ class PortfolioData:
 
         ether_data = None
         if "eth" in tokens:
-            ether_data = EtherData.create(grid_step, cache_path, rpc)
+            ether_data = EtherData.create(**kwargs)
 
         chainlink_datas = [
-            ChainlinkUSDData.create(t, start, end, grid_step, cache_path, rpc)
-            for t in tokens
+            ChainlinkUSDData.create(t, start, end, **kwargs) for t in tokens
         ]
         base_chainlink_datas = [
-            ChainlinkUSDData.create(t, start, end, grid_step, cache_path, rpc)
-            for t in base_tokens
+            ChainlinkUSDData.create(t, start, end, **kwargs) for t in base_tokens
         ]
         return PortfolioData(
             tokens=tokens,

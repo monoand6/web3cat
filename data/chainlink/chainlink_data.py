@@ -61,9 +61,6 @@ class ChainlinkUSDData:
     _events_service: EventsService
     _blocks_service: BlocksService
     _calls_service: CallsService
-    _w3: Web3
-    _grid_step: int
-    _chain_id: int | None
 
     _meta: ERC20Meta | None
     _oracle_decimals: int | None
@@ -75,7 +72,6 @@ class ChainlinkUSDData:
 
     def __init__(
         self,
-        w3: Web3,
         erc20_metas_service: ERC20MetasService,
         events_service: EventsService,
         blocks_service: BlocksService,
@@ -83,9 +79,7 @@ class ChainlinkUSDData:
         token: str,
         start: int | datetime,
         end: int | datetime,
-        grid_step: int,
     ):
-        self._w3 = w3
         self._token = token
         if type(start) is datetime:
             self._from_date = start
@@ -99,25 +93,18 @@ class ChainlinkUSDData:
         self._events_service = events_service
         self._blocks_service = blocks_service
         self._calls_service = calls_service
-        self._grid_step = grid_step
 
         self._meta = None
         self._updates = None
         self._oracle_decimals = None
         self._oracle_proxy_contract = None
         self._oracle_aggregator_contract = None
-        self._chain_id = None
         self._index = None
         self._initial_price = None
 
     @staticmethod
     def create(
-        token: str,
-        start: int | datetime,
-        end: int | datetime,
-        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
-        cache_path: str = "cache.sqlite3",
-        rpc: str | None = None,
+        token: str, start: int | datetime, end: int | datetime, **kwargs
     ) -> ChainlinkUSDData:
         """
         Create an instance of :class:`ChainlinkUSDData`
@@ -133,16 +120,12 @@ class ChainlinkUSDData:
         Returns:
             An instance of :class:`ChainlinkUSDData`
         """
-        w3 = w3auto
-        if rpc:
-            w3 = Web3(Web3.HTTPProvider(rpc))
-        events_service = EventsService.create(cache_path)
-        blocks_service = BlocksService.create(grid_step, cache_path, rpc)
-        calls_service = CallsService.create(cache_path)
-        erc20_metas_service = ERC20MetasService.create(cache_path, rpc)
+        events_service = EventsService.create(**kwargs)
+        blocks_service = BlocksService.create(**kwargs)
+        calls_service = CallsService.create(**kwargs)
+        erc20_metas_service = ERC20MetasService.create(**kwargs)
 
         return ChainlinkUSDData(
-            w3=w3,
             erc20_metas_service=erc20_metas_service,
             events_service=events_service,
             blocks_service=blocks_service,
@@ -150,7 +133,7 @@ class ChainlinkUSDData:
             token=token,
             start=start,
             end=end,
-            grid_step=grid_step,
+            **kwargs,
         )
 
     @property
@@ -185,15 +168,6 @@ class ChainlinkUSDData:
         return self._to_block
 
     @property
-    def chain_id(self) -> int:
-        """
-        Ethereum chain_id
-        """
-        if self._chain_id is None:
-            self._chain_id = get_chain_id(self._w3)
-        return self._chain_id
-
-    @property
     def oracle_proxy_contract(self) -> Contract:
         if self._oracle_proxy_contract is None:
             current_folder = os.path.realpath(os.path.dirname(__file__))
@@ -202,11 +176,11 @@ class ChainlinkUSDData:
             oracle_address = self._resolve_chainlink_address(self.meta.symbol.lower())
             if oracle_address is None:
                 raise LookupError(
-                    f"Chainlink oracle for token `{self.meta.symbol.lower()}` on chain with id `{self.chain_id}` is not found"
+                    f"Chainlink oracle for token `{self.meta.symbol.lower()}` on chain with id `{self._events_service.chain_id}` is not found"
                 )
 
-            self._oracle_proxy_contract = self._w3.eth.contract(
-                address=self._w3.toChecksumAddress(oracle_address), abi=abi
+            self._oracle_proxy_contract = w3auto.eth.contract(
+                address=w3auto.toChecksumAddress(oracle_address), abi=abi
             )
         return self._oracle_proxy_contract
 
@@ -217,12 +191,11 @@ class ChainlinkUSDData:
             with open(f"{current_folder}/oracle_aggregator.abi.json", "r") as f:
                 abi = json.load(f)
             oracle_address = self._calls_service.get_call(
-                self.chain_id,
                 self.oracle_proxy_contract.functions.aggregator(),
                 self.to_block,
             ).response
-            self._oracle_aggregator_contract = self._w3.eth.contract(
-                address=self._w3.toChecksumAddress(oracle_address), abi=abi
+            self._oracle_aggregator_contract = w3auto.eth.contract(
+                address=w3auto.toChecksumAddress(oracle_address), abi=abi
             )
         return self._oracle_aggregator_contract
 
@@ -231,7 +204,6 @@ class ChainlinkUSDData:
         if self._oracle_decimals is None:
             self._oracle_decimals = int(
                 self._calls_service.get_call(
-                    self.chain_id,
                     self.oracle_proxy_contract.functions.decimals(),
                     self.to_block,
                 ).response
@@ -242,7 +214,6 @@ class ChainlinkUSDData:
     def initial_price(self) -> np.float64:
         if self._initial_price is None:
             price = self._calls_service.get_call(
-                self.chain_id,
                 self._oracle_aggregator_contract.functions.latestRoundData(),
                 self.from_block,
             ).response[1]
@@ -285,7 +256,6 @@ class ChainlinkUSDData:
 
     def _build_updates(self) -> pl.DataFrame:
         events: List[Event] = self._events_service.get_events(
-            self.chain_id,
             self.oracle_aggregator_contract.events.AnswerUpdated,
             self.from_block,
             self.to_block,
@@ -321,7 +291,7 @@ class ChainlinkUSDData:
             current_folder = os.path.realpath(os.path.dirname(__file__))
             with open(f"{current_folder}/oracles.json", "r") as f:
                 self._index = json.load(f)
-        cid = str(self.chain_id)
+        cid = str(self._events_service.chain_id)
         if not cid in self._index:
             return None
         oracles = self._index[cid]
@@ -359,13 +329,7 @@ class ChainlinkData:
 
     @staticmethod
     def create(
-        token0: str,
-        token1: str,
-        start: int | datetime,
-        end: int | datetime,
-        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
-        cache_path: str = "cache.sqlite3",
-        rpc: str | None = None,
+        token0: str, token1: str, start: int | datetime, end: int | datetime, **kwargs
     ) -> ChainlinkUSDData:
         """
         Create an instance of :class:`ChainlinkData`
@@ -384,33 +348,18 @@ class ChainlinkData:
         """
 
         token0_data = ChainlinkUSDData.create(
-            token=token0,
-            start=start,
-            end=end,
-            grid_step=grid_step,
-            cache_path=cache_path,
-            rpc=rpc,
+            token=token0, start=start, end=end, **kwargs
         )
         token0_data = None
         token1_data = None
         if token0.lower() != "usd":
             token0_data = ChainlinkUSDData.create(
-                token=token0,
-                start=start,
-                end=end,
-                grid_step=grid_step,
-                cache_path=cache_path,
-                rpc=rpc,
+                token=token0, start=start, end=end, **kwargs
             )
 
         if token1.lower() != "usd":
             token1_data = ChainlinkUSDData.create(
-                token=token1,
-                start=start,
-                end=end,
-                grid_step=grid_step,
-                cache_path=cache_path,
-                rpc=rpc,
+                token=token1, start=start, end=end, **kwargs
             )
 
         return ChainlinkData(token0_data, token1_data)
@@ -432,21 +381,27 @@ class ChainlinkData:
         return token1_price / token0_price
 
     @property
-    def chain_id(self) -> int:
-        if self._token0_data:
-            return self._token0_data.chain_id
-        return self._token1_data.chain_id
-
-    @property
     def token0_meta(self):
         if self._token0_data is None:
-            return ERC20Meta(self.chain_id, ADDRESS_ZERO, "USD", "USD", 6)
+            return ERC20Meta(
+                self._token0_data._events_service.chain_id,
+                ADDRESS_ZERO,
+                "USD",
+                "USD",
+                6,
+            )
         return self._token0_data.meta
 
     @property
     def token1_meta(self):
         if self._token1_data is None:
-            return ERC20Meta(self.chain_id, ADDRESS_ZERO, "USD", "USD", 6)
+            return ERC20Meta(
+                self._token1_data._events_service.chain_id,
+                ADDRESS_ZERO,
+                "USD",
+                "USD",
+                6,
+            )
         return self._token1_data.meta
 
     def prices(self, timestamps: List[int | datetime]) -> pl.DataFrame:
