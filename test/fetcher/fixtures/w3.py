@@ -92,31 +92,3 @@ def w3_mock() -> Web3:
     Mock instance of Web3
     """
     return Web3Mock()
-
-
-class Web3ContractEventMock:
-    _events: List[Event]
-    events_fetched: int
-    address: str
-    event_name: str
-
-    def __init__(self):
-        current_folder = os.path.realpath(os.path.dirname(__file__))
-        events = json.load(open(f"{current_folder}/events.json"))
-        self._events = [Event.from_dict(e) for e in events]
-        self.events_fetched = 0
-        self.address = "0x6b175474e89094c44da98b954eedeac495271d0f"
-        self.event_name = "Transfer"
-
-    def createFilter(
-        self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
-    ) -> Web3EventFilterMock:
-        events = [
-            e
-            for e in self._events
-            if e.block_number >= fromBlock
-            and e.block_number <= toBlock
-            and e.matches_filter(argument_filters)
-        ]
-        self.events_fetched += len(events)
-        return Web3EventFilterMock([e.to_dict() for e in events])

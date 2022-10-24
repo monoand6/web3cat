@@ -1,4 +1,3 @@
-import chunk
 from random import shuffle
 from typing import List
 from hypothesis import given, settings, HealthCheck
@@ -12,7 +11,7 @@ EVENTS_END_BLOCK = 15632000
 TOTAL_EVENTS = 6759
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     start=integers(EVENTS_START_BLOCK, EVENTS_END_BLOCK),
     end=integers(EVENTS_START_BLOCK, EVENTS_END_BLOCK),
@@ -39,7 +38,7 @@ def test_events_service_basic_cache_snapped_blocks(
         w3_mock.events_fetched = 0
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     start=integers(EVENTS_START_BLOCK, EVENTS_END_BLOCK),
     end=integers(EVENTS_START_BLOCK, EVENTS_END_BLOCK),
@@ -65,7 +64,7 @@ def test_events_service_basic_cache(
         w3_mock.events_fetched = 0
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(
     chunks=integers(1, 5),
 )

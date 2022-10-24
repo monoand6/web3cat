@@ -11,10 +11,15 @@ from fixtures.general import rpc
 from fetcher.blocks.service import BlocksService
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import integers, lists
+from web3 import Web3
 import time
 
 LATEST_BLOCK = 26789
 INTIAL_TIME = 1438200000
+
+import cProfile
+import pstats
+from pstats import SortKey
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
@@ -23,10 +28,12 @@ INTIAL_TIME = 1438200000
     block_grid_step=integers(1, 1000),
 )
 def test_get_latest_block_at_timestamp(
-    timestamp: int, block_grid_step: int, blocks_repo: BlocksRepo
+    timestamp: int, block_grid_step: int, blocks_repo: BlocksRepo, w3_mock: Web3
 ) -> int:
     try:
-        service = BlocksService(blocks_repo, block_grid_step=block_grid_step)
+        service = BlocksService(
+            blocks_repo, block_grid_step=block_grid_step, w3=w3_mock
+        )
         block = service.get_latest_block_at_timestamp(timestamp)
         if block is None:
             first_block = service.get_blocks([1])[0]
@@ -47,10 +54,12 @@ def test_get_latest_block_at_timestamp(
     block_grid_step=integers(1, 1000),
 )
 def test_block_numbers_and_timestamps(
-    numbers: List[int], block_grid_step: int, blocks_repo: BlocksRepo
+    numbers: List[int], block_grid_step: int, blocks_repo: BlocksRepo, w3_mock: Web3
 ) -> int:
     try:
-        service = BlocksService(blocks_repo, block_grid_step=block_grid_step)
+        service = BlocksService(
+            blocks_repo, block_grid_step=block_grid_step, w3=w3_mock
+        )
         blocks = service.get_blocks(numbers)
         tss = [b.timestamp for b in blocks]
         blocks = service.get_blocks_by_timestamps(tss)
