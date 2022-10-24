@@ -37,26 +37,17 @@ class EtherData:
 
     _balances_service: BalancesService
     _blocks_service: BlocksService
-    _w3: Web3
-    _chain_id: int | None
 
     def __init__(
         self,
-        w3: Web3,
         balances_service: BalancesService,
         blocks_service: BalancesService,
     ):
-        self._w3 = w3
         self._balances_service = balances_service
         self._blocks_service = blocks_service
-        self._chain_id = None
 
     @staticmethod
-    def create(
-        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
-        cache_path: str = "cache.sqlite3",
-        rpc: str | None = None,
-    ) -> EtherData:
+    def create(**kwargs) -> EtherData:
         """
         Create an instance of :class:`ERC20Data`
 
@@ -72,24 +63,12 @@ class EtherData:
         Returns:
             An instance of :class:`ERC20Data`
         """
-        w3 = w3auto
-        if rpc:
-            w3 = Web3(Web3.HTTPProvider(rpc))
-        balances_service = BalancesService.create(cache_path, rpc)
-        blocks_service = BlocksService.create(grid_step, cache_path, rpc)
+        balances_service = BalancesService.create(**kwargs)
+        blocks_service = BlocksService.create(**kwargs)
 
         return EtherData(
-            w3=w3, balances_service=balances_service, blocks_service=blocks_service
+            balances_service=balances_service, blocks_service=blocks_service
         )
-
-    @property
-    def chain_id(self) -> int:
-        """
-        Ethereum chain_id
-        """
-        if self._chain_id is None:
-            self._chain_id = get_chain_id(self._w3)
-        return self._chain_id
 
     def balances(
         self, addresses: List[str], timestamps: List[int | datetime]
