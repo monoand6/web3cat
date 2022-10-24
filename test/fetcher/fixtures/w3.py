@@ -5,6 +5,9 @@ from typing import Any, Dict, List
 import pytest
 
 from web3 import Web3
+from web3.contract import Contract
+from web3.auto import w3 as w3auto
+from fetcher.calls.call import Call
 
 from fetcher.events.event import Event
 from web3.exceptions import BlockNotFound
@@ -53,6 +56,27 @@ class Web3Mock:
         self.number_of_balances = 0
         self.min_bn = min(self._balances.keys())
         self.max_bn = max(self._balances.keys())
+
+        dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        compound_address = "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
+        dai_abi = json.load(open(f"{current_folder}/erc20_abi.json", "r"))
+        token: Contract = w3auto.eth.contract(address=dai_address, abi=dai_abi)
+        self._call = token.functions.balanceOf(compound_address)
+        calls = json.load(open(f"{current_folder}/calls.json"))
+        self._calls = {e["blockNumber"]: Call.from_dict(e) for e in calls}
+        self.number_of_calls = 0
+        self.min_bn_call = min(self._calls.keys())
+        self.max_bn_call = max(self._calls.keys())
+
+    def call(self, block_identifier: int) -> str:
+        self.number_of_calls += 1
+        block_identifier = block_identifier // 10 * 10
+        if block_identifier in self._calls:
+            return self._calls[block_identifier].response
+        if block_identifier < self.min_bn_call:
+            return self._calls[self.min_bn_call].response
+
+        return self._calls[self.max_bn_call].response
 
     def createFilter(
         self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
@@ -108,6 +132,14 @@ class Web3Mock:
     @property
     def chain_id(self):
         return 1
+
+    @property
+    def abi(self):
+        return self._call.abi
+
+    @property
+    def args(self):
+        return self._call.args
 
 
 @pytest.fixture(scope="session")

@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import json
 from typing import Any, Dict, List, Tuple
+from fetcher.core import Core
 from fetcher.db import connection_from_path
 from fetcher.calls.call import Call
 from fetcher.calls.repo import CallsRepo
@@ -12,7 +13,7 @@ from web3.auto import w3 as w3auto
 from fetcher.utils import calldata, json_response, short_address
 
 
-class CallsService:
+class CallsService(Core):
     """
     Service for web3 calls.
 
@@ -49,11 +50,12 @@ class CallsService:
 
     _calls_repo: CallsRepo
 
-    def __init__(self, calls_repo: CallsRepo):
+    def __init__(self, calls_repo: CallsRepo, **kwargs):
+        super().__init__(**kwargs)
         self._calls_repo = calls_repo
 
     @staticmethod
-    def create(cache_path: str = "cache.sqlite3") -> CallsService:
+    def create(**kwargs) -> CallsService:
         """
         Create an instance of :class:`CallsService`
 
@@ -63,13 +65,11 @@ class CallsService:
         Returns:
             An instance of :class:`CallsService`
         """
-        conn = connection_from_path(cache_path)
-        calls_repo = CallsRepo(conn)
-        return CallsService(calls_repo)
+        calls_repo = CallsRepo(**kwargs)
+        return CallsService(calls_repo, **kwargs)
 
     def get_call(
         self,
-        chain_id: int,
         call: ContractFunction,
         block_number: int,
     ) -> Call:
@@ -86,22 +86,18 @@ class CallsService:
 
         data = calldata(call)
         calls = list(
-            self._calls_repo.find(
-                chain_id, call.address, data, block_number, block_number + 1
-            )
+            self._calls_repo.find(call.address, data, block_number, block_number + 1)
         )
         if len(calls) > 0:
             return calls[0]
 
         resp = json.loads(json_response(call.call(block_identifier=block_number)))
-        call_item = Call(chain_id, call.address, data, block_number, resp)
+        call_item = Call(self.chain_id, call.address, data, block_number, resp)
         self._calls_repo.save([call_item])
         self._calls_repo.commit()
 
         calls = list(
-            self._calls_repo.find(
-                chain_id, call.address, data, block_number, block_number + 1
-            )
+            self._calls_repo.find(call.address, data, block_number, block_number + 1)
         )
         return calls[0]
 

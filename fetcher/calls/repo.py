@@ -10,7 +10,6 @@ class CallsRepo(Repo):
 
     def find(
         self,
-        chain_id: int,
         address: str,
         calldata: str,
         from_block: int = 0,
@@ -31,7 +30,7 @@ class CallsRepo(Repo):
         """
         rows = self.conn.execute(
             "SELECT * FROM calls WHERE chain_id = ? AND address = ? AND calldata = ? AND block_number >= ? AND block_number < ?",
-            (chain_id, address.lower(), calldata, from_block, to_block),
+            (self.chain_id, address.lower(), calldata, from_block, to_block),
         )
         return (Call.from_tuple(r) for r in rows)
 
