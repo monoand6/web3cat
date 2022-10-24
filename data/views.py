@@ -14,7 +14,7 @@ from bokeh.palettes import Category10, Pastel1, Category20
 from data.chainlink.chainlink_data import ChainlinkData
 from data.erc20s.erc20_data import ERC20Data
 from data.portfolios.portfolio import PortfolioData
-from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
+from fetcher.core import DEFAULT_BLOCK_GRID_STEP
 from fetcher.utils import short_address
 import numpy as np
 

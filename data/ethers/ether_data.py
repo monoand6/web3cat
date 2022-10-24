@@ -3,7 +3,7 @@ import json
 import os
 import numpy as np
 from typing import Any, Dict, List, Tuple
-from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
+from fetcher.core import DEFAULT_BLOCK_GRID_STEP
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.erc20_metas import erc20_meta
 from fetcher.events import EventsService, Event
@@ -53,7 +53,7 @@ class EtherData:
 
     @staticmethod
     def create(
-        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
+        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
         cache_path: str = "cache.sqlite3",
         rpc: str | None = None,
     ) -> EtherData:

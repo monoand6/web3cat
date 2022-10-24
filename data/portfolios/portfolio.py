@@ -7,7 +7,7 @@ from web3 import Web3
 from datetime import datetime
 from data.ethers.ether_data import EtherData
 from fetcher.erc20_metas import ERC20MetasService
-from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
+from fetcher.core import DEFAULT_BLOCK_GRID_STEP
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.erc20_metas import ERC20Meta
 from fetcher.events import EventsService, Event
@@ -82,7 +82,7 @@ class PortfolioData:
         start: int | datetime,
         end: int | datetime,
         step: int = 86400,
-        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
+        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
         cache_path: str = "cache.sqlite3",
         rpc: str | None = None,
     ) -> PortfolioData:

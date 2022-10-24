@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from web3 import Web3
 from datetime import datetime
 from fetcher.erc20_metas import ERC20MetasService
-from fetcher.blocks.service import DEFAULT_BLOCK_TIMESTAMP_GRID
+from fetcher.core import DEFAULT_BLOCK_GRID_STEP
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.erc20_metas import ERC20Meta
 from fetcher.events import EventsService, Event
@@ -115,7 +115,7 @@ class ChainlinkUSDData:
         token: str,
         start: int | datetime,
         end: int | datetime,
-        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
+        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
         cache_path: str = "cache.sqlite3",
         rpc: str | None = None,
     ) -> ChainlinkUSDData:
@@ -363,7 +363,7 @@ class ChainlinkData:
         token1: str,
         start: int | datetime,
         end: int | datetime,
-        grid_step: int = DEFAULT_BLOCK_TIMESTAMP_GRID,
+        grid_step: int = DEFAULT_BLOCK_GRID_STEP,
         cache_path: str = "cache.sqlite3",
         rpc: str | None = None,
     ) -> ChainlinkUSDData:
