@@ -9,12 +9,11 @@ class ERC20MetasRepo(Repo):
     Reading and writing :class:`ERC20Meta` to database.
     """
 
-    def find(self, chain_id: int, token: str) -> ERC20Meta | None:
+    def find(self, token: str) -> ERC20Meta | None:
         """
         Find a :class:`ERC20Meta`.
 
         Args:
-            chain_id: Ethereum chain_id
             token: token symbol or address
 
         Returns:
@@ -30,7 +29,7 @@ class ERC20MetasRepo(Repo):
         cursor = self.conn.cursor()
         cursor.execute(
             "SELECT * FROM erc20_metas WHERE chain_id = ? AND (symbol = ? OR address = ?)",
-            (chain_id, token.lower(), token.lower()),
+            (self.chain_id, token.lower(), token.lower()),
         )
         row = cursor.fetchone()
         if not row:

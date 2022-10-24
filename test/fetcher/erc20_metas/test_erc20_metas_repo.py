@@ -11,8 +11,8 @@ from fetcher.erc20_metas.erc20_meta import ERC20Meta
 @given(erc20_meta=erc20_meta())
 def test_read_write(erc20_meta: ERC20Meta, erc20_metas_repo: ERC20MetasRepo):
     erc20_metas_repo.save([erc20_meta])
-    e2 = erc20_metas_repo.find(erc20_meta.chain_id, erc20_meta.symbol)
-    e3 = erc20_metas_repo.find(erc20_meta.chain_id, erc20_meta.address)
+    e2 = erc20_metas_repo.find(erc20_meta.symbol)
+    e3 = erc20_metas_repo.find(erc20_meta.address)
     assert e2
     assert erc20_meta == e2
     assert e2 == e3
