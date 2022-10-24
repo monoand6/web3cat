@@ -15,7 +15,7 @@ chain_id_cache = {}
 class Core:
     rpc: str | None
     cache: str | None
-    block_grid_step: int
+    _block_grid_step: int
 
     def __init__(
         self,
@@ -27,9 +27,16 @@ class Core:
     ):
         self.rpc = rpc
         self.cache_path = cache_path
-        self.block_grid_step = block_grid_step
+        self._block_grid_step = block_grid_step
         self._w3 = w3
         self._conn = conn
+
+    @cached_property
+    def block_grid_step(self) -> int:
+        env_value = os.environ.get("WEB3_BLOCK_GRID_STEP")
+        if not env_value is None:
+            return env_value
+        return self._block_grid_step
 
     @cached_property
     def chain_id(self):
