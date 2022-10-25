@@ -4,7 +4,6 @@ import sys
 import json
 from typing import Any, Dict, List, Tuple
 from fetcher.core import Core
-from fetcher.db import connection_from_path
 from fetcher.balances.balance import Balance
 from fetcher.balances.repo import BalancesRepo
 from web3 import Web3
@@ -133,7 +132,7 @@ class BalancesService(Core):
         )
         balance_item = Balance(self.chain_id, block_number, address, resp / 10**18)
         self._balances_repo.save([balance_item])
-        self._balances_repo.commit()
+        self._balances_repo.conn.commit()
 
         balances = list(
             self._balances_repo.find(address, block_number, block_number + 1)
@@ -145,4 +144,4 @@ class BalancesService(Core):
         Delete all cached ETH balances
         """
         self._balances_repo.purge()
-        self._balances_repo.commit()
+        self._balances_repo.conn.commit()

@@ -1,10 +1,10 @@
 from typing import List
 from fetcher.events.event import Event
-from fetcher.core import Repo
+from fetcher.core import Core
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
-class ERC20MetasRepo(Repo):
+class ERC20MetasRepo(Core):
     """
     Reading and writing :class:`ERC20Meta` to database.
     """

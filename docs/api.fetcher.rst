@@ -15,5 +15,4 @@ fetcher
    api.fetcher.erc20_metas
    api.fetcher.events_indices
    api.fetcher.core
-   api.fetcher.db
    api.fetcher.utils

@@ -1,9 +1,9 @@
 from typing import Any, Dict, Iterator, List
 from fetcher.balances.balance import Balance
-from fetcher.core import Repo
+from fetcher.core import Core
 
 
-class BalancesRepo(Repo):
+class BalancesRepo(Core):
     """
     Reading and writing :class:`Balance` to database cache.
     """

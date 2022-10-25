@@ -1,9 +1,9 @@
 from typing import Any, Dict, Iterator, List
 from fetcher.calls.call import Call
-from fetcher.core import Repo
+from fetcher.core import Core
 
 
-class CallsRepo(Repo):
+class CallsRepo(Core):
     """
     Reading and writing :class:`Call` to database.
     """

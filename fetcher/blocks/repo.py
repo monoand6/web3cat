@@ -1,9 +1,9 @@
 from typing import Iterator, List, Tuple
 from fetcher.blocks.block import Block
-from fetcher.core import Repo
+from fetcher.core import Core
 
 
-class BlocksRepo(Repo):
+class BlocksRepo(Core):
     """
     Reading and writing :class:`Block` to database.
     """

@@ -3,7 +3,6 @@ import sys
 import json
 from typing import Any, Dict, List, Tuple
 from fetcher.core import Core
-from fetcher.db import connection_from_path
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
 from fetcher.events_indices.index import EventsIndex
@@ -189,8 +188,8 @@ class EventsService(Core):
         """
         self._events_indices_repo.purge()
         self._events_repo.purge()
-        self._events_indices_repo.commit()
-        self._events_repo.commit()
+        self._events_indices_repo.conn.commit()
+        self._events_repo.conn.commit()
 
     def _fetch_events_for_chunk_size(
         self,
@@ -282,7 +281,7 @@ class EventsService(Core):
         self._events_repo.save(events)
         write_index.data.set_range(from_block, to_block, True)
         self._events_indices_repo.save([write_index])
-        self._events_indices_repo.commit()
+        self._events_indices_repo.conn.commit()
 
     def _fetch_events_in_one_chunk(
         self,

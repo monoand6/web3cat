@@ -16,4 +16,4 @@ def test_read_write(erc20_meta: ERC20Meta, erc20_metas_repo: ERC20MetasRepo):
     assert e2
     assert erc20_meta == e2
     assert e2 == e3
-    erc20_metas_repo.rollback()
+    erc20_metas_repo.conn.rollback()

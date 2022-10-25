@@ -1,9 +1,9 @@
 from typing import Any, Dict, Generator, Iterator, List, Tuple
 from fetcher.events.event import Event
-from fetcher.core import Repo
+from fetcher.core import Core
 
 
-class EventsRepo(Repo):
+class EventsRepo(Core):
     """
     Reading and writing :class:`Event` to database.
     """

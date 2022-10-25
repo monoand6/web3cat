@@ -42,4 +42,4 @@ def test_read_write(call: Call, calls_repo: CallsRepo):
     assert sorted(calls, key=lambda x: x.block_number) == sorted(
         [c1, c2], key=lambda x: x.block_number
     )
-    calls_repo.rollback()
+    calls_repo.conn.rollback()

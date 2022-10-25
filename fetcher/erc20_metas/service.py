@@ -5,8 +5,7 @@ from typing import Any, Dict
 from web3 import Web3
 from web3.auto import w3 as w3auto
 from web3.contract import Contract
-from fetcher.core import Core, Repo
-from fetcher.db import connection_from_path
+from fetcher.core import Core
 
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 from fetcher.erc20_metas.repo import ERC20MetasRepo
@@ -107,7 +106,7 @@ class ERC20MetasService(Core):
         symbol = contract.functions.symbol().call()
         meta = ERC20Meta(self.chain_id, token, name, symbol, decimals)
         self._erc20_metas_repo.save([meta])
-        self._erc20_metas_repo.commit()
+        self._erc20_metas_repo.conn.commit()
         return meta
 
     def clear_cache(self):
@@ -115,7 +114,7 @@ class ERC20MetasService(Core):
         Delete all cached entries
         """
         self._erc20_metas_repo.purge()
-        self._erc20_metas_repo.commit()
+        self._erc20_metas_repo.conn.commit()
 
     def _get_from_cache(self, token: str) -> ERC20Meta | None:
         token = token.lower()

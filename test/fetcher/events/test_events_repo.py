@@ -25,7 +25,7 @@ def test_read_write(event: Event, events_repo: EventsRepo):
     assert sorted(events, key=lambda x: x.block_number) == sorted(
         [e1, e2], key=lambda x: x.block_number
     )
-    events_repo.rollback()
+    events_repo.conn.rollback()
 
 
 def test_find_db_cursor(events_repo: EventsRepo):

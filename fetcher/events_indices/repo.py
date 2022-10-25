@@ -2,10 +2,10 @@ from typing import Any, Dict, Iterator, List
 
 import json
 from fetcher.events_indices.index import EventsIndex
-from fetcher.core import Repo
+from fetcher.core import Core
 
 
-class EventsIndicesRepo(Repo):
+class EventsIndicesRepo(Core):
     """
     Reading and writing :class:`EventsIndex` to database.
     """

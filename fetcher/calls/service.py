@@ -3,7 +3,6 @@ import sys
 import json
 from typing import Any, Dict, List, Tuple
 from fetcher.core import Core
-from fetcher.db import connection_from_path
 from fetcher.calls.call import Call
 from fetcher.calls.repo import CallsRepo
 from web3 import Web3
@@ -94,7 +93,7 @@ class CallsService(Core):
         resp = json.loads(json_response(call.call(block_identifier=block_number)))
         call_item = Call(self.chain_id, call.address, data, block_number, resp)
         self._calls_repo.save([call_item])
-        self._calls_repo.commit()
+        self._calls_repo.conn.commit()
 
         calls = list(
             self._calls_repo.find(call.address, data, block_number, block_number + 1)
@@ -106,4 +105,4 @@ class CallsService(Core):
         Delete all cached entries
         """
         self._calls_repo.purge()
-        self._calls_repo.commit()
+        self._calls_repo.conn.commit()

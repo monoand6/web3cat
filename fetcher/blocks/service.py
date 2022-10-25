@@ -11,7 +11,6 @@ from math import log
 
 from fetcher.blocks.block import Block
 from fetcher.core import Core
-from fetcher.db import connection_from_path
 from fetcher.utils import get_chain_id, json_response, print_progress
 
 
@@ -237,7 +236,7 @@ class BlocksService(Core):
         Delete all cached entries
         """
         self._blocks_repo.purge()
-        self._blocks_repo.commit()
+        self._blocks_repo.conn.commit()
 
     def _synthesize_block(
         self,
@@ -331,7 +330,7 @@ class BlocksService(Core):
             else:
                 block = self.latest_block
         self._blocks_repo.save([block])
-        self._blocks_repo.commit()
+        self._blocks_repo.conn.commit()
         self.block_cache[block.number] = block
 
         return block

@@ -45,4 +45,4 @@ def test_read_write(balance: Balance, balances_repo: BalancesRepo):
     assert sorted(balances, key=lambda x: x.block_number) == sorted(
         [c1, c2], key=lambda x: x.block_number
     )
-    balances_repo.rollback()
+    balances_repo.conn.rollback()

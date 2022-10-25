@@ -5,8 +5,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 
-from fetcher.core import Repo
-from fetcher.db import connection_from_path
+from fetcher.core import Core, connection_from_path
 
 import pytest
 from web3 import Web3
@@ -44,8 +43,8 @@ def rollback_db(cache_path: str, w3_mock: Web3):
     try:
         yield
     finally:
-        repo = Repo(cache_path=cache_path, w3=w3_mock)
-        repo.rollback()
+        core = Core(cache_path=cache_path, w3=w3_mock)
+        core.conn.rollback()
 
 
 @pytest.fixture(scope="session")
