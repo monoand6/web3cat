@@ -1,4 +1,5 @@
 from __future__ import annotations
+from bisect import bisect
 
 import json
 from typing import Dict, List, Literal
@@ -51,12 +52,14 @@ class BlocksService(Core):
     _blocks_repo: BlocksRepo
     _latest_block: Block | None
     _block_cache: Dict[int, Block]
+    _block_grid_cache: Dict[int, Block]
 
     def __init__(self, blocks_repo: BlocksRepo, **kwargs):
         super().__init__(**kwargs)
         self._blocks_repo = blocks_repo
         self._latest_block = None
-        self._block_cache = None
+        self._block_cache = {}
+        self._block_grid_cache = {}
 
     @staticmethod
     def create(**kwargs) -> BlocksService:
@@ -74,15 +77,6 @@ class BlocksService(Core):
         return service
 
     @property
-    def block_cache(self) -> Dict[int, Block]:
-        if self._block_cache is None:
-            self._block_cache = {}
-            blocks = self._blocks_repo.all()
-            for b in blocks:
-                self._block_cache[b.number] = b
-        return self._block_cache
-
-    @property
     def latest_block(self) -> Block:
         """
         Latest block from Ethereum (this value is cached on the first call)
@@ -96,7 +90,7 @@ class BlocksService(Core):
         Get the first block after a timestamp.
 
         Args:
-            timestamp: UNIX timestamp, UTC+0
+            timestamp: UNIX timestamp
 
         Returns:
             First block after timestamp, ``None`` if the block doesn't exist
@@ -144,24 +138,30 @@ class BlocksService(Core):
         if len(block_timestamps) == 0:
             return []
 
-        out = []
-        for i, ts in enumerate(block_timestamps):
-            if len(block_timestamps) > 5:
-                print_progress(
-                    i,
-                    len(block_timestamps),
-                    f"Resolving {len(block_timestamps)} block numbers",
-                )
-            block = self.get_latest_block_at_timestamp(ts)
-            out.append(block)
+        block_idx = {}
+        timestamps_to_fetch = []
+        for timestamp in block_timestamps:
+            block = self._resolve_from_cache(timestamp)
+            if block is None:
+                timestamps_to_fetch.append(timestamp)
+            else:
+                block_idx[timestamp] = block
 
-        if len(block_timestamps) > 5:
+        for i, timestamp in enumerate(timestamps_to_fetch):
             print_progress(
-                len(block_timestamps),
-                len(block_timestamps),
-                f"Resolving {len(block_timestamps)} block numbers",
+                i,
+                len(timestamps_to_fetch),
+                f"Resolving {len(timestamps_to_fetch)} block numbers",
             )
-        return out
+            block_idx[timestamp] = self.get_latest_block_at_timestamp(timestamp)
+        if len(timestamps_to_fetch) > 0:
+            print_progress(
+                len(timestamps_to_fetch),
+                len(timestamps_to_fetch),
+                f"Resolving {len(timestamps_to_fetch)} block numbers",
+            )
+
+        return [block_idx[timestamp] for timestamp in block_timestamps]
 
     def get_blocks(self, numbers: int | List[int]) -> List[Block]:
         """
@@ -206,6 +206,18 @@ class BlocksService(Core):
         self._blocks_repo.purge()
         self._blocks_repo.conn.commit()
 
+    def _resolve_from_cache(self, timestamp: int) -> Block | None:
+        if timestamp in self._block_cache:
+            return self._block_cache[timestamp]
+
+        left = self._blocks_repo.get_block_before_timestamp(timestamp)
+        right = self._blocks_repo.get_block_after_timestamp(timestamp)
+        if left is None or right is None:
+            return None
+        if right.number - left.number == self.block_grid_step:
+            return self._synthesize_block_from_timestamp(left, right, timestamp)
+        return None
+
     def _synthesize_block(
         self,
         left_block: Block,
@@ -220,8 +232,9 @@ class BlocksService(Core):
             return right_block
         w = (number - left_block.number) / (right_block.number - left_block.number)
         timestamp = int((1 - w) * left_block.timestamp + w * right_block.timestamp)
-
-        return Block(self.chain_id, number, timestamp)
+        block = Block(self.chain_id, number, timestamp)
+        self._block_cache[timestamp] = block
+        return block
 
     def _synthesize_block_from_timestamp(
         self,
@@ -283,12 +296,12 @@ class BlocksService(Core):
         if number != snapped_num:
             raise ValueError("API call for blocks out of grid are prohibited")
 
-        if number in self.block_cache:
-            return self.block_cache[number]
+        if number in self._block_grid_cache:
+            return self._block_grid_cache[number]
 
         block = next(iter(self._blocks_repo.find(number)), None)
         if not block is None:
-            self.block_cache[number] = block
+            self._block_grid_cache[number] = block
             return block
 
         block = self._fetch_block_from_rpc(number)
@@ -299,7 +312,7 @@ class BlocksService(Core):
                 block = self.latest_block
         self._blocks_repo.save([block])
         self._blocks_repo.conn.commit()
-        self.block_cache[block.number] = block
+        self._block_grid_cache[block.number] = block
 
         return block
 
