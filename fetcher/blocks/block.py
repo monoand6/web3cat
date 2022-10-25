@@ -20,14 +20,15 @@ class Block:
         self.number = number
         self.timestamp = timestamp
 
-    def from_row(tuple: Tuple[int, int, int]) -> Block:
+    @staticmethod
+    def from_row(row: Tuple[int, int, int]) -> Block:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
-        return Block(*tuple)
+        return Block(*row)
 
     def to_row(self) -> Tuple[int, int, int]:
         """

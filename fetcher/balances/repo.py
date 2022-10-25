@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List
+from typing import Iterator, List
 from fetcher.balances.balance import Balance
 from fetcher.core import Core
 
@@ -26,7 +26,8 @@ class BalancesRepo(Core):
             An iterator over found balances
         """
         rows = self.conn.execute(
-            "SELECT * FROM balances WHERE chain_id = ? AND address = ? AND block_number >= ? AND block_number < ?",
+            "SELECT * FROM balances WHERE chain_id = ? AND address = ? \
+                AND block_number >= ? AND block_number < ?",
             (self.chain_id, address.lower(), from_block, to_block),
         )
         return (Balance.from_row(r) for r in rows)

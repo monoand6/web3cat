@@ -28,6 +28,7 @@ optional = true
 black = {version = "^22.8.0", allow-prereleases = true}
 jupyterlab = "^3.4.8"
 sphobjinv = "^2.2.2"
+pylint = "^2.15.5"
 
 
 [tool.poetry.group.docs]

@@ -1,29 +1,25 @@
 from __future__ import annotations
-from sqlite3 import Timestamp
-import sys
 import json
-from typing import Any, Dict, List, Tuple
+from typing import List
 from fetcher.core import Core
 from fetcher.balances.balance import Balance
 from fetcher.balances.repo import BalancesRepo
-from web3 import Web3
-from web3.contract import ContractFunction
-from web3.auto import w3 as w3auto
-
 from fetcher.utils import json_response, print_progress, short_address
 
 
 class BalancesService(Core):
     """
-    Service for getting and caching Web3 ETH balances.
+    Service for getting and caching ETH balances.
 
     Since there's no easy way of getting ETH balance deltas from
-    Web3, this service literally queries and caches ETH balance
-    for every desired date and address. Hence it's not as effective as
-    querying token balances, based on fetching Transfer events (deltas)
-    in batches.
+    Web3, this service queries and caches ETH balance
+    for every desired date and address.
 
-    **Request - Response flow**
+    Note:
+        It's not as effective as querying token balances, based on fetching Transfer events (deltas)
+        in batches. Use it with caution.
+
+    **Request/Response flow**
 
     ::
 
@@ -49,6 +45,7 @@ class BalancesService(Core):
 
     Args:
         balances_repo: An instance of :class:`BalancesRepo`
+        kwargs: Args for the :class:`fetcher.core.Core` class
     """
 
     _balances_repo: BalancesRepo
@@ -63,8 +60,7 @@ class BalancesService(Core):
         Create an instance of :class:`BalancesService`
 
         Args:
-            cache_path: path for the cache database
-            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            kwargs: Args for the :class:`fetcher.core.Core` class
 
         Returns:
             An instance of :class:`BalancesService`
@@ -81,7 +77,8 @@ class BalancesService(Core):
             blocks: a list of blocks for ETH balances
 
         Returns:
-            A list of :class:`Balance` for addresses and blocks. The size of a list = ``len(addresses) * len(blocks)``
+            A list of :class:`Balance` for addresses and blocks.
+            The size of a list = ``len(addresses) * len(blocks)``
         """
         addresses = [addr.lower() for addr in addresses]
         total_number = len(addresses) * len(blocks)
@@ -89,13 +86,13 @@ class BalancesService(Core):
             return []
         out = []
         for addr in addresses:
-            for i, b in enumerate(blocks):
+            for i, block in enumerate(blocks):
                 print_progress(
                     i,
                     len(blocks),
                     f"Fetching eth balances for {short_address(addr)}",
                 )
-                out.append(self.get_balance(addr, b))
+                out.append(self.get_balance(addr, block))
             print_progress(
                 len(blocks),
                 len(blocks),
@@ -109,7 +106,7 @@ class BalancesService(Core):
 
         Args:
             address: The address for the ETH balance
-            block: The block for which the ETH balance is fetched
+            block_number: The block number for which the ETH balance is fetched
 
         Returns:
             ETH balance
