@@ -133,16 +133,3 @@ def print_progress(
         sys.stdout.flush()
         last_percent = 0
         last_progress_bar_length = 0
-
-
-chain_id_cache = {}
-
-
-def get_chain_id(w3: Web3):
-    global chain_id_cache
-    uri = w3.HTTPProvider.endpoint_uri
-    if uri in chain_id_cache:
-        return chain_id_cache[uri]
-    chain_id = w3.eth.chain_id
-    chain_id_cache[uri] = chain_id
-    return chain_id

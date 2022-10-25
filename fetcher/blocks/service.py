@@ -11,7 +11,7 @@ from math import log
 
 from fetcher.blocks.block import Block
 from fetcher.core import Core
-from fetcher.utils import get_chain_id, json_response, print_progress
+from fetcher.utils import json_response, print_progress
 
 
 class BlocksService(Core):

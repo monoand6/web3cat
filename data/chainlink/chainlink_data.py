@@ -18,8 +18,6 @@ from web3.auto import w3 as w3auto
 from web3.constants import ADDRESS_ZERO
 import numpy as np
 
-from fetcher.utils import get_chain_id
-
 RESOLVER_MAPPING = {"weth": "eth", "wbtc": "btc"}
 
 

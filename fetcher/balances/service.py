@@ -10,7 +10,7 @@ from web3 import Web3
 from web3.contract import ContractFunction
 from web3.auto import w3 as w3auto
 
-from fetcher.utils import get_chain_id, json_response, print_progress, short_address
+from fetcher.utils import json_response, print_progress, short_address
 
 
 class BalancesService(Core):

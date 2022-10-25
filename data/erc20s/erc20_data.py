@@ -19,7 +19,6 @@ from web3.auto import w3 as w3auto
 
 
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
-from fetcher.utils import get_chain_id
 
 
 class ERC20Data:
