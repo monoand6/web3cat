@@ -91,14 +91,12 @@ class BalancesService(Core):
         for addr in addresses:
             for i, b in enumerate(blocks):
                 print_progress(
-                    f"Balances.get_balances_{addr}",
                     i,
                     len(blocks),
                     f"Fetching eth balances for {short_address(addr)}",
                 )
                 out.append(self.get_balance(addr, b))
             print_progress(
-                f"Balances.get_balances_{addr}",
                 len(blocks),
                 len(blocks),
                 f"Fetching eth balances for {short_address(addr)}",

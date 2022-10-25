@@ -76,7 +76,7 @@ def calldata(call: ContractFunction) -> str:
     Hex calldata for :class:`web3.contract.ContractFunction` call
 
     Args:
-        func: A web3 call
+        call: A web3 call
 
     Returns:
         Hex data (starting with 0x, lowercase)
@@ -89,13 +89,10 @@ def calldata(call: ContractFunction) -> str:
 
 
 last_progress_bar_length = 0
-current_id = None
-start_timestamp = None
 last_percent = 0
 
 
 def print_progress(
-    id: str,
     iteration: int,
     total: int,
     prefix: str = "",
@@ -115,18 +112,9 @@ def print_progress(
         bar_length: character length of bar
     """
     global last_progress_bar_length
-    global current_id
-    global start_timestamp
     global last_percent
 
-    if current_id is None or id != current_id:
-        start_timestamp = datetime.now()
-        current_id = id
-        last_percent = iteration / total
-
-    # if (datetime.now() - start_timestamp).total_seconds() <= 1:
-    #     return
-
+    # Avoid too much output
     if iteration / total - last_percent < 0.01:
         return
 
@@ -143,9 +131,8 @@ def print_progress(
     if iteration == total:
         sys.stdout.write("\n")
         sys.stdout.flush()
-        current_id = None
-        start_timestamp = None
         last_percent = 0
+        last_progress_bar_length = 0
 
 
 chain_id_cache = {}

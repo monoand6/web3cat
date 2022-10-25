@@ -213,7 +213,6 @@ class EventsService(Core):
             shinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
             if shinked_start < shrinked_end:
                 print_progress(
-                    "Events._fetch_events_for_chunk_size",
                     start - from_block,
                     to_block - from_block,
                     prefix=prefix,
@@ -226,7 +225,6 @@ class EventsService(Core):
                     write_index,
                 )
             print_progress(
-                "Events._fetch_events_for_chunk_size",
                 end - from_block,
                 to_block - from_block,
                 prefix=prefix,
