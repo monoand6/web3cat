@@ -8,6 +8,8 @@ for subsequent calls.
 Example:
     ::
 
+        from web3cat.fetcher.balances import BalancesService
+
         addresses = [
             "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
             "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
