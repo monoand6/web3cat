@@ -48,15 +48,15 @@ class Balance:
         )
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]):
+    def from_dict(dct: Dict[str, Any]):
         """
-        Create :class:`Balance` from dict
+        Create :class:`Balance` from dctict
         """
         return Balance(
-            chain_id=d["chainId"],
-            block_number=d["blockNumber"],
-            address=d["address"],
-            balance=d["balance"],
+            chain_id=dct["chainId"],
+            block_number=dct["blockNumber"],
+            address=dct["address"],
+            balance=dct["balance"],
         )
 
     def to_dict(self) -> Dict[str, Any]:

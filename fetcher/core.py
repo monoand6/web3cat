@@ -6,7 +6,6 @@ import os
 from os.path import exists
 from sqlite3 import Connection, connect
 from functools import cached_property
-from sqlite3 import Connection
 from web3 import Web3
 
 DEFAULT_BLOCK_GRID_STEP = 1000
@@ -51,11 +50,14 @@ class Core:
         1. We make a block number grid with a width specified by the ``block_grid_step`` parameter.
         2. For each block number, we take the two closest grid blocks (below and above).
         3. Fetch the grid blocks
-        4. Assume :math:`a_n` and :math:`a_t` is a number and a timestamp for the block above
-        5. Assume :math:`b_n` and :math:`b_t` is a number and a timestamp for the block below
-        6. Assume :math:`c_n` and :math:`c_t` is a number and a timestamp for the block we're looking for
+        4. Assume :math:`a_n` and :math:`a_t` is a number
+           and a timestamp for the block above
+        5. Assume :math:`b_n` and :math:`b_t` is a number
+           and a timestamp for the block below
+        6. Assume :math:`c_n` and :math:`c_t` is a number
+           and a timestamp for the block we're looking for
         7. :math:`w = (c_n - b_n) / (a_n - b_n)`
-        8. Then :math:`c_t = b_t \cdot (1-w) + a_t * w`
+        8. Then :math:`c_t = b_t \\cdot (1-w) + a_t * w`
 
     This algorithm gives a reasonably good approximation for the block
     timestamp and considerably reduces the number of block fetches.
@@ -78,9 +80,11 @@ class Core:
         conn: an instance of database connection (overrides cache_path)
     """
 
-    #: An https Ethereum RPC endpoint uri. Can be ``None`` if :class:`web3.Web3` is injected directly.
+    #: An https Ethereum RPC endpoint uri.
+    #: Can be ``None`` if :class:`web3.Web3` is injected directly.
     rpc: str | None
-    #: OS path to the cache database. Can be ``None`` if :class:`sqlite3.Connection` is injected directly.
+    #: OS path to the cache database.
+    #: Can be ``None`` if :class:`sqlite3.Connection` is injected directly.
     cache: str | None
     _block_grid_step: int
 
@@ -134,7 +138,8 @@ class Core:
 
         if self.rpc is None:
             raise ValueError(
-                "Ethereum RPC is not set. Use `WEB3_PROVIDER_URI` env variable or pass rpc explicitly"
+                "Ethereum RPC is not set. \
+                Use `WEB3_PROVIDER_URI` env variable or pass rpc explicitly"
             )
 
         if not self.rpc in web3_cache:
@@ -155,7 +160,8 @@ class Core:
 
         if self.cache_path is None:
             raise ValueError(
-                "Cache database path is not set. Use `WEB3_CACHE_PATH` env variable or pass cache_path explicitly"
+                "Cache database path is not set. \
+                Use `WEB3_CACHE_PATH` env variable or pass cache_path explicitly"
             )
 
         if not self.cache_path in db_cache:
@@ -199,16 +205,17 @@ def _init_db(conn: Connection):
     # Events table
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS events
-                (chain_id integer, block_number integer, transaction_hash text, log_index integer, address text, event text, args text)"""
+            (chain_id integer, block_number integer, transaction_hash text, \
+            log_index integer, address text, event text, args text)"""
     )
     cursor.execute(
-        """CREATE UNIQUE INDEX IF NOT EXISTS idx_events_id 
-    ON events(chain_id,transaction_hash,log_index)
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_events_id \
+        ON events(chain_id,transaction_hash,log_index)
     """
     )
     cursor.execute(
-        """CREATE INDEX IF NOT EXISTS idx_events_search
-    ON events(chain_id,block_number,event,address)
+        """CREATE INDEX IF NOT EXISTS idx_events_search \
+        ON events(chain_id,block_number,event,address)
     """
     )
 
@@ -252,7 +259,8 @@ def _init_db(conn: Connection):
 
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS calls
-                (chain_id integer, address text, calldata text, block_number integer, response text)"""
+                (chain_id integer, address text, calldata text, \
+                block_number integer, response text)"""
     )
     cursor.execute(
         """CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_id
@@ -265,7 +273,7 @@ def _init_db(conn: Connection):
                 (chain_id integer, block_number integer, address text, balance integer)"""
     )
     cursor.execute(
-        """CREATE UNIQUE INDEX IF NOT EXISTS idx_balances_id 
+        """CREATE UNIQUE INDEX IF NOT EXISTS idx_balances_id \
     ON balances(chain_id,block_number,address)
     """
     )
