@@ -20,11 +20,11 @@ def test_get_block_after_timestamp(blocks_repo: BlocksRepo):
         Block(1, 30, 10705),
     ]
     blocks_repo.save(blocks)
-    assert blocks_repo.get_block_after_timestamp(10701) == blocks[2]
-    assert blocks_repo.get_block_after_timestamp(10703) == blocks[4]
-    assert blocks_repo.get_block_after_timestamp(10705) == blocks[-1]
+    assert blocks_repo.get_block_after_timestamp(10701) == blocks[3]
+    assert blocks_repo.get_block_after_timestamp(10703) == blocks[5]
+    assert blocks_repo.get_block_after_timestamp(10705) == blocks[0]
     assert blocks_repo.get_block_after_timestamp(10706) == blocks[0]
-    assert blocks_repo.get_block_after_timestamp(10800) == blocks[0]
+    assert blocks_repo.get_block_after_timestamp(10800) == None
     assert blocks_repo.get_block_after_timestamp(10801) == None
     assert blocks_repo.get_block_after_timestamp(10000) == blocks[1]
 

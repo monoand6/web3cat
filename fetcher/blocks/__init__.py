@@ -7,8 +7,9 @@ cache so that subsequent requests are returned from cache.
 
 Example:
     ::
+        from datetime import datetime
+        from web3cat.fetcher.blocks import BlocksService
 
-        chain_id = 1
         service = BlocksService.create()
         latest_block = service.get_latest_block()
 

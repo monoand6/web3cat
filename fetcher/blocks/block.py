@@ -40,14 +40,14 @@ class Block:
         return (self.chain_id, self.number, self.timestamp)
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]):
+    def from_dict(dct: Dict[str, Any]):
         """
         Create :class:`Block` from dict
         """
         return Block(
-            chain_id=d["chainId"],
-            number=d["number"],
-            timestamp=d["timestamp"],
+            chain_id=dct["chainId"],
+            number=dct["number"],
+            timestamp=dct["timestamp"],
         )
 
     def to_dict(self) -> Dict[str, Any]:

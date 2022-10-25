@@ -1,4 +1,4 @@
-from typing import Iterator, List, Tuple
+from typing import Iterator, List
 from fetcher.blocks.block import Block
 from fetcher.core import Core
 
@@ -10,18 +10,19 @@ class BlocksRepo(Core):
 
     def get_block_after_timestamp(self, timestamp: int) -> Block | None:
         """
-        Get the first block after the timestamp in database.
+        Get the first block strictly after the timestamp in database.
 
         Args:
             chain_id: Ethereum chain_id
-            timestamp: UNIX timestamp, UTC+0
+            timestamp: UNIX timestamp
 
         Returns:
             First block after the timestamp, ``None`` if the block doesn't exist
         """
 
         row = self.conn.execute(
-            "SELECT * FROM blocks WHERE timestamp >= ? AND chain_id = ? ORDER BY block_number LIMIT 1",
+            "SELECT * FROM blocks WHERE timestamp > ? AND chain_id = ? "
+            "ORDER BY block_number LIMIT 1",
             (timestamp, self.chain_id),
         ).fetchone()
         if not row:
@@ -30,7 +31,7 @@ class BlocksRepo(Core):
 
     def get_block_before_timestamp(self, timestamp: int) -> Block | None:
         """
-        Get the first block before the timestamp in database.
+        Get the first block at or before the timestamp in database.
 
         Args:
             chain_id: Ethereum chain_id
@@ -41,46 +42,51 @@ class BlocksRepo(Core):
         """
 
         row = self.conn.execute(
-            "SELECT * FROM blocks WHERE timestamp < ? AND chain_id = ? ORDER BY block_number DESC LIMIT 1",
+            "SELECT * FROM blocks WHERE timestamp < ? AND chain_id = ? "
+            "ORDER BY block_number DESC LIMIT 1",
             (timestamp, self.chain_id),
         ).fetchone()
         if not row:
             return None
         return Block.from_row(row)
 
-    def find(self, blocks: int | List[int]) -> List[Block]:
+    def find(self, blocks: int | List[int]) -> Iterator[Block]:
         """
         Find blocks by number
 
+        Warning:
+            The order of the blocks are not preserved. Duplicates are eliminated.
+
         Args:
-            chain_id: Ethereum chain_id
             blocks: block number or a list of block numbers
 
         Returns:
             A list of found blocks
         """
         int_blocks = blocks if isinstance(blocks, list) else [blocks]
-        cursor = self.conn.cursor()
-        out = []
-        if len(int_blocks) > 0:
-            statement = f"SELECT * FROM blocks WHERE block_number IN ({','.join('?' * len(int_blocks))}) AND chain_id = ?"
-            cursor.execute(
-                statement,
-                int_blocks + [self.chain_id],
-            )
-            out = cursor.fetchall()
-        out = [Block.from_row(b) for b in out]
-        # unique
-        out = list({(b.number): b for b in out}.values())
+        int_blocks = list(set(int_blocks))
+        if len(int_blocks) == 0:
+            return iter([])
+
+        statement = (
+            "SELECT * FROM blocks WHERE block_number IN "
+            f" ({','.join('?' * len(int_blocks))}) AND chain_id = ?"
+        )
+        out = self.conn.execute(
+            statement,
+            int_blocks + [self.chain_id],
+        )
+        out = (Block.from_row(b) for b in out)
         return sorted(out, key=lambda x: x.number)
 
-    def all(self) -> List[Block]:
+    def all(self) -> Iterator[Block]:
+        """
+        All blocks in the database
+        """
         blocks = self.conn.execute(
             "SELECT * FROM blocks WHERE chain_id = ?", (self.chain_id,)
         )
-        out = [Block.from_row(b) for b in blocks]
-        out = list({(b.number): b for b in out}.values())
-        return sorted(out, key=lambda x: x.number)
+        return (Block.from_row(b) for b in blocks)
 
     def save(self, blocks: List[Block]):
         """

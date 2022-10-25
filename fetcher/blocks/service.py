@@ -1,14 +1,10 @@
 from __future__ import annotations
-from datetime import datetime
 
 import json
-from typing import Dict, List, Literal, Tuple
-from fetcher.blocks.repo import BlocksRepo
-from web3 import Web3
+from typing import Dict, List, Literal
 from web3.exceptions import BlockNotFound
-from web3.auto import w3 as w3auto
-from math import log
 
+from fetcher.blocks.repo import BlocksRepo
 from fetcher.blocks.block import Block
 from fetcher.core import Core
 from fetcher.utils import json_response, print_progress
@@ -16,13 +12,10 @@ from fetcher.utils import json_response, print_progress
 
 class BlocksService(Core):
     """
-    Service for fetching Ethereum block data.
+    Service for fetching and caching Ethereum block data.
 
-    The sole purpose of this service is to fetch events from web3, cache them,
-    and save from the cache on subsequent calls.
+    **Request/Response flow**
 
-
-    The exact flow goes like this:
     ::
 
                 +---------------+            +-------+ +-------------+
@@ -45,39 +38,13 @@ class BlocksService(Core):
               |----------| |                        |            |
                            |                        |            |
 
-    Grid steps
+    Args:
+        blocks_repo: An instance of :class:`fetcher.blocks.BlocksRepo`
+        kwargs: Args for the :class:`fetcher.core.Core`
 
-    Note that by default, these timestamps are not 100% accurate.
-    Why's that?
-
-    Consider the primary use case for this function: providing timestamps
-    for events. Fetching a block for every event might demand
-    a fair amount of rpc calls.
-
-    That's why the following algorithm is proposed:
-
-        1. We make a block number grid with a width specified by the ``grid_step`` parameter.
-        2. For each block number, we take the two closest grid blocks (below and above).
-        3. Fetch the grid blocks
-        4. Assume :math:`a_n` and :math:`a_t` is a number and a timestamp for the block above
-        5. Assume :math:`b_n` and :math:`b_t` is a number and a timestamp for the block below
-        6. Assume :math:`c_n` and :math:`c_t` is a number and a timestamp for the block we're looking for
-        7. :math:`w = (c_n - b_n) / (a_n - b_n)`
-        8. Then :math:`c_t = b_t \cdot (1-w) + a_t * w`
-
-    This algorithm gives a reasonably good approximation for the block
-    timestamp and considerably reduces the number of fetches.
-    For example, if we have 500 events happening in the 1000 - 2000
-    block range, then we fetch only two blocks instead of 500.
-
-    If you still want the exact precision, use
-    ``grid_step = 0``.
-
-    Warning:
-        It's highly advisable to use a single ``grid_step`` for all data.
-        Otherwise (in theory) the happens-before relationship might
-        be violated for the data points.
-
+    See Also:
+        :class:`fetcher.core.Core` for defining the block grid and
+        how timestamps are approximated.
 
     """
 
@@ -97,8 +64,7 @@ class BlocksService(Core):
         Create an instance of :class:`BlocksService`
 
         Args:
-            cache_path: path for the cache database
-            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.savethedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            kwargs: Args for the :class:`fetcher.core.Core`
 
         Returns:
             An instance of :class:`BlocksService`
@@ -135,8 +101,14 @@ class BlocksService(Core):
         Returns:
             First block after timestamp, ``None`` if the block doesn't exist
         """
-        left_block = self.get_blocks([1])[0]
-        right_block = self.latest_block
+        left_block = self._blocks_repo.get_block_before_timestamp(timestamp)
+        if left_block is None:
+            left_block = self.get_blocks([1])[0]
+
+        right_block = self._blocks_repo.get_block_after_timestamp(timestamp)
+        if right_block is None:
+            right_block = self.latest_block
+
         if timestamp >= right_block.timestamp:
             return self.latest_block
         if timestamp < left_block.timestamp:
