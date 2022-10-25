@@ -138,8 +138,8 @@ class Core:
 
         if self.rpc is None:
             raise ValueError(
-                "Ethereum RPC is not set. \
-                Use `WEB3_PROVIDER_URI` env variable or pass rpc explicitly"
+                "Ethereum RPC is not set. "
+                "Use `WEB3_PROVIDER_URI` env variable or pass rpc explicitly"
             )
 
         if not self.rpc in web3_cache:
@@ -160,8 +160,8 @@ class Core:
 
         if self.cache_path is None:
             raise ValueError(
-                "Cache database path is not set. \
-                Use `WEB3_CACHE_PATH` env variable or pass cache_path explicitly"
+                "Cache database path is not set. "
+                "Use `WEB3_CACHE_PATH` env variable or pass cache_path explicitly"
             )
 
         if not self.cache_path in db_cache:
@@ -205,7 +205,7 @@ def _init_db(conn: Connection):
     # Events table
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS events
-            (chain_id integer, block_number integer, transaction_hash text, \
+            (chain_id integer, block_number integer, transaction_hash text, 
             log_index integer, address text, event text, args text)"""
     )
     cursor.execute(
