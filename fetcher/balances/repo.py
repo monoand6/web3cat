@@ -10,7 +10,7 @@ class BalancesRepo(Core):
 
     def find(
         self,
-        address: str,
+        addresses: List[str],
         from_block: int = 0,
         to_block: int = 2**32 - 1,
     ) -> Iterator[Balance]:
@@ -18,17 +18,22 @@ class BalancesRepo(Core):
         Find all balances in the database cache.
 
         Args:
-            address: Contract / EOA address
+            addresses: Contract / EOA addresses
             from_block: starting from this block (inclusive)
             to_block: ending with this block (non-inclusive)
 
         Returns:
             An iterator over found balances
         """
+        if len(addresses) == 0:
+            return iter([])
+
+        addresses = [addr.lower() for addr in addresses]
         rows = self.conn.execute(
-            "SELECT * FROM balances WHERE chain_id = ? AND address = ? \
+            f"SELECT * FROM balances WHERE chain_id = ? \
+                AND address IN ({','.join(['?'] * len(addresses))}) \
                 AND block_number >= ? AND block_number < ?",
-            (self.chain_id, address.lower(), from_block, to_block),
+            [self.chain_id, *addresses, from_block, to_block],
         )
         return (Balance.from_row(r) for r in rows)
 

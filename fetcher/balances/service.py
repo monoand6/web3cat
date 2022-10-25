@@ -4,7 +4,7 @@ from typing import List
 from fetcher.core import Core
 from fetcher.balances.balance import Balance
 from fetcher.balances.repo import BalancesRepo
-from fetcher.utils import json_response, print_progress, short_address
+from fetcher.utils import json_response, print_progress
 
 
 class BalancesService(Core):
@@ -80,24 +80,42 @@ class BalancesService(Core):
             A list of :class:`Balance` for addresses and blocks.
             The size of a list = ``len(addresses) * len(blocks)``
         """
-        addresses = [addr.lower() for addr in addresses]
+        addresses = set([addr.lower() for addr in addresses])
+        blocks = set(blocks)
         total_number = len(addresses) * len(blocks)
         if total_number == 0:
             return []
+
+        cached_balances = list(
+            self._balances_repo.find(addresses, min(blocks), max(blocks) + 1)
+        )
+        cached_balances_idx = {}
+        for bal in cached_balances:
+            key = f"{bal.address}|{bal.block_number}"
+            cached_balances_idx[key] = bal
+
+        num_fetch = len(addresses) * len(blocks) - len(cached_balances)
         out = []
+        i = 0
         for addr in addresses:
-            for i, block in enumerate(blocks):
+            for block in blocks:
+                key = f"{addr}|{block}"
+                if key in cached_balances_idx:
+                    out.append(cached_balances_idx[key])
+                    continue
                 print_progress(
                     i,
-                    len(blocks),
-                    f"Fetching eth balances for {short_address(addr)}",
+                    num_fetch,
+                    f"Fetching {num_fetch} eth balances",
                 )
-                out.append(self.get_balance(addr, block))
-            print_progress(
-                len(blocks),
-                len(blocks),
-                f"Fetching eth balances for {short_address(addr)}",
-            )
+                out.append(self._fetch_balance_and_save(addr, block))
+                i += 1
+            if num_fetch > 0:
+                print_progress(
+                    num_fetch,
+                    num_fetch,
+                    f"Fetching {num_fetch} eth balances",
+                )
         return out
 
     def get_balance(self, address: str, block_number: int) -> Balance:
@@ -113,11 +131,21 @@ class BalancesService(Core):
         """
         address = address.lower()
         balances = list(
-            self._balances_repo.find(address, block_number, block_number + 1)
+            self._balances_repo.find([address], block_number, block_number + 1)
         )
         if len(balances) > 0:
             return balances[0]
 
+        return self._fetch_balance_and_save(address, block_number)
+
+    def clear_cache(self):
+        """
+        Delete all cached ETH balances
+        """
+        self._balances_repo.purge()
+        self._balances_repo.conn.commit()
+
+    def _fetch_balance_and_save(self, address: str, block_number: int) -> Balance:
         resp = json.loads(
             json_response(
                 self.w3.eth.get_balance(
@@ -127,16 +155,4 @@ class BalancesService(Core):
         )
         balance_item = Balance(self.chain_id, block_number, address, resp / 10**18)
         self._balances_repo.save([balance_item])
-        self._balances_repo.conn.commit()
-
-        balances = list(
-            self._balances_repo.find(address, block_number, block_number + 1)
-        )
-        return balances[0]
-
-    def clear_cache(self):
-        """
-        Delete all cached ETH balances
-        """
-        self._balances_repo.purge()
         self._balances_repo.conn.commit()
