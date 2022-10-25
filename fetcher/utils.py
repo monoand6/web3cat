@@ -4,16 +4,13 @@ Utility functions.
 
 import sys
 from typing import Any, Dict, Union
+import json
 from hexbytes import HexBytes
 from eth_typing.encoding import HexStr
 from web3.datastructures import AttributeDict
 from web3.contract import ContractFunction, get_abi_input_types
 from web3.auto import w3
-from web3 import Web3
 from eth_utils import function_abi_to_4byte_selector
-from datetime import datetime
-
-import json
 
 
 class Web3JsonEncoder(json.JSONEncoder):
@@ -25,17 +22,17 @@ class Web3JsonEncoder(json.JSONEncoder):
     hex format.
     """
 
-    def default(self, obj: Any) -> Union[Dict[Any, Any], HexStr]:
+    def default(self, o: Any) -> Union[Dict[Any, Any], HexStr]:
         """
         Convert Web3 response to ``dict``
         """
-        if isinstance(obj, AttributeDict):
-            return {k: v for k, v in obj.items()}
-        if isinstance(obj, HexBytes):
-            return HexStr(obj.hex())
-        if isinstance(obj, (bytes, bytearray)):
-            return HexStr(HexBytes(obj).hex())
-        return json.JSONEncoder.default(self, obj)
+        if isinstance(o, AttributeDict):
+            return {k: v for k, v in o.items()}
+        if isinstance(o, HexBytes):
+            return HexStr(o.hex())
+        if isinstance(o, (bytes, bytearray)):
+            return HexStr(HexBytes(o).hex())
+        return json.JSONEncoder.default(self, o)
 
 
 def json_response(response: AttributeDict) -> str:
@@ -88,8 +85,8 @@ def calldata(call: ContractFunction) -> str:
     return selector + HexBytes(bytes_calldata).hex()[2:]
 
 
-last_progress_bar_length = 0
-last_percent = 0
+LAST_PROGRESS_BAR_LENGTH = 0
+LAST_PERCENT = 0
 
 
 def print_progress(
@@ -111,25 +108,25 @@ def print_progress(
         decimals: positive number of decimals in percent complete
         bar_length: character length of bar
     """
-    global last_progress_bar_length
-    global last_percent
+    global LAST_PROGRESS_BAR_LENGTH
+    global LAST_PERCENT
 
     # Avoid too much output
-    if iteration / total - last_percent < 0.01:
+    if iteration / total - LAST_PERCENT < 0.01:
         return
 
-    last_percent = iteration / total
+    LAST_PERCENT = iteration / total
     str_format = "{0:." + str(decimals) + "f}"
     percents = str_format.format(100 * (iteration / float(total)))
     filled_length = int(round(bar_length * iteration / float(total)))
-    bar = "█" * filled_length + "-" * (bar_length - filled_length)
-    text = "%s |%s| %s%s %s\r" % (prefix, bar, percents, "%", suffix)
-    sys.stdout.write("%s\r" % (" " * last_progress_bar_length)),
-    sys.stdout.write(text),
-    last_progress_bar_length = len(text)
+    vert_bar = "█" * filled_length + "-" * (bar_length - filled_length)
+    text = f"{prefix} |{vert_bar}| {percents}% {suffix}\r"
+    _ = sys.stdout.write(f"{' ' * LAST_PROGRESS_BAR_LENGTH}\r")
+    _ = sys.stdout.write(text)
+    LAST_PROGRESS_BAR_LENGTH = len(text)
 
     if iteration == total:
         sys.stdout.write("\n")
         sys.stdout.flush()
-        last_percent = 0
-        last_progress_bar_length = 0
+        LAST_PERCENT = 0
+        LAST_PROGRESS_BAR_LENGTH = 0

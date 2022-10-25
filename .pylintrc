@@ -1,5 +1,5 @@
 [MAIN]
 
-disable = C0114
+disable = C0114,W0603
 argument-rgx=[a-z_][a-z0-9_]{1,30}$
 method-rgx=[a-z_][a-z0-9_]{1,}$
