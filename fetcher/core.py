@@ -19,16 +19,16 @@ chain_id_cache = {}
 
 class Core:
     """
-    This would a base class for any class that wants to use
+    A base class for any class that wants to use
     an Ethereum RPC or Sqlite3 cache database.
 
-    When deriving this class you're providing arguments like rpc url
-    or OS path to the database. The actual resources are instantiated
-    on demand though. This means that if you're just using the Ethereum
+    When deriving this class, you're providing arguments like rpc url
+    or OS path to the database. The resources are instantiated
+    on demand though. It means that if you're just using the Ethereum
     RPC it's sufficient to supply only the rpc endpoint and skip OS path
     to the database in the constructor.
 
-    This makes this class lightweight and safe to derive from any other
+    So this class lightweight and safe to derive from any other
     class.
 
     **Caching**
@@ -36,17 +36,17 @@ class Core:
     The web3 instance and chain_id are cached by the rpc url key.
     The sqlite3 connection is cached by the OS path of the database.
 
-    While this might not work good in a multithreaded scenario, for
-    single threaded this lowers overhead like making new connections
-    and for example querying chain_id each time it's accessed.
+    While this might not work well in a multi-threaded scenario, for
+    single-threaded there's no overhead like making new connections
+    and, for example, querying chain_id each time it's accessed.
 
     **Block grid**
 
     It's often desirable to convert block number to timestamp and vice
-    versa. In a way, blocks are blockchain-readable and timestamps are
-    human readable.
+    versa. In a way, blocks are blockchain-readable, and timestamps are
+    human-readable.
 
-    However fetching every single block is impractical in many cases.
+    However, fetching every single block is impractical in many cases.
 
     That's why the following algorithm is used for timestamp estimation:
 
@@ -164,44 +164,3 @@ class Core:
             db_cache[self.cache_path] = connection_from_path(self.cache_path)
 
         return db_cache[self.cache_path]
-
-
-class Repo(Core):
-    """
-    Base class for any repo (an entity over the database)
-    used in the :mod:`fetcher` module.
-    This is a thin wrapper around `sqlite3.Connection <https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection>`_ so that
-    subclasses use has-a inheritance with a connection.
-
-    Important:
-        All the changes happening at the repo must be committed using
-        :meth:`commit` method or rolled back using :meth:`rollback` method. Otherwise
-        there's no guarantee that changes will be saved.
-
-    Examples:
-
-        ::
-
-            class Widgets(Repo):
-                def save(self, w: Widget):
-                    cursor = self.conn.cursor()
-                    cursor.execute("INSERT INTO widgets VALUES (...)", w)
-
-            ws = Widgets.from_path("cache.db")
-            w = Widget(...)
-            w.save() # Doesn't really save anything, changes are pending
-            w.commit() # Now everything is saved
-
-    """
-
-    def commit(self):
-        """
-        Commits all changes pending on the database connection.
-        """
-        self.conn.commit()
-
-    def rollback(self):
-        """
-        Rollbacks all changes pending on the database connection.
-        """
-        self.conn.rollback()
