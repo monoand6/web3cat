@@ -17,5 +17,5 @@ Web3Cat
    :maxdepth: 1
    :caption: Api
 
-   api.fetcher
    api.data
+   api.fetcher
