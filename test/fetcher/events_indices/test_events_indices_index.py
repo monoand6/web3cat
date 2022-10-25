@@ -7,8 +7,8 @@ from fetcher.events_indices.index_data import BLOCKS_PER_BIT
 
 
 @given(events_index())
-def test_events_index_from_to_tuple(idx: EventsIndex):
-    assert EventsIndex.from_tuple(idx.to_tuple()) == idx
+def test_events_index_from_to_row(idx: EventsIndex):
+    assert EventsIndex.from_row(idx.to_row()) == idx
 
 
 @given(events_index())
@@ -18,7 +18,7 @@ def test_events_index_data_dump_load(idx: EventsIndex):
     for i in range(0, 1_000_000, 10000):
         assert data[i] == restored[i]
 
-    assert EventsIndex.from_tuple(idx.to_tuple()) == idx
+    assert EventsIndex.from_row(idx.to_row()) == idx
 
 
 @given(

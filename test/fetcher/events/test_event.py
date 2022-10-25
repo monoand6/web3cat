@@ -5,7 +5,7 @@ from fetcher.events.event import Event
 
 @given(event())
 def test_event_tuples(event: Event):
-    assert Event.from_tuple(event.to_tuple()) == event
+    assert Event.from_row(event.to_row()) == event
 
 
 @given(event())

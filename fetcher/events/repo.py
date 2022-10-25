@@ -40,7 +40,7 @@ class EventsRepo(Core):
             args,
         )
         rows = cursor.fetchall()
-        return (Event.from_tuple(r) for r in rows)
+        return (Event.from_row(r) for r in rows)
 
     def save(self, events: List[Event]):
         """
@@ -50,7 +50,7 @@ class EventsRepo(Core):
             events: List of events to save
         """
         cursor = self.conn.cursor()
-        rows = [e.to_tuple() for e in events]
+        rows = [e.to_row() for e in events]
         cursor.executemany(
             "INSERT INTO events VALUES(?,?,?,?,?,?,?) ON CONFLICT DO NOTHING", rows
         )

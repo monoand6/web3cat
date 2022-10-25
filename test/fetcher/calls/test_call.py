@@ -5,7 +5,7 @@ from fetcher.calls.call import Call
 
 @given(call())
 def test_call_tuples(call: Call):
-    assert Call.from_tuple(call.to_tuple()) == call
+    assert Call.from_row(call.to_row()) == call
 
 
 @given(call())

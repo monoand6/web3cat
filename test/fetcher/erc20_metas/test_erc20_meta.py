@@ -7,4 +7,4 @@ from erc20_metas.strategies import erc20_meta
 
 @given(erc20_meta())
 def test_tuples(event: ERC20Meta):
-    assert ERC20Meta.from_tuple(event.to_tuple()) == event
+    assert ERC20Meta.from_row(event.to_row()) == event

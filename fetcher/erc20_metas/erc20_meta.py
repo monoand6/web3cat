@@ -30,7 +30,7 @@ class ERC20Meta:
         self.symbol = symbol
         self.decimals = decimals
 
-    def from_tuple(tuple: Tuple[int, str, str, str, int]) -> ERC20Meta:
+    def from_row(tuple: Tuple[int, str, str, str, int]) -> ERC20Meta:
         """
         Deserialize from database row
 
@@ -40,7 +40,7 @@ class ERC20Meta:
 
         return ERC20Meta(*tuple)
 
-    def to_tuple(self) -> Tuple[int, str, str, str, int]:
+    def to_row(self) -> Tuple[int, str, str, str, int]:
         """
         Serialize to database row
 

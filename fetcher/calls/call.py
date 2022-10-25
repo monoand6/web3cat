@@ -54,7 +54,7 @@ class Call:
         self._calldata = val.lower()
 
     @staticmethod
-    def from_tuple(tuple: Tuple[int, str, str, int, str]) -> Call:
+    def from_row(tuple: Tuple[int, str, str, int, str]) -> Call:
         """
         Deserialize from database row
 
@@ -65,7 +65,7 @@ class Call:
         call.response = json.loads(call.response)
         return call
 
-    def to_tuple(self) -> Tuple[int, str, str, int, str]:
+    def to_row(self) -> Tuple[int, str, str, int, str]:
         """
         Serialize to database row
 

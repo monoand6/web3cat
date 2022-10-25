@@ -29,7 +29,7 @@ class BalancesRepo(Core):
             "SELECT * FROM balances WHERE chain_id = ? AND address = ? AND block_number >= ? AND block_number < ?",
             (self.chain_id, address.lower(), from_block, to_block),
         )
-        return (Balance.from_tuple(r) for r in rows)
+        return (Balance.from_row(r) for r in rows)
 
     def save(self, balances: List[Balance]):
         """
@@ -38,7 +38,7 @@ class BalancesRepo(Core):
         Args:
             balances: List of balances to save
         """
-        rows = [e.to_tuple() for e in balances]
+        rows = [e.to_row() for e in balances]
         self.conn.executemany(
             "INSERT INTO balances VALUES(?,?,?,?) ON CONFLICT DO NOTHING", rows
         )

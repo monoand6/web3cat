@@ -26,7 +26,7 @@ class BlocksRepo(Core):
         ).fetchone()
         if not row:
             return None
-        return Block.from_tuple(row)
+        return Block.from_row(row)
 
     def get_block_before_timestamp(self, timestamp: int) -> Block | None:
         """
@@ -46,7 +46,7 @@ class BlocksRepo(Core):
         ).fetchone()
         if not row:
             return None
-        return Block.from_tuple(row)
+        return Block.from_row(row)
 
     def find(self, blocks: int | List[int]) -> List[Block]:
         """
@@ -69,7 +69,7 @@ class BlocksRepo(Core):
                 int_blocks + [self.chain_id],
             )
             out = cursor.fetchall()
-        out = [Block.from_tuple(b) for b in out]
+        out = [Block.from_row(b) for b in out]
         # unique
         out = list({(b.number): b for b in out}.values())
         return sorted(out, key=lambda x: x.number)
@@ -78,7 +78,7 @@ class BlocksRepo(Core):
         blocks = self.conn.execute(
             "SELECT * FROM blocks WHERE chain_id = ?", (self.chain_id,)
         )
-        out = [Block.from_tuple(b) for b in blocks]
+        out = [Block.from_row(b) for b in blocks]
         out = list({(b.number): b for b in out}.values())
         return sorted(out, key=lambda x: x.number)
 
@@ -91,7 +91,7 @@ class BlocksRepo(Core):
         """
 
         cursor = self.conn.cursor()
-        rows = [b.to_tuple() for b in blocks]
+        rows = [b.to_row() for b in blocks]
         cursor.executemany(
             "INSERT INTO blocks VALUES(?,?,?) ON CONFLICT DO NOTHING", rows
         )

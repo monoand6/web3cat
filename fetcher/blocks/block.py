@@ -20,7 +20,7 @@ class Block:
         self.number = number
         self.timestamp = timestamp
 
-    def from_tuple(tuple: Tuple[int, int, int]) -> Block:
+    def from_row(tuple: Tuple[int, int, int]) -> Block:
         """
         Deserialize from database row
 
@@ -29,7 +29,7 @@ class Block:
         """
         return Block(*tuple)
 
-    def to_tuple(self) -> Tuple[int, int, int]:
+    def to_row(self) -> Tuple[int, int, int]:
         """
         Serialize to database row
 

@@ -34,7 +34,7 @@ class ERC20MetasRepo(Core):
         row = cursor.fetchone()
         if not row:
             return None
-        return ERC20Meta.from_tuple(row)
+        return ERC20Meta.from_row(row)
 
     def save(self, erc20_metas: List[ERC20Meta]):
         """
@@ -44,7 +44,7 @@ class ERC20MetasRepo(Core):
             erc20_metas: a list of :class:`ERC20Meta` to save
         """
         cursor = self.conn.cursor()
-        rows = [e.to_tuple() for e in erc20_metas]
+        rows = [e.to_row() for e in erc20_metas]
         cursor.executemany(
             "INSERT INTO erc20_metas VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING", rows
         )

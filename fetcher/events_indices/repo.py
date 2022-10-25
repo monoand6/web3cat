@@ -52,7 +52,7 @@ class EventsIndicesRepo(Core):
             f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
             (self.chain_id, address, event),
         )
-        indices = (EventsIndex.from_tuple(r) for r in rows)
+        indices = (EventsIndex.from_row(r) for r in rows)
         return (i for i in indices if is_softer_filter_than(i.args, args))
 
     def get_index(
@@ -89,7 +89,7 @@ class EventsIndicesRepo(Core):
         row = cursor.fetchone()
         if row is None:
             return None
-        return EventsIndex.from_tuple(row)
+        return EventsIndex.from_row(row)
 
     def save(self, indices: List[EventsIndex]):
         """
@@ -99,7 +99,7 @@ class EventsIndicesRepo(Core):
             indices: a list of indices to save
         """
         cursor = self.conn.cursor()
-        rows = [i.to_tuple() for i in indices]
+        rows = [i.to_row() for i in indices]
         cursor.executemany(
             "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO UPDATE SET data = excluded.data",
             rows,

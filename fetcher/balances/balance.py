@@ -24,16 +24,16 @@ class Balance:
         self.balance = balance
 
     @staticmethod
-    def from_tuple(tuple: Tuple[int, int, str, int]) -> Balance:
+    def from_row(row: Tuple[int, int, str, int]) -> Balance:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
-        return Balance(*tuple)
+        return Balance(*row)
 
-    def to_tuple(self) -> Tuple[int, int, str, int]:
+    def to_row(self) -> Tuple[int, int, str, int]:
         """
         Serialize to database row
 

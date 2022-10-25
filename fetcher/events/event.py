@@ -40,7 +40,7 @@ class Event:
         self.args = args
 
     @staticmethod
-    def from_tuple(tuple: Tuple[int, int, str, int, str, str, str]) -> Event:
+    def from_row(tuple: Tuple[int, int, str, int, str, str, str]) -> Event:
         """
         Deserialize from database row
 
@@ -51,7 +51,7 @@ class Event:
         event.args = json.loads(event.args)
         return event
 
-    def to_tuple(self) -> Tuple[int, int, str, int, str, str, str]:
+    def to_row(self) -> Tuple[int, int, str, int, str, str, str]:
         """
         Serialize to database row
 

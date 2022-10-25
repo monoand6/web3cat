@@ -5,7 +5,7 @@ from fetcher.blocks.block import Block
 
 @given(block())
 def test_block_tuples(block: Block):
-    assert Block.from_tuple(block.to_tuple()) == block
+    assert Block.from_row(block.to_row()) == block
 
 
 @given(block())

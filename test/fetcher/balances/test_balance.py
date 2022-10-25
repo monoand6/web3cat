@@ -5,7 +5,7 @@ from fetcher.balances.balance import Balance
 
 @given(balance())
 def test_balance_tuples(balance: Balance):
-    assert Balance.from_tuple(balance.to_tuple()) == balance
+    assert Balance.from_row(balance.to_row()) == balance
 
 
 @given(balance())

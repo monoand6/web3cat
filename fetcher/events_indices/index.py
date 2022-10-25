@@ -43,7 +43,7 @@ class EventsIndex:
         self.data = data
 
     @staticmethod
-    def from_tuple(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
+    def from_row(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
         """
         Deserialize from database row
 
@@ -55,7 +55,7 @@ class EventsIndex:
         data = EventsIndexData.load(raw_data)
         return EventsIndex(chain_id, address, event, args, data)
 
-    def to_tuple(self) -> Tuple[int, str, str, str, bytes]:
+    def to_row(self) -> Tuple[int, str, str, str, bytes]:
         """
         Serialize to database row
 
