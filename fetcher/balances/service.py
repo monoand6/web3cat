@@ -110,12 +110,13 @@ class BalancesService(Core):
                 )
                 out.append(self._fetch_balance_and_save(addr, block))
                 i += 1
-            if num_fetch > 0:
-                print_progress(
-                    num_fetch,
-                    num_fetch,
-                    f"Fetching {num_fetch} eth balances",
-                )
+
+        if num_fetch > 0:
+            print_progress(
+                num_fetch,
+                num_fetch,
+                f"Fetching {num_fetch} eth balances",
+            )
         return out
 
     def get_balance(self, address: str, block_number: int) -> Balance:
@@ -156,3 +157,4 @@ class BalancesService(Core):
         balance_item = Balance(self.chain_id, block_number, address, resp / 10**18)
         self._balances_repo.save([balance_item])
         self._balances_repo.conn.commit()
+        return balance_item

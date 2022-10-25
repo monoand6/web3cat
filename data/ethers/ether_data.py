@@ -77,19 +77,25 @@ class EtherData:
         ]
         balances = self._balances_service.get_balances(addresses, blocks)
         balances = [
-            {"timestamp": timestamps[i % len(timestamps)], **b.to_dict()}
+            {
+                "timestamp": timestamps[i % len(timestamps)],
+                "date": datetime.fromtimestamp(timestamps[i % len(timestamps)]),
+                "block_number": b.block_number,
+                "address": b.address,
+                "balance": b.balance,
+            }
             for i, b in enumerate(balances)
         ]
         df = pl.DataFrame(
             balances,
             {
                 "timestamp": pl.UInt64,
-                "chainId": pl.UInt64,
-                "blockNumber": pl.UInt64,
+                "date": pl.Datetime,
+                "block_number": pl.UInt64,
                 "address": pl.Utf8,
                 "balance": pl.Float64,
             },
-        )
+        ).sort(["timestamp", "address"])
         return df
 
     def _resolve_timetamps(self, timestamps: List[int | datetime]) -> List[int]:
