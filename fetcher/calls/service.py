@@ -1,25 +1,22 @@
 from __future__ import annotations
-import sys
 import json
-from typing import Any, Dict, List, Tuple
-from fetcher.core import Core
-from fetcher.calls.call import Call
-from fetcher.calls.repo import CallsRepo
-from web3 import Web3
 from web3.contract import ContractFunction
-from web3.auto import w3 as w3auto
+from fetcher.calls.call import Call
 
-from fetcher.utils import calldata, json_response, short_address
+from fetcher.core import Core
+from fetcher.utils import calldata, json_response
+from fetcher.calls.repo import CallsRepo
 
 
 class CallsService(Core):
     """
-    Service for web3 calls.
+    Service for making contract static calls.
 
     The sole purpose of this service is to cache web 3 calls and
     serve them on subsequent calls.
 
-    The exact flow goes like this
+    **Request/Response flow**
+
     ::
 
                 +---------------+                 +-------+ +-----------+
@@ -44,7 +41,7 @@ class CallsService(Core):
 
 
     Args:
-        calls_repo: Repo of calls
+        calls_repo: :class:`CallsRepo` instance
     """
 
     _calls_repo: CallsRepo
@@ -59,7 +56,7 @@ class CallsService(Core):
         Create an instance of :class:`CallsService`
 
         Args:
-            cache_path: path for the cache database
+            kwargs: Args for the :class:`fetcher.core.Core`
 
         Returns:
             An instance of :class:`CallsService`
@@ -73,14 +70,15 @@ class CallsService(Core):
         block_number: int,
     ) -> Call:
         """
-        Get call specified by parameters.
+        Make contract call specified by parameters.
 
         Args:
-            call: class:`web3.contract.ContractCall` specifying contract and call arguments.
-            block_number: fetch call for this block
+            call: :class:`web3.contract.ContractFunction` specifying contract, function
+                  and call arguments.
+            block_number: get call at this block
 
         Returns:
-            A fetched calls
+            A fetched :class:`fetcher.calls.Call`
         """
 
         data = calldata(call)
