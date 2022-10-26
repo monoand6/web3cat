@@ -96,7 +96,7 @@ class BlocksService(Core):
         """
         left_block = self._blocks_repo.get_block_before_timestamp(timestamp)
         if left_block is None:
-            left_block = self.get_blocks([1])[0]
+            left_block = self._get_grid_block(1)
 
         right_block = self._blocks_repo.get_block_after_timestamp(timestamp)
         if right_block is None:
@@ -145,7 +145,6 @@ class BlocksService(Core):
 
         if len(block_timestamps) == 0:
             return []
-
         block_idx = {}
         timestamps_to_fetch = []
         for timestamp in block_timestamps:
@@ -154,7 +153,6 @@ class BlocksService(Core):
                 timestamps_to_fetch.append(timestamp)
             else:
                 block_idx[timestamp] = block
-
         for i, timestamp in enumerate(timestamps_to_fetch):
             print_progress(
                 i,
@@ -162,6 +160,7 @@ class BlocksService(Core):
                 f"Resolving {len(timestamps_to_fetch)} block numbers",
             )
             block_idx[timestamp] = self.get_latest_block_at_timestamp(timestamp)
+
         if len(timestamps_to_fetch) > 0:
             print_progress(
                 len(timestamps_to_fetch),
