@@ -172,7 +172,7 @@ class BlocksService(Core):
 
     def get_blocks(self, numbers: int | List[int]) -> List[Block]:
         """
-        Get blocks by a number.
+        Get blocks by numbers.
 
         Args:
             number: block numbers
@@ -243,6 +243,8 @@ class BlocksService(Core):
         """
         Delete all cached entries
         """
+        self._block_cache = {}
+        self._block_grid_cache = {}
         self._blocks_repo.purge()
         self._blocks_repo.conn.commit()
 
