@@ -1,5 +1,4 @@
 from __future__ import annotations
-from bisect import bisect
 
 import json
 from typing import Dict, List, Literal
@@ -129,9 +128,18 @@ class BlocksService(Core):
 
         return self._synthesize_block_from_timestamp(left_block, right_block, timestamp)
 
-    def get_blocks_by_timestamps(
+    def get_latest_blocks_by_timestamps(
         self, block_timestamps: int | List[int]
     ) -> List[Block]:
+        """
+        Get a list of latest blocks as of timestamp.
+
+        Args:
+            block_timestamps: Unix timestamps
+
+        Returns:
+            A list of blocks in the same order
+        """
         if not isinstance(block_timestamps, list):
             block_timestamps = [block_timestamps]
 
@@ -165,38 +173,39 @@ class BlocksService(Core):
 
     def get_blocks(self, numbers: int | List[int]) -> List[Block]:
         """
-        Get block with a specific number.
+        Get blocks by a number.
 
         Args:
-            number: block number. If ``None``, fetches the latest block
+            number: block numbers
 
         Returns:
-            Block with this number. ``None`` if the block doesn't exist.
+            Blocks with these numbers. ``None`` if the block doesn't exist.
         """
 
         if not isinstance(numbers, list):
             numbers = [numbers]
 
+        if len(numbers) == 0:
+            return []
+
         out = []
         for i, num in enumerate(numbers):
-            if len(numbers) > 5:
-                print_progress(
-                    i,
-                    len(numbers),
-                    f"Resolving {len(numbers)} block numbers",
-                )
+            print_progress(
+                i,
+                len(numbers),
+                f"Resolving {len(numbers)} block numbers",
+            )
             left_num = self._snap_to_grid(num, direction="left")
             right_num = self._snap_to_grid(num, direction="right")
             left = self._get_grid_block(left_num)
             right = self._get_grid_block(right_num)
             out.append(self._synthesize_block(left, right, num))
 
-        if len(numbers) > 5:
-            print_progress(
-                len(numbers),
-                len(numbers),
-                f"Resolving {len(numbers)} block numbers",
-            )
+        print_progress(
+            len(numbers),
+            len(numbers),
+            f"Resolving {len(numbers)} block numbers",
+        )
         return out
 
     def clear_cache(self):

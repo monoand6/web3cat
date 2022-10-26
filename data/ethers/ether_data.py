@@ -73,7 +73,8 @@ class EtherData:
     ) -> pl.DataFrame:
         timestamps = sorted(self._resolve_timetamps(timestamps))
         blocks = [
-            b.number for b in self._blocks_service.get_blocks_by_timestamps(timestamps)
+            b.number
+            for b in self._blocks_service.get_latest_blocks_by_timestamps(timestamps)
         ]
         balances = self._balances_service.get_balances(addresses, blocks)
         balances = [

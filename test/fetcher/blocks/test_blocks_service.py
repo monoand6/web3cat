@@ -62,7 +62,7 @@ def test_block_numbers_and_timestamps(
         )
         blocks = service.get_blocks(numbers)
         tss = [b.timestamp for b in blocks]
-        blocks = service.get_blocks_by_timestamps(tss)
+        blocks = service.get_latest_blocks_by_timestamps(tss)
         nums = [b.number for b in blocks]
         assert nums == numbers
     finally:

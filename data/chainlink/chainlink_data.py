@@ -150,7 +150,7 @@ class ChainlinkUSDData:
         """
         if not hasattr(self, "_from_block"):
             ts = time.mktime(self._from_date.timetuple())
-            self._from_block = self._blocks_service.get_blocks_by_timestamps(ts)[
+            self._from_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
                 0
             ].number
         return self._from_block
@@ -162,7 +162,9 @@ class ChainlinkUSDData:
         """
         if not hasattr(self, "_to_block"):
             ts = time.mktime(self._to_date.timetuple())
-            self._to_block = self._blocks_service.get_blocks_by_timestamps(ts)[0].number
+            self._to_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
+                0
+            ].number
         return self._to_block
 
     @property

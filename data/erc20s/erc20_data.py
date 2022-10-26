@@ -192,7 +192,7 @@ class ERC20Data:
         """
         if not hasattr(self, "_from_block"):
             ts = time.mktime(self._from_date.timetuple())
-            self._from_block = self._blocks_service.get_blocks_by_timestamps(ts)[
+            self._from_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
                 0
             ].number
         return self._from_block
@@ -204,7 +204,9 @@ class ERC20Data:
         """
         if not hasattr(self, "_to_block"):
             ts = time.mktime(self._to_date.timetuple())
-            self._to_block = self._blocks_service.get_blocks_by_timestamps(ts)[0].number
+            self._to_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
+                0
+            ].number
         return self._to_block
 
     @property
@@ -321,7 +323,7 @@ class ERC20Data:
             if len(self.transfers) > 0:
                 first_block = self.transfers["block_number"][0]
             else:
-                first_block = self._blocks_service.get_blocks_by_timestamps(
+                first_block = self._blocks_service.get_latest_blocks_by_timestamps(
                     timestamps[0]
                 )[0].number
             initial_balance_wei = self._calls_service.get_call(
