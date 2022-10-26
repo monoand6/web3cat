@@ -42,6 +42,7 @@ class CallsService(Core):
 
     Args:
         calls_repo: :class:`CallsRepo` instance
+        kwargs: Args for the :class:`fetcher.core.Core`
     """
 
     _calls_repo: CallsRepo

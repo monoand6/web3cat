@@ -1,9 +1,9 @@
+# pylint: disable=line-too-long
+
 from __future__ import annotations
 import json
 import os
 from typing import Any, Dict
-from web3 import Web3
-from web3.auto import w3 as w3auto
 from web3.contract import Contract
 from fetcher.core import Core
 
@@ -19,6 +19,8 @@ class ERC20MetasService(Core):
     cache it, and read from the cache on subsequent calls.
 
     The exact flow goes like this
+
+    **Request/Response flow**
 
     ::
 
@@ -44,6 +46,10 @@ class ERC20MetasService(Core):
         | Metadata response |-|                                   |             |                  |
         |-------------------| |                                   |             |                  |
                               |                                   |             |                  |
+
+    Args:
+        erc20_metas_repo: :class:`ERC20MetasRepo` instance
+        kwargs: Args for the :class:`fetcher.core.Core`
     """
 
     _cache: Dict[str, Any]
@@ -53,9 +59,9 @@ class ERC20MetasService(Core):
     def __init__(self, erc20_metas_repo: ERC20MetasRepo, **kwargs):
         super().__init__(**kwargs)
         current_folder = os.path.realpath(os.path.dirname(__file__))
-        with open(f"{current_folder}/tokens.json", "r") as f:
+        with open(f"{current_folder}/tokens.json", "r", encoding="utf-8") as f:
             self._cache = json.load(f)
-        with open(f"{current_folder}/erc20_abi.json", "r") as f:
+        with open(f"{current_folder}/erc20_abi.json", "r", encoding="utf-8") as f:
             self._erc20_abi = json.load(f)
         self._erc20_metas_repo = erc20_metas_repo
 
@@ -65,8 +71,7 @@ class ERC20MetasService(Core):
         Create an instance of :class:`ERC20MetasService`
 
         Args:
-            cache_path: path for the cache database
-            rpc: Ethereum rpc url. If ``None``, `Web3 auto detection <https://web3py.readthedocs.io/en/stable/providers.html#how-automated-detection-works>`_ is used
+            kwargs: Args for the :class:`fetcher.core.Core`
 
         Returns:
             An instance of :class:`ERC20MetasService`
@@ -80,8 +85,8 @@ class ERC20MetasService(Core):
         Get metadata by token symbol or token address.
 
         Getting token metadata by symbol only works for cached metadata.
-        The preloaded cache is quite large and contains major
-        tokens for evm chains.
+        The preloaded cache is large and contains major
+        tokens for all evm chains.
 
         Args:
             token: token symbol or token address

@@ -4,7 +4,7 @@
 Module for fetching and caching contract calls.
 
 The main class of this module is :class:`CallsService`.
-It is used for makind static calls to Ethereum contracts
+It is used for making static calls to Ethereum contracts
 and caching them for subsequent calls.
 
 Example:
