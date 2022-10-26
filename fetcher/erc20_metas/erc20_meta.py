@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Tuple
+import json
+from typing import Any, Dict, Tuple
 
 
 class ERC20Meta:
@@ -7,17 +8,19 @@ class ERC20Meta:
     ERC20 token metadata (name, symbol, decimals).
 
     Note:
-        The convention is to use ``address`` and ``symbol`` in lowercase format.
+        The convention is to use ``address``, ``name`` and ``symbol`` in lowercase format.
         This is not in line with EIP55 but makes things more uniform and
         simpler.
     """
 
     #: Ethereum chain_id
     chain_id: int
-    _address: str
-    #: Token name
+    #: Token address (lowercase)
+    address: str
+    #: Token name (lowercase)
     name: str
-    _symbol: str
+    #: Token symbol (lowercase)
+    symbol: str
     #: Token decimals
     decimals: int
 
@@ -25,20 +28,21 @@ class ERC20Meta:
         self, chain_id: int, address: str, name: str, symbol: str, decimals: int
     ):
         self.chain_id = chain_id
-        self.address = address
-        self.name = name
-        self.symbol = symbol
+        self.address = address.lower()
+        self.name = name.lower()
+        self.symbol = symbol.lower()
         self.decimals = decimals
 
-    def from_row(tuple: Tuple[int, str, str, str, int]) -> ERC20Meta:
+    @staticmethod
+    def from_row(row: Tuple[int, str, str, str, int]) -> ERC20Meta:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
 
-        return ERC20Meta(*tuple)
+        return ERC20Meta(*row)
 
     def to_row(self) -> Tuple[int, str, str, str, int]:
         """
@@ -48,29 +52,33 @@ class ERC20Meta:
             database row
         """
 
-        return (self.chain_id, self._address, self.name, self._symbol, self.decimals)
+        return (self.chain_id, self.address, self.name, self.symbol, self.decimals)
 
-    @property
-    def address(self) -> str:
+    def to_dict(self) -> Dict[str, Any]:
         """
-        Token address (lowercase)
+        Convert :class:`ERC20Meta` to dict
         """
-        return self._address
+        return {
+            "chainId": self.chain_id,
+            "address": self.address,
+            "name": self.name,
+            "symbol": self.symbol,
+            "decimals": self.decimals,
+        }
 
-    @address.setter
-    def address(self, val: str):
-        self._address = val.lower()
-
-    @property
-    def symbol(self) -> str:
+    @staticmethod
+    def from_dict(dct: Dict[str, Any]):
         """
-        Token symbol (lowercase)
+        Create :class:`Call` from dict
         """
-        return self._symbol
 
-    @symbol.setter
-    def symbol(self, val: str):
-        self._symbol = val.lower()
+        return ERC20Meta(
+            chain_id=dct["chainId"],
+            address=dct["address"],
+            name=dct["name"],
+            symbol=dct["symbol"],
+            decimals=dct["decimals"],
+        )
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -78,4 +86,4 @@ class ERC20Meta:
         return False
 
     def __repr__(self):
-        return f'ERC20Meta({{"chain_id": {self.chain_id}, "address": {self.address}, "name": {self.name}, "symbol": {self.symbol}, "decimals": {self.decimals}}})'
+        return f"ERC20Meta({json.dumps(self.to_dict())})"

@@ -1,10 +1,13 @@
 from hypothesis import given
-from events.strategies import event
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
-from fetcher.events.event import Event
 from erc20_metas.strategies import erc20_meta
 
 
 @given(erc20_meta())
-def test_tuples(event: ERC20Meta):
-    assert ERC20Meta.from_row(event.to_row()) == event
+def test_erc20_meta_rows(meta: ERC20Meta):
+    assert ERC20Meta.from_row(meta.to_row()) == meta
+
+
+@given(erc20_meta())
+def test_erc20_meta_dicts(meta: ERC20Meta):
+    assert ERC20Meta.from_dict(meta.to_dict()) == meta
