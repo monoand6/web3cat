@@ -51,6 +51,6 @@ class BalancesRepo(Core):
 
     def purge(self):
         """
-        Clean all balances entries from the database cache.
+        Clear all balances entries from the database cache.
         """
         self.conn.execute("DELETE FROM balances")

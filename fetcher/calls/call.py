@@ -5,13 +5,15 @@ from typing import Any, Dict, Tuple
 
 class Call:
     """
-    Call represents a call to Ethereum function with a response
+    Call represents a static call to Ethereum contract function
     """
 
     #: Ethereum chain_id
     chain_id: int
-    _address: str
-    _calldata: str
+    #: Contract address for this call
+    address: str
+    #: Calldata for this call
+    calldata: str
     #: Number of the block for this call
     block_number: int
     #: Response received for the call
@@ -26,42 +28,20 @@ class Call:
         response: Dict[str, Any],
     ):
         self.chain_id = chain_id
-        self.address = address
-        self.calldata = calldata
+        self.address = address.lower()
+        self.calldata = calldata.lower()
         self.block_number = block_number
         self.response = response
 
-    @property
-    def address(self):
-        """
-        Contract address for this call
-        """
-        return self._address
-
-    @address.setter
-    def address(self, val: str):
-        self._address = val.lower()
-
-    @property
-    def calldata(self):
-        """
-        Calldata for this call
-        """
-        return self._calldata
-
-    @calldata.setter
-    def calldata(self, val: str):
-        self._calldata = val.lower()
-
     @staticmethod
-    def from_row(tuple: Tuple[int, str, str, int, str]) -> Call:
+    def from_row(row: Tuple[int, str, str, int, str]) -> Call:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
-        call = Call(*tuple)
+        call = Call(*row)
         call.response = json.loads(call.response)
         return call
 
@@ -93,17 +73,17 @@ class Call:
         }
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]):
+    def from_dict(dct: Dict[str, Any]):
         """
         Create :class:`Call` from dict
         """
 
         return Call(
-            chain_id=d["chainId"],
-            address=d["address"],
-            calldata=d["calldata"],
-            block_number=d["blockNumber"],
-            response=d["response"],
+            chain_id=dct["chainId"],
+            address=dct["address"],
+            calldata=dct["calldata"],
+            block_number=dct["blockNumber"],
+            response=dct["response"],
         )
 
     def __eq__(self, other):
@@ -112,4 +92,4 @@ class Call:
         return False
 
     def __repr__(self):
-        return f'Call({{"chain_id":{self.chain_id}, "address": {self.address}, "calldata": {self.calldata}, "block_number": {self.block_number}, "response": {json.dumps(self.response)}}})'
+        return f"Call({json.dumps(self.to_dict())})"

@@ -104,7 +104,7 @@ class BlocksRepo(Core):
 
     def purge(self):
         """
-        Clean all database entries
+        Clear all database entries
         """
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM blocks")
