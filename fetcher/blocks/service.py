@@ -189,23 +189,55 @@ class BlocksService(Core):
             return []
 
         out = []
-        for i, num in enumerate(numbers):
+
+        block_numbers = list(set(numbers))
+        grid_block_numbers = []
+
+        for b in block_numbers:
+            snapped = self._snap_to_grid(b, direction="left")
+            grid_block_numbers.append(snapped)
+            if snapped != b:
+                right = self._next_grid_block(snapped)
+                if not right is None:
+                    grid_block_numbers.append(right)
+
+        grid_block_numbers = list(set(grid_block_numbers))
+        cached_grid_blocks = self._blocks_repo.find(grid_block_numbers)
+        grid_block_idx = {b.number: b for b in cached_grid_blocks}
+        grid_block_numbers_to_fecth = []
+        for num in grid_block_numbers:
+            if not num in grid_block_idx:
+                grid_block_numbers_to_fecth.append(num)
+
+        for i, num in enumerate(grid_block_numbers_to_fecth):
             print_progress(
                 i,
                 len(numbers),
+                f"Resolving {len(grid_block_numbers_to_fecth)} block numbers",
+            )
+            block = self._fetch_block_from_rpc_and_save(num)
+            grid_block_idx[block.number] = block
+
+        if len(grid_block_numbers_to_fecth) > 0:
+            print_progress(
+                len(grid_block_numbers_to_fecth),
+                len(grid_block_numbers_to_fecth),
                 f"Resolving {len(numbers)} block numbers",
             )
-            left_num = self._snap_to_grid(num, direction="left")
-            right_num = self._snap_to_grid(num, direction="right")
-            left = self._get_grid_block(left_num)
-            right = self._get_grid_block(right_num)
-            out.append(self._synthesize_block(left, right, num))
 
-        print_progress(
-            len(numbers),
-            len(numbers),
-            f"Resolving {len(numbers)} block numbers",
-        )
+        out = []
+        for num in numbers:
+            left_num = self._snap_to_grid(num, direction="left")
+            if left_num == num:
+                out.append(grid_block_idx[num])
+                continue
+
+            right_num = self._snap_to_grid(num, direction="right")
+            left = grid_block_idx[left_num]
+            right = grid_block_idx[right_num]
+            block = self._synthesize_block(left, right, num)
+            out.append(block)
+
         return out
 
     def clear_cache(self):
@@ -258,11 +290,11 @@ class BlocksService(Core):
         )
         number = int((1 - w) * left_block.number + w * right_block.number)
         prev = self._synthesize_block(left_block, right_block, number)
-        next = self._synthesize_block(left_block, right_block, number + 1)
-        if next.timestamp > timestamp:
+        nxt = self._synthesize_block(left_block, right_block, number + 1)
+        if nxt.timestamp > timestamp:
             return prev
         else:
-            return next
+            return nxt
 
     def _snap_to_grid(
         self, block_number: int, direction=Literal["left"] | Literal["right"]
@@ -313,6 +345,9 @@ class BlocksService(Core):
             self._block_grid_cache[number] = block
             return block
 
+        return self._fetch_block_from_rpc_and_save(number)
+
+    def _fetch_block_from_rpc_and_save(self, number: int) -> Block | None:
         block = self._fetch_block_from_rpc(number)
         if block is None:
             if number < 1:

@@ -7,11 +7,12 @@ cache so that subsequent requests are returned from cache.
 
 Example:
     ::
-        from datetime import datetime
+
+        from datetime import datetime, timezone
         from web3cat.fetcher.blocks import BlocksService
 
         service = BlocksService.create()
-        latest_block = service.get_latest_block()
+        latest_block = service.latest_block
 
         new_year = datetime(2022, 1, 1, tzinfo=timezone.utc)
         new_year_block = service.get_latest_blocks_by_timestamps(int(new_year.timestamp()))[0]
@@ -20,7 +21,7 @@ Example:
         new_year_block = service.get_latest_blocks_by_timestamps(int(new_year.timestamp()))[0]
         # cached result
 
-        new_year_block = service.get_block(new_year_block.number)
+        new_year_block = service.get_blocks(new_year_block.number)
         # cached result
 """
 
