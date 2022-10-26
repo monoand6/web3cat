@@ -16,10 +16,12 @@ class Event:
     transaction_hash: str
     #: The log number for this event inside the transaction
     log_index: int
-    _address: str
+    #: The contract address this event appeared in (lowercase)
+    address: str
     #: Event name
     event: str
-    _args: Dict[str, Any]
+    #: Event arguments (hexes are lowercase)
+    args: Dict[str, Any]
 
     def __init__(
         self,
@@ -35,19 +37,19 @@ class Event:
         self.block_number = block_number
         self.transaction_hash = transaction_hash
         self.log_index = log_index
-        self.address = address
+        self.address = address.lower()
         self.event = event
-        self.args = args
+        self.args = self._lower(args)
 
     @staticmethod
-    def from_row(tuple: Tuple[int, int, str, int, str, str, str]) -> Event:
+    def from_row(row: Tuple[int, int, str, int, str, str, str]) -> Event:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
-        event = Event(*tuple)
+        event = Event(*row)
         event.args = json.loads(event.args)
         return event
 
@@ -83,52 +85,52 @@ class Event:
         }
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]):
+    def from_dict(dct: Dict[str, Any]):
         """
         Create :class:`Event` from dict
         """
         return Event(
-            chain_id=d["chainId"],
-            block_number=d["blockNumber"],
-            transaction_hash=d["transactionHash"],
-            log_index=d["logIndex"],
-            address=d["address"],
-            event=d["event"],
-            args=d["args"],
+            chain_id=dct["chainId"],
+            block_number=dct["blockNumber"],
+            transaction_hash=dct["transactionHash"],
+            log_index=dct["logIndex"],
+            address=dct["address"].lower(),
+            event=dct["event"],
+            args=Event._lower(dct["args"]),
         )
 
-    def matches_filter(self, filter: Dict[str, Any] | None) -> bool:
+    def matches_filter(self, event_filter: Dict[str, Any] | None) -> bool:
         """
-        Checks if :class:`Event` matches given event filter.
+        Checks if :class:`Event` matches given event event_filter.
 
         Args:
-            filter: Event filter
+            event_filter: Event event_filter
 
         Returns:
             ``True`` if matches, ``False`` otherwise
         """
-        if filter is None or filter == {}:
+        if event_filter is None or event_filter == {}:
             return True
         if self.args is None:
             return False
-        for k in filter.keys():
+        for k in event_filter.keys():
             if not k in self.args:
                 return False
-            if not self._value_match_filter(self.args[k], filter[k]):
+            if not self._value_match_filter(self.args[k], event_filter[k]):
                 return False
         return True
 
     def _value_match_filter(self, value, filter_value):
         # the most basic case: 2 plain values
-        if not type(filter_value) is list and not type(value) is list:
+        if not isinstance(filter_value, list) and not isinstance(value, list):
             return value == filter_value
         # filter_value is a list of possible values (OR filter) and value is list
-        if type(filter_value) is list and not type(value) is list:
+        if isinstance(filter_value, list) and not isinstance(value, list):
             for ifv in filter_value:
                 if ifv == value:
                     return True
         # filter value is plain value but value is list
-        if not type(filter_value) is list and type(value) is list:
+        if not isinstance(filter_value, list) and isinstance(value, list):
             return False
         # Now we have both values as lists
         # Case 1: filter_value is []. It is a plain list comparison then.
@@ -137,48 +139,23 @@ class Event:
             return value == filter_value
 
         # Case 2: filter_value is a list of lists. Then it's OR on lists
-        if type(filter_value[0]) is list:
+        if isinstance(filter_value[0], list):
             for fv in filter_value:
                 if fv == value:
                     return True
         # Case 3: filter_value is a list and value is a list
         return value == filter_value
 
-    @property
-    def address(self) -> str:
-        """
-        The contract address this event appeared in.
-
-        The convention is this address is always stored in lowercase.
-        """
-        return self._address
-
-    @address.setter
-    def address(self, val: str) -> str:
-        self._address = val.lower()
-
-    @property
-    def args(self) -> Dict[str, Any]:
-        """
-        Event arguments.
-
-        The convention is all hex are always stored in lowercase.
-        """
-        return self._args
-
-    @args.setter
-    def args(self, val: Dict[str, Any] | None):
-        self._args = self._lower(val)
-
-    def _lower(self, val: Any) -> Dict[str, Any]:
+    @classmethod
+    def _lower(cls, val: Any) -> Dict[str, Any]:
         if val is None:
             return None
         if isinstance(val, list):
-            for i in range(len(val)):
-                val[i] = self._lower(val[i])
+            for i, v in enumerate(val):
+                val[i] = cls._lower(v)
         if isinstance(val, dict):
             for k in val.keys():
-                val[k] = self._lower(val[k])
+                val[k] = cls._lower(val[k])
         if isinstance(val, str) and val.startswith("0x"):
             val = val.lower()
         return val
@@ -189,4 +166,4 @@ class Event:
         return False
 
     def __repr__(self):
-        return f'Event({{"chain_id":{self.chain_id}, "block_number": {self.block_number}, "transaction_hash":{self.transaction_hash}, "log_index":{self.log_index}, "address": {self.address}, "event": {self.event}, "args": {json.dumps(self.args)}}})'
+        return f"Event({json.dumps(self.to_dict())})"
