@@ -115,7 +115,7 @@ class BitArray:
         # at least in neighbor bytes
         full_start = start // 8 + 1
         full_end = end // 8
-        val = 0 if value == False else 255
+        val = 0 if value is False else 255
         for i in range(full_start, full_end):
             self._data[i] = val
         for i in range(start, full_start * 8):

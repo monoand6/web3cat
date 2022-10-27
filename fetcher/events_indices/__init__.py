@@ -4,7 +4,7 @@ Module with repos and models for :class:`EventsIndex`.
 :class:`EventsIndex` stores the information about fetched events.
 Each :class:`EventsIndex` is persisted in the :code:`events_indices` table.
 :class:`EventsIndex` has a field ``data`` that stores the blocks
-for which events (with given chain_id, contract address, 
+for which events (with given chain_id, contract address,
 event name, and arguments for lookup) were already fetched.
 
 Note:
@@ -17,7 +17,7 @@ Note:
 Example
 ~~~~~~~
 
-As an illustratory example, consider how an instance of :class:`EventsIndex` 
+As an illustratory example, consider how an instance of :class:`EventsIndex`
 evolves when fetching the same type of events for different blocks.
 
 Assume :code:`BLOCKS_PER_BIT == 1000`.

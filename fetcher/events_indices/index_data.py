@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 from fetcher.events_indices.constants import BLOCKS_PER_BIT
 from fetcher.events_indices.bitarray import BitArray
 
@@ -65,7 +65,9 @@ class EventsIndexData:
             or end_block % self._blocks_per_bit != 0
         ):
             raise IndexError(
-                f"EventsIndexData only multiples of `{self._blocks_per_bit}` are allowed for start_block and end_block. Got `{start_block}` and `{end_block}`"
+                f"EventsIndexData only multiples of `{self._blocks_per_bit}` "
+                f"are allowed for start_block and end_block. Got `{start_block}` "
+                f"and `{end_block}`"
             )
         self._update_start_block(start_block)
         start_idx = self._block_to_bit(start_block)
@@ -74,7 +76,8 @@ class EventsIndexData:
 
     def snap_block_to_grid(self, block: int) -> int:
         """
-        Round down block to the nearest chunk start (chunks of size :const:`constants.BLOCKS_PER_BIT`)
+        Round down block to the nearest chunk start
+        (chunks of size :const:`constants.BLOCKS_PER_BIT`)
         """
         return block - block % self._blocks_per_bit
 
@@ -90,19 +93,20 @@ class EventsIndexData:
 
         The binary format is
 
-        +-------------+---------------------+
-        | start_block | mask                |
-        +=============+=====================+
-        | 4 bytes     | n bytes (as needed) |
-        +-------------+---------------------+
+        +-------------+-----------+---------------------+
+        | start_block | end_block | mask                |
+        +=============+===========+=====================+
+        | 4 bytes     | 4 bytes   | n bytes (as needed) |
+        +-------------+-----------+---------------------+
         """
         if self._start_block is None:
             return bytes()
         bytes4 = self._start_block.to_bytes(4, "big")
         end_block = self.end_block or 0
         bytes48 = end_block.to_bytes(4, "big")
-        return bytes4 + bytes48 + self._mask._data
+        return bytes4 + bytes48 + self._mask._data  # pylint: disable=protected-access
 
+    @staticmethod
     def load(data: bytes) -> EventsIndexData:
         """
         Restore class from binary. See :meth:`dump` for binary format.

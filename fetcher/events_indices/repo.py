@@ -30,7 +30,8 @@ class EventsIndicesRepo(Core):
         Imagine two indices for the ERC20 Transfer event:
 
         1. Stating that all ``Transfer`` events were fetched from block 2000 to 4000
-        2. Stating that ``Transfer`` from address "0x6b17..." events were fetched from block 3000 to 4000
+        2. Stating that ``Transfer`` from address "0x6b17..." events were fetched
+           from block 3000 to 4000
 
         Now we want to query if the ``Transfer`` events were fetched for
         :code:`{"from": "0x6b17..."}` for blocks 2500 to 4000. A naive implementation
@@ -49,7 +50,8 @@ class EventsIndicesRepo(Core):
             Iterator of matched indices
         """
         rows = self.conn.execute(
-            f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ?",
+            "SELECT * FROM events_indices WHERE chain_id = ? "
+            "AND address = ? AND event = ?",
             (self.chain_id, address, event),
         )
         indices = (EventsIndex.from_row(r) for r in rows)
@@ -78,7 +80,8 @@ class EventsIndicesRepo(Core):
         args = args or {}
         cursor = self.conn.cursor()
         cursor.execute(
-            f"SELECT * FROM events_indices WHERE chain_id = ? AND address = ? AND event = ? and args = ?",
+            "SELECT * FROM events_indices WHERE chain_id = ? AND address = ? "
+            "AND event = ? and args = ?",
             (
                 self.chain_id,
                 address,
@@ -101,7 +104,8 @@ class EventsIndicesRepo(Core):
         cursor = self.conn.cursor()
         rows = [i.to_row() for i in indices]
         cursor.executemany(
-            "INSERT INTO events_indices VALUES (?,?,?,?,?) ON CONFLICT DO UPDATE SET data = excluded.data",
+            "INSERT INTO events_indices VALUES (?,?,?,?,?) "
+            "ON CONFLICT DO UPDATE SET data = excluded.data",
             rows,
         )
 

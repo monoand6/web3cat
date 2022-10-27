@@ -15,7 +15,8 @@ class EventsIndex:
         address: Contract address
         event: Event name
         _args: Argument filters (filter for indexed fields of event)
-        data: Index data storing blocks for which events were already fetched. See :class:`EventsIndexData` for details.
+        data: Index data storing blocks for which events were already fetched.
+              See :class:`EventsIndexData` for details.
     """
 
     #: Ethereum chain_id
@@ -43,14 +44,14 @@ class EventsIndex:
         self.data = data
 
     @staticmethod
-    def from_row(tuple: Tuple[int, str, str, str, bytes]) -> EventsIndex:
+    def from_row(row: Tuple[int, str, str, str, bytes]) -> EventsIndex:
         """
         Deserialize from database row
 
         Args:
-            tuple: database row
+            row: database row
         """
-        chain_id, address, event, args_json, raw_data = tuple
+        chain_id, address, event, args_json, raw_data = row
         args = json.loads(args_json)
         data = EventsIndexData.load(raw_data)
         return EventsIndex(chain_id, address, event, args, data)
