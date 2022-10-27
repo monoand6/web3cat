@@ -29,16 +29,19 @@ class EventsIndexData:
     """
 
     _start_block: int | None
+    end_block: int | None
     _mask: BitArray
     _blocks_per_bit: int
 
     def __init__(
         self,
         start_block: int | None = None,
+        end_block: int | None = None,
         mask: bytes | None = None,
     ):
         self._blocks_per_bit = BLOCKS_PER_BIT
         self._start_block = None
+        self.end_block = end_block
         self._mask = BitArray(mask or [])
         self._update_start_block(start_block)
 
@@ -96,7 +99,9 @@ class EventsIndexData:
         if self._start_block is None:
             return bytes()
         bytes4 = self._start_block.to_bytes(4, "big")
-        return bytes4 + self._mask._data
+        end_block = self.end_block or 0
+        bytes48 = end_block.to_bytes(4, "big")
+        return bytes4 + bytes48 + self._mask._data
 
     def load(data: bytes) -> EventsIndexData:
         """
@@ -107,9 +112,12 @@ class EventsIndexData:
         """
         if len(data) < 4:
             return EventsIndexData()
-        block = int.from_bytes(data[0:4], "big")
-        mask = data[4:]
-        return EventsIndexData(block, mask)
+        start_block = int.from_bytes(data[0:4], "big")
+        end_block = int.from_bytes(data[4:8], "big")
+        if end_block == 0:
+            end_block = None
+        mask = data[8:]
+        return EventsIndexData(start_block, end_block, mask)
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -117,6 +125,7 @@ class EventsIndexData:
         """
         return {
             "startBlock": self._start_block,
+            "endBlock": self.end_block,
             "mask": self._mask.to_hex(),
         }
 
@@ -132,13 +141,16 @@ class EventsIndexData:
         """
         if self._start_block is None:
             return False
+        if not self.end_block is None:
+            if block >= self.end_block:
+                return False
         bit = self._block_to_bit(block)
         if bit < 0 or bit >= len(self._mask):
             return False
         return self._mask[bit]
 
     def __repr__(self) -> str:
-        return f"EventsIndexData(start_block: {self._start_block}, mask: {self._mask})"
+        return f"EventsIndexData({json.dumps(self.to_dict())})"
 
     def _update_start_block(self, block: int | None):
         """

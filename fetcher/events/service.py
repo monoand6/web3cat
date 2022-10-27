@@ -3,6 +3,7 @@ import json
 from typing import Any, Dict, List, Tuple
 from web3.contract import ContractEvent
 from requests.exceptions import ReadTimeout
+from fetcher.blocks.service import BlocksService
 
 from fetcher.core import Core
 from fetcher.events.event import Event
@@ -55,13 +56,19 @@ class EventsService(Core):
 
     _events_repo: EventsRepo
     _events_indices_repo: EventsIndicesRepo
+    _blocks_service: BlocksService
 
     def __init__(
-        self, events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, **kwargs
+        self,
+        events_repo: EventsRepo,
+        events_indices_repo: EventsIndicesRepo,
+        blocks_service: BlocksService,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self._events_repo = events_repo
         self._events_indices_repo = events_indices_repo
+        self._blocks_service = blocks_service
 
     @staticmethod
     def create(**kwargs) -> EventsService:
@@ -76,7 +83,10 @@ class EventsService(Core):
         """
         events_repo = EventsRepo(**kwargs)
         events_indices_repo = EventsIndicesRepo(**kwargs)
-        return EventsService(events_repo, events_indices_repo)
+        blocks_service = BlocksService.create(**kwargs)
+        return EventsService(
+            events_repo, events_indices_repo, blocks_service=blocks_service
+        )
 
     def get_events(
         self,
@@ -205,6 +215,7 @@ class EventsService(Core):
             f"({from_block} - {to_block})"
         )
         step = chunk_size_in_steps * write_index.step()
+        print(from_block, to_block, step)
         for start in range(from_block, to_block, step):
             end = min(start + step, to_block)
             shinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
@@ -270,6 +281,12 @@ class EventsService(Core):
         to_block: int,
         write_index: EventsIndex,
     ) -> List[Event]:
+        # we're fetching beyond latest block
+        latest_exclusive = self._blocks_service.latest_block.number + 1
+        if to_block > latest_exclusive:
+            # the latest block in the index is outdated
+            if latest_exclusive > (write_index.data.end_block or 0):
+                write_index.data.end_block = latest_exclusive
         events = self._fetch_events_in_one_chunk(
             event, from_block, to_block, argument_filters
         )

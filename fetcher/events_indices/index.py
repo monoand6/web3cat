@@ -97,7 +97,7 @@ class EventsIndex:
         out = {}
         for k in sorted(args.keys()):
             v = args[k]
-            if type(v) is list:
+            if isinstance(v, list):
                 v = sorted(v)
             out[k] = v
         return out
@@ -126,13 +126,13 @@ class EventsIndex:
         out = {}
         for k in sorted(self.args.keys()):
             v = self.args[k]
-            if type(v) is list:
+            if isinstance(v, list):
                 v = sorted(v)
             out[k] = v
         return json.dumps(out)
 
     def __repr__(self) -> str:
-        return f"EventsIndex(chain_id: {self.chain_id}, address: {self.address}, event: {self.event}, args: {self.args}, data: {self.data})"
+        return f"EventsIndex({json.dumps(self.to_dict())})"
 
     def __eq__(self, other):
         if type(other) is type(self):

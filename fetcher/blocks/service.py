@@ -84,6 +84,12 @@ class BlocksService(Core):
             self._latest_block = self._fetch_block_from_rpc()
         return self._latest_block
 
+    def refresh_latest_block(self):
+        """
+        Refresh :attr:`latest_block` (the value is cached by default)
+        """
+        self._latest_block = self._fetch_block_from_rpc()
+
     def get_latest_block_at_timestamp(self, timestamp: int) -> Block | None:
         """
         Get the first block after a timestamp.

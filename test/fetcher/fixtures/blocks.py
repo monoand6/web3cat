@@ -13,8 +13,8 @@ def blocks_repo(cache_path: str, w3_mock: Web3) -> BlocksRepo:
 
 
 @pytest.fixture
-def blocks_service(cache_path: str, w3_mock: Web3) -> BlocksService:
+def blocks_service(blocks_repo: BlocksRepo, w3_mock: Web3) -> BlocksService:
     """
     Instance of blocks.BlocksService
     """
-    return BlocksService(cache_path=cache_path, w3=w3_mock)
+    return BlocksService(blocks_repo=blocks_repo, w3=w3_mock)

@@ -13,7 +13,7 @@ from fetcher.events.event import Event
 from web3.exceptions import BlockNotFound
 from eth_typing.encoding import HexStr
 
-LATEST_BLOCK = 26789
+LATEST_BLOCK = 15839990
 INTIAL_TIME = 1438200000
 
 
@@ -29,7 +29,6 @@ class Web3EventFilterMock:
 
 class Web3Mock:
     _events: List[Event]
-    _block_numbers: List[int]
     _balances: List[int]
 
     number_of_calls: int
@@ -45,11 +44,6 @@ class Web3Mock:
         self.events_fetched = 0
         self.event_name = "Transfer"
 
-        self._block_numbers = []
-        initial_time = 1438200000
-        for i in range(LATEST_BLOCK + 1):
-            self._block_numbers.append(initial_time)
-            initial_time += randint(10, 20)
         self.number_of_calls = 0
 
         self._balances = {b: b * 1000 for b in range(15632000, 15642000, 100)}
@@ -105,7 +99,7 @@ class Web3Mock:
         return {
             "hash": HexStr(Web3.keccak(number)).hex(),
             "number": number,
-            "timestamp": self._block_numbers[number],
+            "timestamp": 1438200000 + number * 13,
         }
 
     def get_balance(self, address: str, block_identifier: int) -> str:

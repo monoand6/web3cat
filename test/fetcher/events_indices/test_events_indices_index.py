@@ -100,5 +100,5 @@ def test_events_index_to_dict():
         "address": address,
         "event": event,
         "args": args,
-        "data": {"startBlock": 8000, "mask": "0x38"},
+        "data": {"startBlock": 8000, "endBlock": None, "mask": "0x38"},
     }

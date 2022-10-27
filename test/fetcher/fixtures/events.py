@@ -1,3 +1,4 @@
+from fetcher.blocks.service import BlocksService
 from fetcher.events import Event
 from sqlite3 import Connection
 from typing import Any, Dict, List
@@ -59,6 +60,14 @@ def events_repo(cache_path: str, w3_mock: Web3) -> EventsRepo:
 
 @pytest.fixture
 def events_service(
-    events_repo: EventsRepo, events_indices_repo: EventsIndicesRepo, w3_mock: Web3
+    events_repo: EventsRepo,
+    events_indices_repo: EventsIndicesRepo,
+    blocks_service: BlocksService,
+    w3_mock: Web3,
 ) -> EventsService:
-    return EventsService(events_repo, events_indices_repo, w3=w3_mock)
+    return EventsService(
+        events_repo=events_repo,
+        events_indices_repo=events_indices_repo,
+        blocks_service=blocks_service,
+        w3=w3_mock,
+    )
