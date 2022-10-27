@@ -30,16 +30,15 @@ serve the cached result.
 Example:
     ::
 
-        from web3.auto import w3
         from web3cat.fetcher.events import EventsService
+        from web3cat.fetcher.erc20_metas import ERC20MetasService
 
-        dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-        dai_abi = [{"anonymous":False,"inputs":[{"indexed":True,"internalType":"address","name":"from","type":"address"},{"indexed":True,"internalType":"address","name":"to","type":"address"},{"indexed":False,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]
-        token = w3.eth.contract(address=dai_address, abi=dai_abi)
+        erc20 = ERC20MetasService.create()
+        dai = erc20.get("Dai")
 
         service = EventsService.create()
         events = service.get_events(
-            token.events.Transfer, from_block=15830000, to_block=15840100
+            dai.contract.events.Transfer, from_block=15830000, to_block=15840100
         )
 """
 

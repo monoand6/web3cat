@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, Tuple
+from web3.contract import Contract
 
 
 class ERC20Meta:
@@ -23,15 +24,24 @@ class ERC20Meta:
     symbol: str
     #: Token decimals
     decimals: int
+    #: :class:`web3.Contract` for the token
+    contract: Contract
 
     def __init__(
-        self, chain_id: int, address: str, name: str, symbol: str, decimals: int
+        self,
+        chain_id: int,
+        address: str,
+        name: str,
+        symbol: str,
+        decimals: int,
+        contract: Contract,
     ):
         self.chain_id = chain_id
         self.address = address.lower()
         self.name = name.lower()
         self.symbol = symbol.lower()
         self.decimals = decimals
+        self.contract = contract
 
     @staticmethod
     def from_row(row: Tuple[int, str, str, str, int]) -> ERC20Meta:
@@ -41,8 +51,7 @@ class ERC20Meta:
         Args:
             row: database row
         """
-
-        return ERC20Meta(*row)
+        return ERC20Meta(contract=None, *row)
 
     def to_row(self) -> Tuple[int, str, str, str, int]:
         """
@@ -78,6 +87,7 @@ class ERC20Meta:
             name=dct["name"],
             symbol=dct["symbol"],
             decimals=dct["decimals"],
+            contract=None,
         )
 
     def __eq__(self, other):

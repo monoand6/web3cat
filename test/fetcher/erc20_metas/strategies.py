@@ -18,4 +18,5 @@ def erc20_meta() -> SearchStrategy[ERC20Meta]:
         text(ascii_letters),
         text(ascii_letters),
         integers(0, 18),
+        just(None),
     )

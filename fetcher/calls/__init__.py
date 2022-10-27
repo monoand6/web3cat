@@ -10,27 +10,24 @@ and caching them for subsequent calls.
 Example:
     ::
 
-        from web3.auto import w3
-        from web3.contract import Contract
-        import json
         from web3cat.fetcher.calls import CallsService
+        from web3cat.fetcher.erc20_metas import ERC20MetasService
 
-        dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        erc20 = ERC20MetasService.create()
+        dai = erc20.get("Dai")
         compound_address = "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
-        dai_abi = [{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
-        token: Contract = w3.eth.contract(address=dai_address, abi=dai_abi)
 
         service = CallsService.create()
         response = service.get_call(
-            token.functions.balanceOf(compound_address), block_number=15632000
+            dai.contract.functions.balanceOf(compound_address), block_number=15632000
         )
         # => going for web3 rpc
 
         response = service.get_call(
-            token.functions.balanceOf(compound_address), block_number=15632000
+            dai.contract.functions.balanceOf(compound_address), block_number=15632000
         )
         # => serving from cache
-"""
+# """
 
 
 from fetcher.calls.call import Call

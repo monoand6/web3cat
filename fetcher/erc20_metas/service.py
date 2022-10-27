@@ -96,10 +96,14 @@ class ERC20MetasService(Core):
         """
         token = token.lower()
         cached_token = self._get_from_cache(token)
+        if not cached_token:
+            cached_token = self._erc20_metas_repo.find(token)
         if cached_token:
-            return cached_token
-        cached_token = self._erc20_metas_repo.find(token)
-        if cached_token:
+            contract: Contract = self.w3.eth.contract(
+                address=self.w3.toChecksumAddress(cached_token.address),
+                abi=self._erc20_abi,
+            )
+            cached_token.contract = contract
             return cached_token
         if not token.startswith("0x"):
             raise ValueError(f"Could not find token `{token}`")
@@ -109,7 +113,9 @@ class ERC20MetasService(Core):
         decimals = contract.functions.decimals().call()
         name = contract.functions.name().call()
         symbol = contract.functions.symbol().call()
-        meta = ERC20Meta(self.chain_id, token, name, symbol, decimals)
+        meta = ERC20Meta(
+            self.chain_id, token, name, symbol, decimals, contract=contract
+        )
         self._erc20_metas_repo.save([meta])
         self._erc20_metas_repo.conn.commit()
         return meta
@@ -135,4 +141,5 @@ class ERC20MetasService(Core):
             data["name"],
             data["symbol"],
             data["decimals"],
+            None,
         )
