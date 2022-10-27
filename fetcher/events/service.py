@@ -215,28 +215,36 @@ class EventsService(Core):
             f"({from_block} - {to_block})"
         )
         step = chunk_size_in_steps * write_index.step()
-        print(from_block, to_block, step)
+        to_fetch = []
         for start in range(from_block, to_block, step):
             end = min(start + step, to_block)
-            shinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
-            if shinked_start < shrinked_end:
-                print_progress(
-                    start - from_block,
-                    to_block - from_block,
-                    prefix=prefix,
-                )
-                self._fetch_and_save_events_in_one_chunk(
-                    event,
-                    argument_filters,
-                    shinked_start,
-                    shrinked_end,
-                    write_index,
-                )
+            shrinked_start, shrinked_end = self._shrink_blocks(read_indices, start, end)
+            if shrinked_start < shrinked_end:
+                to_fetch.append([shrinked_start, shrinked_end])
+
+        if len(to_fetch) == 0:
+            return
+
+        for i, tup in enumerate(to_fetch):
+            shrinked_start, shrinked_end = tup
             print_progress(
-                end - from_block,
-                to_block - from_block,
+                i,
+                len(to_fetch),
                 prefix=prefix,
             )
+            self._fetch_and_save_events_in_one_chunk(
+                event,
+                argument_filters,
+                shrinked_start,
+                shrinked_end,
+                write_index,
+            )
+
+        print_progress(
+            len(to_fetch),
+            len(to_fetch),
+            prefix=prefix,
+        )
 
     def _shrink_blocks(
         self, read_indices: List[EventsIndex], from_block: int, to_block: int
@@ -255,6 +263,8 @@ class EventsService(Core):
         shrinked_start, shrinked_end = from_block, to_block
         while (
             self._block_is_in_indices(read_indices, shrinked_start)
+            # this one is for the case of latest block
+            and self._block_is_in_indices(read_indices, shrinked_start + step - 1)
             and shrinked_start <= shrinked_end
         ):
             shrinked_start += step
@@ -281,17 +291,27 @@ class EventsService(Core):
         to_block: int,
         write_index: EventsIndex,
     ) -> List[Event]:
+        latest_number = self._blocks_service.latest_block.number
+        if from_block > latest_number:
+            return []
+
+        latest_to_grid_block = to_block
         # we're fetching beyond latest block
-        latest_exclusive = self._blocks_service.latest_block.number + 1
-        if to_block > latest_exclusive:
+
+        if to_block > latest_number + 1:
+            to_block = latest_number + 1
+            latest_to_grid_block = write_index.data.snap_block_to_grid(to_block)
+            if latest_to_grid_block != to_block:
+                latest_to_grid_block += write_index.data.step()
             # the latest block in the index is outdated
-            if latest_exclusive > (write_index.data.end_block or 0):
-                write_index.data.end_block = latest_exclusive
+
+            if latest_number + 1 > (write_index.data.end_block or 0):
+                write_index.data.end_block = latest_number + 1
         events = self._fetch_events_in_one_chunk(
             event, from_block, to_block, argument_filters
         )
         self._events_repo.save(events)
-        write_index.data.set_range(from_block, to_block, True)
+        write_index.data.set_range(from_block, latest_to_grid_block, True)
         self._events_indices_repo.save([write_index])
         self._events_indices_repo.conn.commit()
 
