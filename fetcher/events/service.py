@@ -3,9 +3,9 @@ import json
 from typing import Any, Dict, List, Tuple
 from web3.contract import ContractEvent
 from requests.exceptions import ReadTimeout
-from fetcher.blocks.service import BlocksService
 
 from fetcher.core import Core
+from fetcher.blocks import BlocksService
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
 from fetcher.events_indices.index import EventsIndex

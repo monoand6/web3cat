@@ -1,3 +1,5 @@
+# pylint: disable=line-too-long
+
 """
 Module for fetching and caching events from web3.
 
@@ -28,14 +30,16 @@ serve the cached result.
 Example:
     ::
 
-        chain_id = 1
+        from web3.auto import w3
+        from web3cat.fetcher.events import EventsService
+
         dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-        dai_abi = json.load(...)
-        token: Contract = w3.eth.contract(address=dai_address, abi=dai_abi)
+        dai_abi = [{"anonymous":False,"inputs":[{"indexed":True,"internalType":"address","name":"from","type":"address"},{"indexed":True,"internalType":"address","name":"to","type":"address"},{"indexed":False,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]
+        token = w3.eth.contract(address=dai_address, abi=dai_abi)
 
         service = EventsService.create()
         events = service.get_events(
-            chain_id, token.events.Transfer, from_block=15632000 - 10000, to_block=15632000
+            token.events.Transfer, from_block=15830000, to_block=15840100
         )
 """
 
