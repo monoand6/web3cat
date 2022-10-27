@@ -1,28 +1,27 @@
 from __future__ import annotations
-import sys
 import json
 from typing import Any, Dict, List, Tuple
+from web3.contract import ContractEvent
+from requests.exceptions import ReadTimeout
+
 from fetcher.core import Core
 from fetcher.events.event import Event
 from fetcher.events.repo import EventsRepo
 from fetcher.events_indices.index import EventsIndex
 from fetcher.events_indices.index_data import EventsIndexData
 from fetcher.events_indices.repo import EventsIndicesRepo
-from web3 import Web3
-from web3.contract import ContractEvent
-from web3.auto import w3 as w3auto
-
 from fetcher.utils import json_response, print_progress, short_address
 
 
 class EventsService(Core):
     """
-    Service for fetching web3 events.
+    Service for fetching contract events.
 
-    The sole purpose of this service is to fetch events from web3, cache them,
+    This service fetches contract events from web3, cache them,
     and read from the cache on subsequent calls.
 
-    The exact flow goes like this
+    **Request/Response flow**
+
     ::
 
                    +---------------+              +-------+ +-------------------+ +-------------+
@@ -51,7 +50,7 @@ class EventsService(Core):
     Args:
         events_repo: Repo of events
         events_indices_repo: Repo of events_indices
-
+        kwargs: Args for the :class:`fetcher.core.Core`
     """
 
     _events_repo: EventsRepo
@@ -70,7 +69,7 @@ class EventsService(Core):
         Create an instance of :class:`EventsService`
 
         Args:
-            cache_path: path for the cache database
+            kwargs: Args for the :class:`fetcher.core.Core`
 
         Returns:
             An instance of :class:`EventsService`
@@ -93,7 +92,8 @@ class EventsService(Core):
             event: class:`web3.contract.ContractEvent` specifying contract and event_name.
             from_block: fetch events from this block (inclusive)
             to_block: fetch events from this block (non-inclusive)
-            argument_filters: Additional filters for events search. Example: :code:`{"from": "0xfa45..."}`
+            argument_filters: Additional filters for events search.
+                              Example: :code:`{"from": "0xfa45..."}`
 
         Returns:
             A list of fetched events
@@ -125,7 +125,8 @@ class EventsService(Core):
             event: class:`web3.contract.ContractEvent` specifying contract and event_name.
             from_block: fetch events from this block (inclusive)
             to_block: fetch events from this block (non-inclusive)
-            argument_filters: Additional filters for events search. Example: :code:`{"from": "0xfa45..."}`
+            argument_filters: Additional filters for events search.
+                              Example: :code:`{"from": "0xfa45..."}`
 
         Exceptions:
             This method tries to fetch all events from :code:`from_block`
@@ -156,15 +157,11 @@ class EventsService(Core):
             )
         current_chunk_size_in_steps = (to_block - from_block) // write_index.step() + 1
         fetched = False
-        e_memoized = None
         while not fetched:
             if current_chunk_size_in_steps == 0:
-                if not e_memoized:
-                    raise RuntimeError(
-                        "Couldn't fetch data because minimum chunk size is reached"
-                    )
-                else:
-                    raise e_memoized
+                raise RuntimeError(
+                    "Couldn't fetch data because minimum chunk size is reached"
+                )
             try:
                 self._fetch_events_for_chunk_size(
                     current_chunk_size_in_steps,
@@ -176,10 +173,7 @@ class EventsService(Core):
                     write_index,
                 )
                 fetched = True
-            # ValueError is for error of exceeding log size
-            # However requests.exceptions.ReadTimeout also happens sometimes, so it's better to use catch-all
-            except Exception as e:
-                e_memoized = e
+            except (ValueError, ReadTimeout):
                 current_chunk_size_in_steps //= 2
 
     def clear_cache(self):
@@ -206,7 +200,10 @@ class EventsService(Core):
         to_block = (
             write_index.data.snap_block_to_grid(to_block) + offset * write_index.step()
         )
-        prefix = f"Fetching {event.event_name}@{short_address(event.address)} ({from_block} - {to_block})"
+        prefix = (
+            f"Fetching {event.event_name}@{short_address(event.address)} "
+            f"({from_block} - {to_block})"
+        )
         step = chunk_size_in_steps * write_index.step()
         for start in range(from_block, to_block, step):
             end = min(start + step, to_block)

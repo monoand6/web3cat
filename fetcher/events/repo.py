@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 from fetcher.events.event import Event
 from fetcher.core import Core
 
@@ -22,7 +22,8 @@ class EventsRepo(Core):
         Args:
             event: Event name
             address: Contract address
-            argument_filters: an additional filter with keys being event fieds (AND query) and values are filter values (tuples of values for OR query)
+            argument_filters: an additional filter with keys being event fieds (AND query)
+                              and values are filter values (list of values for OR query)
             from_block: starting from this block (inclusive)
             to_block: ending with this block (non-inclusive)
 
@@ -31,7 +32,10 @@ class EventsRepo(Core):
         """
         cursor = self.conn.cursor()
         args_query, args_values = self._convert_filter_to_sql(argument_filters)
-        statement = f"SELECT * FROM events WHERE chain_id = ? AND event = ? AND address = ? AND block_number >= ? AND block_number < ?{args_query}"
+        statement = (
+            "SELECT * FROM events WHERE chain_id = ? AND event = ? "
+            f"AND address = ? AND block_number >= ? AND block_number < ?{args_query}"
+        )
         args = tuple(
             [self.chain_id, event, address.lower(), from_block, to_block, *args_values]
         )
@@ -63,13 +67,13 @@ class EventsRepo(Core):
         cursor.execute("DELETE FROM events")
 
     def _convert_filter_to_sql(
-        self, filter: Dict[str, Any] | None
+        self, event_filter: Dict[str, Any] | None
     ) -> Tuple[str, List[Any]]:
-        if filter is None:
+        if event_filter is None:
             return ("", [])
         query = ""
         values = []
-        for k, v in filter.items():
+        for k, v in event_filter.items():
             if not isinstance(v, list):
                 v = [v]
             inner = " OR ".join([f"""json_extract(args, "$.{k}") = ?""" for _ in v])
