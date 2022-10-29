@@ -1,7 +1,7 @@
+# pylint: disable=line-too-long
+
 from __future__ import annotations
 from functools import cached_property
-import json
-import os
 from typing import Any, Dict, List
 from datetime import datetime
 import time
@@ -11,8 +11,7 @@ import polars as pl
 from web3.contract import Contract
 from web3.constants import ADDRESS_ZERO
 from web3 import Web3
-from web3.auto import w3 as w3auto
-from data.core import resolve_block
+from data.core import DataCore
 
 from fetcher.erc20_metas import ERC20MetasService
 from fetcher.events import EventsService, Event
@@ -21,21 +20,10 @@ from fetcher.calls import CallsService
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
-class ERC20Data:
+class ERC20Data(DataCore):
     """
     Datasets for a specific ERC20 token.
     """
-
-    TRANSFER_SCHEMA = {
-        "timestamp": pl.UInt64,
-        "date": pl.Datetime,
-        "block_number": pl.UInt64,
-        "transaction_hash": pl.Utf8,
-        "log_index": pl.UInt64,
-        "from": pl.Utf8,
-        "to": pl.Utf8,
-        "value": pl.Float64,
-    }
 
     _start: int | datetime
     _end: int | datetime
@@ -58,76 +46,23 @@ class ERC20Data:
         address_filter: List[str] | None,
         start: int | datetime,
         end: int | datetime,
-        erc20_metas_service: ERC20MetasService,
-        events_service: EventsService,
-        blocks_service: BlocksService,
-        calls_service: CallsService,
+        **kwargs,
     ):
+        super().__init__(start, end, **kwargs)  # pylint: disable=too-many-function-args
         self._token = token
         self._address_filter = address_filter or []
-        self._start = start
-        self._end = end
-        self._erc20_metas_service = erc20_metas_service
-        self._events_service = events_service
-        self._blocks_service = blocks_service
-        self._calls_service = calls_service
 
-        self._meta = None
-        self._transfers = None
-        self._mints_burns = None
-        self._token_contract = None
-        self._chain_id = None
-
-    @staticmethod
-    def create(
-        token: str,
-        start: int | datetime,
-        end: int | datetime,
-        address_filter: List[str] | None = None,
-        **kwargs,
-    ) -> ERC20Data:
-        """
-        Create an instance of :class:`ERC20Data`
-
-        Args:
-            token: Token symbol or address
-            start: Start of the erc20 data - block number or datetime (inclusive)
-            end: End of the erc20 data - block number or datetime (non-inclusive)
-            address_filter: Limit erc20 transfers data to only these addresses. If ``None``, all transfers are fetched
-
-        Returns:
-            An instance of :class:`ERC20Data`
-        """
-        events_service = EventsService.create(**kwargs)
-        blocks_service = BlocksService.create(**kwargs)
-        calls_service = CallsService.create(**kwargs)
-        erc20_metas_service = ERC20MetasService.create(**kwargs)
-
-        return ERC20Data(
-            token=token,
-            address_filter=address_filter,
-            start=start,
-            end=end,
-            erc20_metas_service=erc20_metas_service,
-            events_service=events_service,
-            blocks_service=blocks_service,
-            calls_service=calls_service,
-        )
-
-    @property
+    @cached_property
     def meta(self) -> ERC20Meta:
         """
         Metadata for tokens (like name, symbol and decimals)
         """
-        if self._meta is None:
-            self._meta = self._erc20_metas_service.get(self._token)
-        return self._meta
+        return self._erc20_metas_service.get(self._token)
 
-    @property
+    @cached_property
     def transfers(self) -> pl.DataFrame:
         """
-        Dataframe with transfers data
-        (see `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_)
+        Dataframe with transfers for addresses specified by the ``address_filter ``.
 
         **Fields**
 
@@ -153,50 +88,46 @@ class ERC20Data:
         | ``value``            | :attr:`numpy.float64`      | Transfer value in natural token units (e.g. eth for weth, not wei)           |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
-        if self._transfers is None:
-            self._transfers = self._build_transfers(self._address_filter)
-        return self._transfers
-
-    @property
-    def mints_burns(self) -> pl.DataFrame:
-        if not (self._mints_burns is None):
-            return self._mints_burns
-
-        if ADDRESS_ZERO in self._address_filter and self._transfers:
-            self._mints_burns = self._transfers.filter(
-                pl.col("from") == ADDRESS_ZERO | pl.col("to") == ADDRESS_ZERO
-            )
-            return self._mints_burns
-
-        self._mints_burns = self._build_transfers([ADDRESS_ZERO])
-        return self._mints_burns
+        return self._fetch_transfers(self._address_filter)
 
     @cached_property
-    def from_block(self):
+    def emission(self) -> pl.DataFrame:
         """
-        Start block for the data.
-        """
-        return resolve_block(self._start, self._blocks_service)
+        All mints and burns.
 
-    @cached_property
-    def to_block(self):
+        **Schema**
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
+        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
+        |                      |                            | for details)                                                                 |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :attr:`numpy.int64`        | Block number for this transfer                                               |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``transaction_hash`` | :class:`str`               | Transaction hash for this transfer                                           |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``log_index``        | :attr:`numpy.int64`        | Log index inside the transaction for this transfer                           |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``from``             | :class:`str`               | If non-zero: the burn address                                                |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``to``               | :class:`str`               | If non-zero: the mint address                                                |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``value``            | :attr:`numpy.float64`      | Mint / Burn value in natural token units (e.g. eth for weth, not wei)        |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
-        End block for the data.
-        """
-        if not hasattr(self, "_to_block"):
-            ts = time.mktime(self._to_date.timetuple())
-            self._to_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
-                0
-            ].number
-        return self._to_block
+
+        return self._fetch_transfers([ADDRESS_ZERO])
 
     @property
     def volumes(self) -> pl.DataFrame:
         """
-        Dataframe with transfer volumes and balance changes by address
-        (see `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_).
+        Dataframe with transfer volumes and balance changes by address.
 
-        **Fields**
+        **Schema**
 
         +-------------+-----------------------+----------------------------------------------+
         | Name        | Type                  | Description                                  |
@@ -229,34 +160,35 @@ class ERC20Data:
             .sort(pl.col("volume"), reverse=True)
         )
 
-    @property
-    def token_contract(self) -> Contract:
-        """
-        :class:`web3.contracts.Contract` for this token
-        """
-        current_folder = os.path.realpath(os.path.dirname(__file__))
-        if self._token_contract is None:
-            with open(f"{current_folder}/erc20_abi.json", "r") as f:
-                erc20_abi = json.load(f)
-            self._token_contract = w3auto.eth.contract(
-                address=w3auto.toChecksumAddress(self.meta.address), abi=erc20_abi
-            )
-        return self._token_contract
-
-    def total_supplies(
+    def total_supply(
         self,
-        timestamps: List[int | datetime],
-        initial_total_supply: int | None = None,
+        timepoints: List[int | datetime],
     ):
-        if initial_total_supply is None:
-            first_block = self.mints_burns["block_number"][0]
-            initial_balance_wei = self._calls_service.get_call(
-                self.token_contract.functions.totalSupply(),
-                first_block - 1,
-            ).response
-            initial_total_supply = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timestamps(timestamps))
-        bs = self._zero_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
+        """
+        Dataframe with total supply of the token
+
+        **Schema**
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
+        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
+        |                      |                            | for details)                                                                 |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``total_supply``     | :attr:`numpy.float64`      | Total supply in natural tokens (e.g. eth for weth, not wei)                  |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+
+        """
+        initial_balance_wei = self._calls_service.get_call(
+            self.meta.contract.functions.totalSupply(),
+            self.from_block_number - 1,
+        ).response
+        initial_total_supply = initial_balance_wei / 10**self.meta.decimals
+        timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
+        bs = self._accrued_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
         out = [
             {
                 "timestamp": ts,
@@ -270,7 +202,7 @@ class ERC20Data:
             {"timestamp": pl.UInt64, "date": pl.Datetime, "total_supply": pl.Float64},
         )
 
-    def balances(
+    def balance(
         self,
         address: str,
         timestamps: List[int | datetime],
@@ -316,7 +248,7 @@ class ERC20Data:
             initial_balance = initial_balance_wei / 10**self.meta.decimals
         timestamps = sorted(self._resolve_timestamps(timestamps))
 
-        bs = self._zero_balances(address, timestamps, self.transfers)
+        bs = self._accrued_balances(address, timestamps, self.transfers)
         out = [
             {
                 "timestamp": ts,
@@ -366,7 +298,7 @@ class ERC20Data:
                 resolved.append(ts)
         return resolved
 
-    def _zero_balances(
+    def _accrued_balances(
         self, address: str, timestamps: List[int], events: pl.DataFrame
     ) -> List[np.float64]:
         if len(timestamps) == 0:
@@ -421,6 +353,40 @@ class ERC20Data:
             pl.col("timestamp")
         )
 
+    def _fetch_transfers(self, addresses: List[str]) -> pl.DataFrame:
+        events: List[Event] = []
+
+        # Fetch with "from" and "to" filter
+        for filters in self._build_argument_filters(addresses):
+            fetched_events = self._events_service.get_events(
+                self.meta.contract.events.Transfer,
+                self.from_block,
+                self.to_block,
+                argument_filters=filters,
+            )
+            events += fetched_events
+
+        block_numbers = list(set(e.block_number for e in events))
+        blocks = self._blocks_service.get_blocks(block_numbers)
+        ts_index = {b.number: b.timestamp for b in blocks}
+        factor = 10**self.meta.decimals
+        transfers = pl.DataFrame(
+            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
+            {
+                "timestamp": pl.UInt64,
+                "date": pl.Datetime,
+                "block_number": pl.UInt64,
+                "transaction_hash": pl.Utf8,
+                "log_index": pl.UInt64,
+                "from": pl.Utf8,
+                "to": pl.Utf8,
+                "value": pl.Float64,
+            },
+        )
+        return transfers.unique(subset=["transaction_hash", "log_index"]).sort(
+            pl.col("timestamp")
+        )
+
     def _build_argument_filters(
         self, address_filter: List[str]
     ) -> List[Dict[str, Any] | None, Dict[str, Any] | None]:
@@ -428,14 +394,14 @@ class ERC20Data:
             return [None]
         return [{"from": address_filter}, {"to": address_filter}]
 
-    def _event_to_row(self, e: Event, ts: int, val_factor: int) -> Dict[str, Any]:
-        fr, to, val = list(e.args.values())
+    def _event_to_row(self, event: Event, ts: int, val_factor: int) -> Dict[str, Any]:
+        fr, to, val = list(event.args.values())
         return {
             "timestamp": ts,
             "date": datetime.fromtimestamp(ts),
-            "block_number": e.block_number,
-            "transaction_hash": e.transaction_hash,
-            "log_index": e.log_index,
+            "block_number": event.block_number,
+            "transaction_hash": event.transaction_hash,
+            "log_index": event.log_index,
             "from": fr.lower(),
             "to": to.lower(),
             "value": val / val_factor,

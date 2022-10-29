@@ -1,6 +1,7 @@
 from datetime import datetime
 from functools import cached_property
 from time import time
+from typing import List
 from fetcher.balances import BalancesService
 from fetcher.blocks import BlocksService
 from fetcher.calls import CallsService
@@ -38,14 +39,14 @@ class DataCore:
         """
         Start block number for the data.
         """
-        return self._resolve_block(self._start, self._blocks_service)
+        return self._resolve_timepoints(self._start, to_blocks=True)
 
     @cached_property
     def to_block_number(self) -> int:
         """
         End block number for the data.
         """
-        return self._resolve_block(self._end, self._blocks_service)
+        return self._resolve_timepoints(self._end, to_blocks=True)
 
     @cached_property
     def from_timestamp(self) -> int:
@@ -53,8 +54,7 @@ class DataCore:
         Start unix timestamp for the data.
         """
 
-        block = self._blocks_service.get_blocks(self.from_block_number)[0]
-        return block.timestamp
+        return self._resolve_timepoints(self._start, to_blocks=False)
 
     @cached_property
     def to_timestamp(self) -> int:
@@ -62,8 +62,7 @@ class DataCore:
         End unix timestamp for the data.
         """
 
-        block = self._blocks_service.get_blocks(self.to_block_number)[0]
-        return block.timestamp
+        return self._resolve_timepoints(self._end, to_blocks=False)
 
     @property
     def from_date(self) -> datetime:
@@ -81,23 +80,36 @@ class DataCore:
 
         return datetime.fromtimestamp(self.to_timestamp)
 
-    def _resolve_block(self, timepoint: int | datetime, blocks_service: BlocksService):
-        """
-        Resolve a block.
+    def _resolve_timepoints(self, timepoints: List[int | datetime], to_blocks: bool):
+        resolved_dates = []
+        for t in timepoints:
+            if isinstance(t, datetime):
+                t = int(time.mktime(t.timetuple()))
+            resolved_dates.append(t)
+        timestamps = []
+        blocks = []
+        for ts in resolved_dates:
+            # This works because on each chain block_time > 1s
+            # It means that timepoint is a block
+            if ts < ETH_START_TIMESTAMP:
+                blocks.append(ts)
+            else:
+                timestamps.append(ts)
+        timestamps_idx = {}
+        blocks_idx = {}
+        if to_blocks:
+            resolved = self._blocks_service.get_latest_blocks_by_timestamps(timestamps)
+            i = 0
+            for ts in timestamps:
+                timestamps_idx[ts] = resolved[i].number
+                i += 1
+            blocks_idx = {b: b for b in blocks}
+        else:
+            resolved = self._blocks_service.get_blocks(blocks)
+            i = 0
+            for b in blocks:
+                blocks_idx[b] = resolved[i].timestamp
+                i += 1
+            timestamps_idx = {ts: ts for ts in timestamps}
 
-        Args:
-            timepoint: block or Unix timestamp or datetime
-
-        Returns:
-            Block
-        """
-
-        if isinstance(timepoint, datetime):
-            timepoint = int(time.mktime(timepoint.timetuple()))
-
-        # This works because on each chain block_time > 1s
-        # It means that timepoint is a block
-        if timepoint < ETH_START_TIMESTAMP:
-            return timepoint
-
-        return blocks_service.get_latest_block_at_timestamp(timepoint)
+        return [blocks_idx.get(tp, timestamps_idx.get(tp)) for tp in resolved_dates]
