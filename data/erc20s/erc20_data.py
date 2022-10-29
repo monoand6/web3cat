@@ -1,35 +1,29 @@
 from __future__ import annotations
+from functools import cached_property
 import json
 import os
+from typing import Any, Dict, List
+from datetime import datetime
+import time
+
 import numpy as np
-from typing import Any, Dict, List, Tuple
-from fetcher.core import DEFAULT_BLOCK_GRID_STEP
-from fetcher.erc20_metas import ERC20MetasService
-from fetcher.erc20_metas import erc20_meta
-from fetcher.events import EventsService, Event
-from fetcher.blocks import BlocksService
-from fetcher.calls import CallsService
 import polars as pl
 from web3.contract import Contract
 from web3.constants import ADDRESS_ZERO
 from web3 import Web3
-from datetime import datetime
-import time
 from web3.auto import w3 as w3auto
+from data.core import resolve_block
 
-
+from fetcher.erc20_metas import ERC20MetasService
+from fetcher.events import EventsService, Event
+from fetcher.blocks import BlocksService
+from fetcher.calls import CallsService
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
 class ERC20Data:
     """
-    Data for a specific ERC20 token.
-
-    When the instance of the class is created, no data is
-    fetched. The class has lazy properties like :attr:`transfers`
-    and :attr:`volumes` that are fetched only when accessed.
-
-    See :mod:`data.erc20s` for examples.
+    Datasets for a specific ERC20 token.
     """
 
     TRANSFER_SCHEMA = {
@@ -43,10 +37,8 @@ class ERC20Data:
         "value": pl.Float64,
     }
 
-    _from_block: int | None
-    _to_block: int | None
-    _from_date: datetime | None
-    _to_date: datetime | None
+    _start: int | datetime
+    _end: int | datetime
 
     _token: str
     _address_filter: List[str]
@@ -73,14 +65,8 @@ class ERC20Data:
     ):
         self._token = token
         self._address_filter = address_filter or []
-        if type(start) is datetime:
-            self._from_date = start
-        else:
-            self._from_block = start
-        if type(end) is datetime:
-            self._to_date = end
-        else:
-            self._to_block = end
+        self._start = start
+        self._end = end
         self._erc20_metas_service = erc20_metas_service
         self._events_service = events_service
         self._blocks_service = blocks_service
@@ -185,19 +171,14 @@ class ERC20Data:
         self._mints_burns = self._build_transfers([ADDRESS_ZERO])
         return self._mints_burns
 
-    @property
+    @cached_property
     def from_block(self):
         """
         Start block for the data.
         """
-        if not hasattr(self, "_from_block"):
-            ts = time.mktime(self._from_date.timetuple())
-            self._from_block = self._blocks_service.get_latest_blocks_by_timestamps(ts)[
-                0
-            ].number
-        return self._from_block
+        return resolve_block(self._start, self._blocks_service)
 
-    @property
+    @cached_property
     def to_block(self):
         """
         End block for the data.
