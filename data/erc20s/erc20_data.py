@@ -186,19 +186,26 @@ class ERC20Data(DataCore):
             self.from_block_number - 1,
         ).response
         initial_total_supply = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
-        bs = self._accrued_balances(ADDRESS_ZERO, timestamps, self.emission)
+        blocks = sorted(self._resolve_timepoints(timepoints), key=lambda x: x.number)
+        block_numbers = [b.number for b in blocks]
+        bs = self._accrued_balances(ADDRESS_ZERO, block_numbers, self.emission)
         out = [
             {
-                "timestamp": ts,
-                "date": datetime.fromtimestamp(ts),
+                "timestamp": b.timestamp,
+                "date": datetime.fromtimestamp(b.timestamp),
+                "block_number": b.number,
                 "total_supply": initial_total_supply - balance,
             }
-            for ts, balance in zip(timestamps, bs)
+            for b, balance in zip(blocks, bs)
         ]
         return pl.DataFrame(
             out,
-            {"timestamp": pl.UInt64, "date": pl.Datetime, "total_supply": pl.Float64},
+            {
+                "timestamp": pl.UInt64,
+                "date": pl.Datetime,
+                "block_number": pl.UInt64,
+                "total_supply": pl.Float64,
+            },
         )
 
     def balances(
@@ -246,36 +253,38 @@ class ERC20Data(DataCore):
         initial_balances = self._calls_service.get_calls(
             initial_balance_calls, [self.from_block_number]
         )
-        timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
-
+        blocks = sorted(self._resolve_timepoints(timepoints), key=lambda x: x.number)
+        block_numbers = [b.number for b in blocks]
         out = []
         factor = 10**self.meta.decimals
         for i, addr in enumerate(addresses):
             initial_balance = initial_balances[i].response / factor
-            bs = self._accrued_balances(addr, timestamps, self.transfers)
+            bs = self._accrued_balances(addr, block_numbers, self.transfers)
             out += [
                 {
-                    "timestamp": ts,
-                    "date": datetime.fromtimestamp(ts),
+                    "timestamp": b.timestamp,
+                    "date": datetime.fromtimestamp(b.timestamp),
+                    "block_number": b.number,
                     "address": addr,
                     "balance": balance + initial_balance,
                 }
-                for ts, balance in zip(timestamps, bs)
+                for b, balance in zip(blocks, bs)
             ]
         return pl.DataFrame(
             out,
             {
                 "timestamp": pl.UInt64,
                 "date": pl.Datetime,
+                "block_number": pl.UInt64,
                 "address": pl.Utf8,
                 "balance": pl.Float64,
             },
         )
 
     def _accrued_balances(
-        self, address: str, timestamps: List[int], events: pl.DataFrame
+        self, address: str, blocks: List[int], events: pl.DataFrame
     ) -> List[np.float64]:
-        if len(timestamps) == 0:
+        if len(blocks) == 0:
             return []
 
         address = address.lower()
@@ -287,14 +296,14 @@ class ERC20Data(DataCore):
                 .then(pl.col("value") * (-1))
                 .otherwise(pl.col("value"))
                 .alias("cash_flow")
-            )[["timestamp", "cash_flow"]]
+            )[["block_number", "timestamp", "cash_flow"]]
             .to_dicts()
         )
         j = 0
         balance = 0
         out = []
-        for ts in timestamps:
-            while j < len(transfers) and transfers[j]["timestamp"] <= ts:
+        for b in blocks:
+            while j < len(transfers) and transfers[j]["block_number"] <= b:
                 balance += transfers[j]["cash_flow"]
                 j += 1
             out.append(balance)
