@@ -217,7 +217,7 @@ class BlocksService(Core):
         for i, num in enumerate(grid_block_numbers_to_fecth):
             print_progress(
                 i,
-                len(numbers),
+                len(grid_block_numbers_to_fecth),
                 f"Resolving {len(grid_block_numbers_to_fecth)} block numbers",
             )
             block = self._fetch_block_from_rpc_and_save(num)
