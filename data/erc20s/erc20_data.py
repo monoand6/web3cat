@@ -36,7 +36,7 @@ class ERC20Data(DataCore):
 
     _meta: ERC20Meta | None
     _transfers: pl.DataFrame | None
-    _mints_burns: pl.DataFrame | None
+    _emission: pl.DataFrame | None
     _token_contract: Contract | None
 
     def __init__(
@@ -122,7 +122,7 @@ class ERC20Data(DataCore):
         return self._fetch_transfers([ADDRESS_ZERO])
 
     @property
-    def volumes(self) -> pl.DataFrame:
+    def volume(self) -> pl.DataFrame:
         """
         Dataframe with transfer volumes and balance changes by address.
 
@@ -187,7 +187,7 @@ class ERC20Data(DataCore):
         ).response
         initial_total_supply = initial_balance_wei / 10**self.meta.decimals
         timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
-        bs = self._accrued_balances(ADDRESS_ZERO, timestamps, self.mints_burns)
+        bs = self._accrued_balances(ADDRESS_ZERO, timestamps, self.emission)
         out = [
             {
                 "timestamp": ts,
@@ -240,7 +240,7 @@ class ERC20Data(DataCore):
                     "Please add them when initializing ERC20Data."
                 )
         initial_balance_calls = [
-            self.token_contract.functions.balanceOf(Web3.toChecksumAddress(addr))
+            self.meta.contract.functions.balanceOf(Web3.toChecksumAddress(addr))
             for addr in addresses
         ]
         initial_balances = self._calls_service.get_calls(
@@ -249,8 +249,9 @@ class ERC20Data(DataCore):
         timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
 
         out = []
+        factor = 10**self.meta.decimals
         for i, addr in enumerate(addresses):
-            initial_balance = initial_balances[i]
+            initial_balance = initial_balances[i].response / factor
             bs = self._accrued_balances(addr, timestamps, self.transfers)
             out += [
                 {
