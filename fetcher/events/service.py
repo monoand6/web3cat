@@ -114,7 +114,7 @@ class EventsService(Core):
         self.prefetch_events(event, from_block, to_block, argument_filters)
         all_events = self._events_repo.find(
             event.event_name,
-            event.address,
+            event.address.lower(),
             from_block=from_block,
             to_block=to_block,
             argument_filters=argument_filters,

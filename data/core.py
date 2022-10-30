@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import cached_property
-from time import time
+import time
 from typing import List
 from fetcher.balances import BalancesService
 from fetcher.blocks import BlocksService
@@ -39,14 +39,14 @@ class DataCore:
         """
         Start block number for the data.
         """
-        return self._resolve_timepoints(self._start, to_blocks=True)
+        return self._resolve_timepoints([self._start], to_blocks=True)[0]
 
     @cached_property
     def to_block_number(self) -> int:
         """
         End block number for the data.
         """
-        return self._resolve_timepoints(self._end, to_blocks=True)
+        return self._resolve_timepoints([self._end], to_blocks=True)[0]
 
     @cached_property
     def from_timestamp(self) -> int:
@@ -54,7 +54,7 @@ class DataCore:
         Start unix timestamp for the data.
         """
 
-        return self._resolve_timepoints(self._start, to_blocks=False)
+        return self._resolve_timepoints([self._start], to_blocks=False)[0]
 
     @cached_property
     def to_timestamp(self) -> int:
@@ -62,7 +62,7 @@ class DataCore:
         End unix timestamp for the data.
         """
 
-        return self._resolve_timepoints(self._end, to_blocks=False)
+        return self._resolve_timepoints([self._end], to_blocks=False)[0]
 
     @property
     def from_date(self) -> datetime:

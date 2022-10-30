@@ -4,7 +4,6 @@ from __future__ import annotations
 from functools import cached_property
 from typing import Any, Dict, List
 from datetime import datetime
-import time
 
 import numpy as np
 import polars as pl
@@ -50,7 +49,7 @@ class ERC20Data(DataCore):
     ):
         super().__init__(start, end, **kwargs)  # pylint: disable=too-many-function-args
         self._token = token
-        self._address_filter = address_filter or []
+        self._address_filter = [addr.lower() for addr in (address_filter or [])]
 
     @cached_property
     def meta(self) -> ERC20Meta:
@@ -202,10 +201,10 @@ class ERC20Data(DataCore):
             {"timestamp": pl.UInt64, "date": pl.Datetime, "total_supply": pl.Float64},
         )
 
-    def balance(
+    def balances(
         self,
         addresses: List[str],
-        timestamps: List[int | datetime],
+        timepoints: List[int | datetime],
     ) -> pl.DataFrame:
         """
         Get `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_ with
@@ -213,8 +212,7 @@ class ERC20Data(DataCore):
 
         Args:
             address: The address for balances
-            timestamps: A series of timestamps or datetimes to fetch balances for. Not that timestamps are not exact, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
-            initial_balance: Initial balance of the address (at the :class:`ERC20Data` start). If ``None``, the balance is fetched from the blockchain.
+            timepoints: A series of timestamps or datetimes or block numbers to fetch balances for.
 
         Returns a Dataframe with fields
 
@@ -226,8 +224,6 @@ class ERC20Data(DataCore):
         |                      |                            | for details)                                                                 |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``block_number``     | :attr:`numpy.int64`        | Block number                                                                 |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``address``          | :class:`str`               | Ethereum Address                                                             |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
@@ -243,144 +239,28 @@ class ERC20Data(DataCore):
                     f"Addresses {', '.join(mismatched)} are not in address_filter for this set. "
                     "Please add them when initializing ERC20Data."
                 )
-        initial_balances = []
-        for address in addresses:
-            initial_balance_wei = self._calls_service.get_call(
-                self.token_contract.functions.balanceOf(
-                    Web3.toChecksumAddress(address)
-                ),
-                first_block - 1,
-            ).response
-        if initial_balance is None:
-            if len(self.transfers) > 0:
-                first_block = self.transfers["block_number"][0]
-            else:
-                first_block = self._blocks_service.get_latest_blocks_by_timestamps(
-                    timestamps[0]
-                )[0].number
-            initial_balance_wei = self._calls_service.get_call(
-                self.token_contract.functions.balanceOf(
-                    Web3.toChecksumAddress(address)
-                ),
-                first_block - 1,
-            ).response
-            initial_balance = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timestamps(timestamps))
-
-        bs = self._accrued_balances(address, timestamps, self.transfers)
-        out = [
-            {
-                "timestamp": ts,
-                "date": datetime.fromtimestamp(ts),
-                "balance": balance + initial_balance,
-            }
-            for ts, balance in zip(timestamps, bs)
+        initial_balance_calls = [
+            self.token_contract.functions.balanceOf(Web3.toChecksumAddress(addr))
+            for addr in addresses
         ]
-        return pl.DataFrame(
-            out, {"timestamp": pl.UInt64, "date": pl.Datetime, "balance": pl.Float64}
+        initial_balances = self._calls_service.get_calls(
+            initial_balance_calls, [self.from_block_number]
         )
-
-    def balance(
-        self,
-        address: str,
-        timestamps: List[int | datetime],
-        initial_balance: int | None = None,
-    ) -> pl.DataFrame:
-        """
-        Get `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_ with
-        balances over time for a specific address.
-
-        Args:
-            address: The address for balances
-            timestamps: A series of timestamps or datetimes to fetch balances for. Not that timestamps are not exact, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
-            initial_balance: Initial balance of the address (at the :class:`ERC20Data` start). If ``None``, the balance is fetched from the blockchain.
-
-        Returns a Dataframe with fields
-
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | Field                | Type                       | Description                                                                  |
-        +======================+============================+==============================================================================+
-        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``balance``          | :attr:`numpy.float64`      | Balance in natural token units (e.g. eth for weth, not wei)                  |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-
-        """
-        if initial_balance is None:
-            if len(self.transfers) > 0:
-                first_block = self.transfers["block_number"][0]
-            else:
-                first_block = self._blocks_service.get_latest_blocks_by_timestamps(
-                    timestamps[0]
-                )[0].number
-            initial_balance_wei = self._calls_service.get_call(
-                self.token_contract.functions.balanceOf(
-                    Web3.toChecksumAddress(address)
-                ),
-                first_block - 1,
-            ).response
-            initial_balance = initial_balance_wei / 10**self.meta.decimals
-        timestamps = sorted(self._resolve_timestamps(timestamps))
-
-        bs = self._accrued_balances(address, timestamps, self.transfers)
-        out = [
-            {
-                "timestamp": ts,
-                "date": datetime.fromtimestamp(ts),
-                "balance": balance + initial_balance,
-            }
-            for ts, balance in zip(timestamps, bs)
-        ]
-        return pl.DataFrame(
-            out, {"timestamp": pl.UInt64, "date": pl.Datetime, "balance": pl.Float64}
-        )
-
-    def balance_for_addresses(
-        self, addresses: List[str], timestamps: List[int | datetime]
-    ):
-        """
-        Get `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_ with
-        balances over time for a specific address.
-
-        Args:
-            address: The address for balances
-            timestamps: A series of timestamps or datetimes to fetch balances for. Not that timestamps are not exact, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps` for details
-            initial_balance: Initial balance of the address (at the :class:`ERC20Data` start). If ``None``, the balance is fetched from the blockchain.
-
-        Returns a Dataframe with fields
-
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | Field                | Type                       | Description                                                                  |
-        +======================+============================+==============================================================================+
-        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``balance``          | :attr:`numpy.float64`      | Balance in natural token units (e.g. eth for weth, not wei)                  |
-        +----------------------+----------------------------+------------------------------------------------------------------------------+
-
-        """
+        timestamps = sorted(self._resolve_timepoints(timepoints, to_blocks=False))
 
         out = []
-        for addr in addresses:
-            balances = self.balances(addr, timestamps).to_dicts()
-            balances = [
+        for i, addr in enumerate(addresses):
+            initial_balance = initial_balances[i]
+            bs = self._accrued_balances(addr, timestamps, self.transfers)
+            out += [
                 {
-                    "timestamp": b["timestamp"],
-                    "date": b["date"],
-                    "address": addr.lower(),
-                    "balance": b["balance"],
+                    "timestamp": ts,
+                    "date": datetime.fromtimestamp(ts),
+                    "address": addr,
+                    "balance": balance + initial_balance,
                 }
-                for b in balances
+                for ts, balance in zip(timestamps, bs)
             ]
-            out += balances
-
         return pl.DataFrame(
             out,
             {
@@ -389,17 +269,7 @@ class ERC20Data(DataCore):
                 "address": pl.Utf8,
                 "balance": pl.Float64,
             },
-        ).sort(pl.col("timestamp"))
-
-    def _resolve_timestamps(self, timestamps: List[int | datetime]) -> List[int]:
-        resolved = []
-        for ts in timestamps:
-            # resolve datetimes to timestamps
-            if isinstance(ts, datetime):
-                resolved.append(int(time.mktime(ts.timetuple())))
-            else:
-                resolved.append(ts)
-        return resolved
+        )
 
     def _accrued_balances(
         self, address: str, timestamps: List[int], events: pl.DataFrame
@@ -429,33 +299,6 @@ class ERC20Data(DataCore):
             out.append(balance)
         return out
 
-    def _build_transfers(self, address_filter: List[str]) -> pl.DataFrame:
-        events: List[Event] = []
-        for filters in self._build_argument_filters(address_filter):
-            fetched_events = self._events_service.get_events(
-                self.token_contract.events.Transfer,
-                self.from_block,
-                self.to_block,
-                argument_filters=filters,
-            )
-            events += fetched_events
-
-        block_numbers = [e.block_number for e in events]
-        blocks = self._blocks_service.get_blocks(block_numbers)
-        timestamps = [b.timestamp for b in blocks]
-        ts_index = {
-            block_number: timestamp
-            for block_number, timestamp in zip(block_numbers, timestamps)
-        }
-        factor = 10**self.meta.decimals
-        transfers = pl.DataFrame(
-            [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
-            ERC20Data.TRANSFER_SCHEMA,
-        )
-        return transfers.unique(subset=["transaction_hash", "log_index"]).sort(
-            pl.col("timestamp")
-        )
-
     def _fetch_transfers(self, addresses: List[str]) -> pl.DataFrame:
         events: List[Event] = []
 
@@ -463,8 +306,8 @@ class ERC20Data(DataCore):
         for filters in self._build_argument_filters(addresses):
             fetched_events = self._events_service.get_events(
                 self.meta.contract.events.Transfer,
-                self.from_block,
-                self.to_block,
+                self.from_block_number,
+                self.to_block_number,
                 argument_filters=filters,
             )
             events += fetched_events
