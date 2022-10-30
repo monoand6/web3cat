@@ -21,7 +21,24 @@ from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 class ERC20Data(DataCore):
     """
-    Datasets for a specific ERC20 token.
+    Datasets for an ERC20 token.
+
+    Note:
+        Throughout the docs a notion of ``timepoint`` is used.
+        ``timepoint`` is either block number or Unix timestamp or datetime.
+
+    Note:
+        All values in the datasets are in natural units. For example ETHs,
+        not WEIs.
+
+    Args:
+        token: Token name or address
+        address_filter: Limit token transfer data only to these addresses.
+                        All transfers for mainstream tokens is a big chunk of data.
+                        This optimization makes fetches faster. This filter
+                        doesn't apply to mints, burns, and total_supply.
+        start: Starting timepoint
+        end: Ending timepoint
     """
 
     _start: int | datetime
@@ -51,6 +68,13 @@ class ERC20Data(DataCore):
         self._token = token
         self._address_filter = [addr.lower() for addr in (address_filter or [])]
 
+    @property
+    def contract(self) -> Contract:
+        """
+        A :class:`web3.contract.Contract` for this token
+        """
+        return self.meta.contract
+
     @cached_property
     def meta(self) -> ERC20Meta:
         """
@@ -61,16 +85,14 @@ class ERC20Data(DataCore):
     @cached_property
     def transfers(self) -> pl.DataFrame:
         """
-        Dataframe with transfers for addresses specified by the ``address_filter ``.
+        Dataframe with transfers for addresses specified by the ``address_filter``.
 
-        **Fields**
+        **Schema**
 
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | Field                | Type                       | Description                                                                  |
         +======================+============================+==============================================================================+
         | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
@@ -84,7 +106,7 @@ class ERC20Data(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``to``               | :class:`str`               | The address to which erc20 token was sent                                    |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``value``            | :attr:`numpy.float64`      | Transfer value in natural token units (e.g. eth for weth, not wei)           |
+        | ``value``            | :attr:`numpy.float64`      | Transfer value                                                               |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
         return self._fetch_transfers(self._address_filter)
@@ -100,22 +122,20 @@ class ERC20Data(DataCore):
         | Field                | Type                       | Description                                                                  |
         +======================+============================+==============================================================================+
         | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``block_number``     | :attr:`numpy.int64`        | Block number for this transfer                                               |
+        | ``block_number``     | :attr:`numpy.int64`        | Block number for this mint / burn                                            |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``transaction_hash`` | :class:`str`               | Transaction hash for this transfer                                           |
+        | ``transaction_hash`` | :class:`str`               | Transaction hash for this mint / burn                                        |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``log_index``        | :attr:`numpy.int64`        | Log index inside the transaction for this transfer                           |
+        | ``log_index``        | :attr:`numpy.int64`        | Log index inside the transaction for this mint / burn                        |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``from``             | :class:`str`               | If non-zero: the burn address                                                |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``to``               | :class:`str`               | If non-zero: the mint address                                                |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``value``            | :attr:`numpy.float64`      | Mint / Burn value in natural token units (e.g. eth for weth, not wei)        |
+        | ``value``            | :attr:`numpy.float64`      | Transfer value                                                               |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
 
@@ -133,9 +153,9 @@ class ERC20Data(DataCore):
         +=============+=======================+==============================================+
         | ``address`` | :class:`str`          | Address                                      |
         +-------------+-----------------------+----------------------------------------------+
-        | ``volume``  | :attr:`numpy.float64` | Volume in natural token units                |
+        | ``volume``  | :attr:`numpy.float64` | Volume for the period                        |
         +-------------+-----------------------+----------------------------------------------+
-        | ``change``  | :attr:`numpy.float64` | Change for the period in natural token units |
+        | ``change``  | :attr:`numpy.float64` | Change for the period (aka net volume)       |
         +-------------+-----------------------+----------------------------------------------+
         """
         df1 = (
@@ -171,18 +191,18 @@ class ERC20Data(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | Field                | Type                       | Description                                                                  |
         +======================+============================+==============================================================================+
-        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of total supply snapshot                                           |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :attr:`numpy.int64`        | Block number for this total supply snapshot                                  |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``total_supply``     | :attr:`numpy.float64`      | Total supply in natural tokens (e.g. eth for weth, not wei)                  |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
         initial_balance_wei = self._calls_service.get_call(
-            self.meta.contract.functions.totalSupply(),
+            self.contract.functions.totalSupply(),
             self.from_block_number - 1,
         ).response
         initial_total_supply = initial_balance_wei / 10**self.meta.decimals
@@ -214,27 +234,24 @@ class ERC20Data(DataCore):
         timepoints: List[int | datetime],
     ) -> pl.DataFrame:
         """
-        Get `polars.Dataframe <https://pola-rs.github.io/polars/py-polars/html/reference/dataframe.html>`_ with
-        balances over time for a specific address.
+        Dataframe with balances for addresses over time.
 
         Args:
-            address: The address for balances
-            timepoints: A series of timestamps or datetimes or block numbers to fetch balances for.
+            addresses: The list of addresses
+            timepoints: A list of timepoints (see :class:`ERC20Data`).
 
         Returns a Dataframe with fields
 
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | Field                | Type                       | Description                                                                  |
         +======================+============================+==============================================================================+
-        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp of the transfer event                                              |
-        |                      |                            | (approximate, see :meth:`fetcher.blocks.BlocksService.get_block_timestamps`  |
-        |                      |                            | for details)                                                                 |
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``address``          | :class:`str`               | Ethereum Address                                                             |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``balance``          | :attr:`numpy.float64`      | Balance in natural token units (e.g. eth for weth, not wei)                  |
+        | ``balance``          | :attr:`numpy.float64`      | Balance of an address at the time                                            |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
@@ -247,7 +264,7 @@ class ERC20Data(DataCore):
                     "Please add them when initializing ERC20Data."
                 )
         initial_balance_calls = [
-            self.meta.contract.functions.balanceOf(Web3.toChecksumAddress(addr))
+            self.contract.functions.balanceOf(Web3.toChecksumAddress(addr))
             for addr in addresses
         ]
         initial_balances = self._calls_service.get_calls(
@@ -315,7 +332,7 @@ class ERC20Data(DataCore):
         # Fetch with "from" and "to" filter
         for filters in self._build_argument_filters(addresses):
             fetched_events = self._events_service.get_events(
-                self.meta.contract.events.Transfer,
+                self.contract.events.Transfer,
                 self.from_block_number,
                 self.to_block_number,
                 argument_filters=filters,
