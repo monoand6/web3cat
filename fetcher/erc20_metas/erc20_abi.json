@@ -3,6 +3,30 @@
         "anonymous": false,
         "inputs": [
             {
+                "indexed": false,
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "Issue",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "Redeem",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
                 "indexed": true,
                 "internalType": "address",
                 "name": "owner",

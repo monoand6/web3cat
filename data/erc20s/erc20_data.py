@@ -146,6 +146,8 @@ class ERC20Data(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         """
 
+        if self.meta.symbol.upper() == "USDT":
+            return self._fetch_usdt_emission()
         return self._fetch_transfers([ADDRESS_ZERO])
 
     @property
@@ -333,6 +335,36 @@ class ERC20Data(DataCore):
             out.append(balance)
         return out
 
+    def _fetch_usdt_emission(self) -> pl.DataFrame:
+        events = []
+        owner = self._calls_service.get_call(
+            self.contract.functions.owner(), self.from_block_number
+        ).response.lower()
+        for raw_event in self._events_service.get_events(
+            self.contract.events.Issue,
+            self.from_block_number,
+            self.to_block_number,
+        ):
+            raw_event.args = {
+                "from": ADDRESS_ZERO,
+                "to": owner,
+                "value": raw_event.args["amount"],
+            }
+            events.append(raw_event)
+
+        for raw_event in self._events_service.get_events(
+            self.contract.events.Redeem,
+            self.from_block_number,
+            self.to_block_number,
+        ):
+            raw_event.args = {
+                "from": owner,
+                "to": ADDRESS_ZERO,
+                "value": raw_event.args["amount"],
+            }
+            events.append(raw_event)
+        return self._transform_raw_events(events)
+
     def _fetch_transfers(self, addresses: List[str]) -> pl.DataFrame:
         events: List[Event] = []
 
@@ -346,6 +378,9 @@ class ERC20Data(DataCore):
             )
             events += fetched_events
 
+        return self._transform_raw_events(events)
+
+    def _transform_raw_events(self, events: List[Event]) -> pl.DataFrame:
         block_numbers = list(set(e.block_number for e in events))
         blocks = self._blocks_service.get_blocks(block_numbers)
         ts_index = {b.number: b.timestamp for b in blocks}
