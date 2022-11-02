@@ -82,6 +82,13 @@ class ERC20Data(DataCore):
         """
         return self._erc20_metas_service.get(self._token)
 
+    @property
+    def address_filter(self) -> List[str]:
+        """
+        Address filter for this data (transfers only for these addreses)
+        """
+        return self._address_filter
+
     @cached_property
     def transfers(self) -> pl.DataFrame:
         """

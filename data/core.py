@@ -18,8 +18,8 @@ class DataCore:
     Base class for all data classes
     """
 
-    _start: int | datetime
-    _end: int | datetime
+    start: int | datetime
+    end: int | datetime
     _balances_service: BalancesService
     _blocks_service: BlocksService
     _calls_service: CallsService
@@ -27,8 +27,8 @@ class DataCore:
     _events_service: EventsService
 
     def __init__(self, start: int | datetime, end: int | datetime, **kwargs):
-        self._start = start
-        self._end = end
+        self.start = start
+        self.end = end
         self._balances_service = BalancesService.create(**kwargs)
         self._blocks_service = BlocksService.create(**kwargs)
         self._calls_service = CallsService.create(**kwargs)
@@ -40,14 +40,14 @@ class DataCore:
         """
         Start block number for the data.
         """
-        return self._resolve_timepoints([self._start])[0].number
+        return self._resolve_timepoints([self.start])[0].number
 
     @cached_property
     def to_block_number(self) -> int:
         """
         End block number for the data.
         """
-        return self._resolve_timepoints([self._end])[0].number
+        return self._resolve_timepoints([self.end])[0].number
 
     @cached_property
     def from_timestamp(self) -> int:
@@ -55,7 +55,7 @@ class DataCore:
         Start unix timestamp for the data.
         """
 
-        return self._resolve_timepoints([self._start])[0].timestamp
+        return self._resolve_timepoints([self.start])[0].timestamp
 
     @cached_property
     def to_timestamp(self) -> int:
@@ -63,7 +63,7 @@ class DataCore:
         End unix timestamp for the data.
         """
 
-        return self._resolve_timepoints([self._end])[0].timestamp
+        return self._resolve_timepoints([self.end])[0].timestamp
 
     @property
     def from_date(self) -> datetime:
