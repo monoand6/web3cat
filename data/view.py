@@ -12,6 +12,7 @@ from bokeh.models import (
     GlyphRenderer,
 )
 from bokeh.plotting import figure
+from bokeh.palettes import Category10
 import numpy as np
 
 from data.erc20s.erc20_data import ERC20Data
@@ -71,6 +72,15 @@ class TimeseriesWireframe(Wireframe):
             return int(time.mktime(tim.timetuple()))
         return tim
 
+    def plot(
+        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
+    ) -> GlyphRenderer:
+        return fig.line(
+            x,
+            y,
+            **kwargs,
+        )
+
 
 @dataclass(frozen=True)
 class TotalSupplyWireframe(TimeseriesWireframe):
@@ -104,14 +114,39 @@ class TotalSupplyWireframe(TimeseriesWireframe):
     def y(self, data: ERC20Data) -> List[np.float64]:
         return data.total_supply(self.x(data))["total_supply"].to_list()
 
-    def plot(
-        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
-    ) -> GlyphRenderer:
-        return fig.line(
-            x,
-            y,
-            **kwargs,
+
+@dataclass(frozen=True)
+class BalanceWireframe(TimeseriesWireframe):
+    token: ERC20Meta
+    address: str
+
+    @cached_property
+    def data_key(self) -> str:
+        return self.token.symbol.upper()
+
+    @property
+    def y_axis(self) -> str:
+        return f"Balance ({self.token.symbol.upper()})"
+
+    def build_data(self, default_data: ERC20Data | None, **core_args) -> ERC20Data:
+        data = ERC20Data(
+            token=self.token.address,
+            address_filter=[self.address],
+            start=self.start,
+            end=self.end,
+            **core_args,
         )
+        if default_data is None:
+            return data
+        return ERC20Data(
+            token=self.token.address,
+            address_filter=default_data.address_filter + [self.address],
+            start=min(data.from_block_number, default_data.from_block_number),
+            end=max(data.to_block_number, default_data.to_block_number),
+        )
+
+    def y(self, data: ERC20Data) -> List[np.float64]:
+        return data.balances([self.address], self.x(data))["balance"].to_list()
 
 
 class View:
@@ -119,13 +154,17 @@ class View:
     _core_args: Dict[str, Any]
     _fig_args: Dict[str, Any]
     _defaults: Dict[str, Any]
+    _colors: List[Any]
 
     _erc20_metas_service: ERC20MetasService
+    _glyphs: List[Any]
     _datas: Dict[str, Any]
 
     def __init__(self, **kwargs):
         self._wireframes = []
         self._datas = {}
+        self._colors = kwargs.pop("colors", Category10[10])
+        self._glyphs = []
         self._core_args = {
             k: kwargs.pop(k)
             for k in ["rpc", "cache_path", "block_grid_step", "w3", "conn"]
@@ -170,24 +209,42 @@ class View:
 
     def total_supply(
         self,
-        token: str,
+        token: str | None = None,
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
     ):
-        token_meta = self._erc20_metas_service.get(token)
-        self._wireframes.append(
-            TotalSupplyWireframe(
-                **self._build_wireframe_args(
-                    {
-                        "token": token_meta,
-                        "start": start,
-                        "end": end,
-                        "numpoints": numpoints,
-                    }
-                )
-            )
+        args = self._build_wireframe_args(
+            {
+                "token": token,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
         )
+        args["token"] = self._erc20_metas_service.get(args["token"])
+        self._wireframes.append(TotalSupplyWireframe(**args))
+        return self
+
+    def balance(
+        self,
+        address: str | None = None,
+        token: str | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        numpoints: int | None = None,
+    ):
+        args = self._build_wireframe_args(
+            {
+                "token": token,
+                "address": address,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
+        )
+        args["token"] = self._erc20_metas_service.get(args["token"])
+        self._wireframes.append(BalanceWireframe(**args))
         return self
 
     def show(self):
@@ -197,7 +254,7 @@ class View:
             x = wf.x(data)
             y = wf.y(data)
             self._update_axes(self.figure, min(y), max(y), wf)
-            wf.plot(self.figure, x, y)
+            self._glyphs.append(wf.plot(self.figure, x, y, color=self._get_color()))
         show(self.figure)
 
     def _build_data(self):
@@ -209,6 +266,10 @@ class View:
         clean_args = {k: v for k, v in args.items() if not v is None}
         merged = {**self._defaults, **clean_args}
         return {k: v for k, v in merged.items() if k in args}
+
+    def _get_color(self):
+        color = self._colors[len(self._glyphs) % len(self._colors)]
+        return color
 
     def _update_axes(
         self, fig: Figure, miny: float, maxy: float, wf: Wireframe
