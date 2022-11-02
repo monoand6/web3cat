@@ -147,5 +147,5 @@ def is_softer_filter_than(filter1: Any | None, filter2: Any | None) -> bool:
             return False
         sb = set(filter1)
         sp = set(filter2)
-        return sb.issubset(sp)
+        return sp.issubset(sb)
     return filter1 == filter2

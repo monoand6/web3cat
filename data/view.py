@@ -13,6 +13,7 @@ from bokeh.models import (
 )
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
+from fetcher.utils import short_address
 import numpy as np
 
 from data.erc20s.erc20_data import ERC20Data
@@ -72,15 +73,6 @@ class TimeseriesWireframe(Wireframe):
             return int(time.mktime(tim.timetuple()))
         return tim
 
-    def plot(
-        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
-    ) -> GlyphRenderer:
-        return fig.line(
-            x,
-            y,
-            **kwargs,
-        )
-
 
 @dataclass(frozen=True)
 class TotalSupplyWireframe(TimeseriesWireframe):
@@ -113,6 +105,17 @@ class TotalSupplyWireframe(TimeseriesWireframe):
 
     def y(self, data: ERC20Data) -> List[np.float64]:
         return data.total_supply(self.x(data))["total_supply"].to_list()
+
+    def plot(
+        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
+    ) -> GlyphRenderer:
+        return fig.line(
+            x,
+            y,
+            line_width=2,
+            legend_label=self.y_axis,
+            **kwargs,
+        )
 
 
 @dataclass(frozen=True)
@@ -147,6 +150,17 @@ class BalanceWireframe(TimeseriesWireframe):
 
     def y(self, data: ERC20Data) -> List[np.float64]:
         return data.balances([self.address], self.x(data))["balance"].to_list()
+
+    def plot(
+        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
+    ) -> GlyphRenderer:
+        return fig.line(
+            x,
+            y,
+            line_width=2,
+            legend_label=f"{short_address(self.address.lower())} balance ({self.token.symbol.upper()})",
+            **kwargs,
+        )
 
 
 class View:
@@ -195,6 +209,9 @@ class View:
         }
         self._erc20_metas_service = ERC20MetasService.create(**self._core_args)
         self._defaults = {"numpoints": 100, **kwargs}
+
+    def get_data(self, index: int) -> Any:
+        return self._datas[self._wireframes[index].data_key]
 
     @cached_property
     def figure(self):
@@ -278,6 +295,8 @@ class View:
     def _update_axes(
         self, fig: Figure, miny: float, maxy: float, wf: Wireframe
     ) -> Dict[str, Any]:
+        miny /= 1.05
+        maxy *= 1.05
         y_axis = wf.y_axis
         formatter = BasicTickFormatter()
         order = int(np.log((miny + maxy) / 2) / np.log(10))

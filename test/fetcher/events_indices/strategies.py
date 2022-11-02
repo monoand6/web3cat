@@ -14,10 +14,9 @@ def args_subset_and_superset(draw) -> Tuple[Dict[str, Any], Dict[str, Any]]:
                 lists(one_of(integers(), text(printable))), integers(), text(printable)
             )
         )
+        res2[k] = res1[k]
         if isinstance(res1[k], list):
-            res2[k] = res1[k] + draw(lists(one_of(integers(), text(printable))))
-        else:
-            res2[k] = res1[k]
+            res1[k] = res2[k] + draw(lists(one_of(integers(), text(printable))))
     for k in draw(lists(text(printable))):
         if k in res1.keys():
             continue
