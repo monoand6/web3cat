@@ -254,7 +254,11 @@ class View:
             x = wf.x(data)
             y = wf.y(data)
             self._update_axes(self.figure, min(y), max(y), wf)
-            self._glyphs.append(wf.plot(self.figure, x, y, color=self._get_color()))
+            self._glyphs.append(
+                wf.plot(
+                    self.figure, x, y, color=self._get_color(), y_range_name=wf.y_axis
+                )
+            )
         show(self.figure)
 
     def _build_data(self):
