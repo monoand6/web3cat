@@ -1,166 +1,19 @@
-from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import Any, Dict, List
-import time
 from bokeh.plotting import Figure, show
 from bokeh.models import (
     BasicTickFormatter,
     NumeralTickFormatter,
     Range1d,
     LinearAxis,
-    GlyphRenderer,
 )
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
-from fetcher.utils import short_address
 import numpy as np
 
-from data.erc20s.erc20_data import ERC20Data
-from fetcher.erc20_metas import ERC20Meta, ERC20MetasService
-
-
-@dataclass(frozen=True)
-class Wireframe:
-    numpoints: int
-
-    @property
-    def data_key(self):
-        pass
-
-    @property
-    def x_axis(self):
-        pass
-
-    @property
-    def y_axis(self):
-        pass
-
-    def x(self, data: Any) -> List[Any]:
-        pass
-
-    def y(self, data: Any) -> List[Any]:
-        pass
-
-    def build_data(self, default_data: Any | None, **core_args) -> Any:
-        pass
-
-    def plot(self, fig: Figure, x: Any, y: Any, **kwargs) -> GlyphRenderer:
-        pass
-
-
-@dataclass(frozen=True)
-class TimeseriesWireframe(Wireframe):
-    start: int | datetime
-    end: int | datetime
-
-    @property
-    def x_axis(self) -> str:
-        return "datetime"
-
-    def x(self, data: Any):
-        start = self._resolve_datetime(self.start)
-        end = self._resolve_datetime(self.end)
-        step = (end - start) // self.numpoints
-        timestamps = [z for z in range(start, end, step)]
-        if timestamps[-1] != end:
-            timestamps.append(end)
-        dates = [datetime.fromtimestamp(t) for t in timestamps]
-        return dates
-
-    def _resolve_datetime(self, tim: int | datetime):
-        if isinstance(tim, datetime):
-            return int(time.mktime(tim.timetuple()))
-        return tim
-
-
-@dataclass(frozen=True)
-class TotalSupplyWireframe(TimeseriesWireframe):
-    token: ERC20Meta
-
-    @cached_property
-    def data_key(self) -> str:
-        return self.token.symbol.upper()
-
-    @property
-    def y_axis(self) -> str:
-        return f"Total Supply ({self.token.symbol.upper()})"
-
-    def build_data(self, default_data: ERC20Data | None, **core_args) -> ERC20Data:
-        data = ERC20Data(
-            token=self.token.address,
-            address_filter=[],
-            start=self.start,
-            end=self.end,
-            **core_args,
-        )
-        if default_data is None:
-            return data
-        return ERC20Data(
-            token=self.token.address,
-            address_filter=default_data.address_filter,
-            start=min(data.from_block_number, default_data.from_block_number),
-            end=max(data.to_block_number, default_data.to_block_number),
-        )
-
-    def y(self, data: ERC20Data) -> List[np.float64]:
-        return data.total_supply(self.x(data))["total_supply"].to_list()
-
-    def plot(
-        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
-    ) -> GlyphRenderer:
-        return fig.line(
-            x,
-            y,
-            line_width=2,
-            legend_label=self.y_axis,
-            **kwargs,
-        )
-
-
-@dataclass(frozen=True)
-class BalanceWireframe(TimeseriesWireframe):
-    token: ERC20Meta
-    address: str
-
-    @cached_property
-    def data_key(self) -> str:
-        return self.token.symbol.upper()
-
-    @property
-    def y_axis(self) -> str:
-        return f"Balance ({self.token.symbol.upper()})"
-
-    def build_data(self, default_data: ERC20Data | None, **core_args) -> ERC20Data:
-        data = ERC20Data(
-            token=self.token.address,
-            address_filter=[self.address],
-            start=self.start,
-            end=self.end,
-            **core_args,
-        )
-        if default_data is None:
-            return data
-        return ERC20Data(
-            token=self.token.address,
-            address_filter=default_data.address_filter + [self.address],
-            start=min(data.from_block_number, default_data.from_block_number),
-            end=max(data.to_block_number, default_data.to_block_number),
-        )
-
-    def y(self, data: ERC20Data) -> List[np.float64]:
-        return data.balances([self.address], self.x(data))["balance"].to_list()
-
-    def plot(
-        self, fig: Figure, x: List[datetime], y: List[np.float64], **kwargs
-    ) -> GlyphRenderer:
-        return fig.line(
-            x,
-            y,
-            line_width=2,
-            legend_label=f"{short_address(self.address.lower())} balance ({self.token.symbol.upper()})",
-            **kwargs,
-        )
+from fetcher.erc20_metas import ERC20MetasService
+from view.wireframes import Wireframe, BalanceWireframe, TotalSupplyWireframe
 
 
 class View:
