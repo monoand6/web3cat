@@ -2,6 +2,8 @@ from datetime import datetime
 from functools import cached_property
 import time
 from typing import List
+from web3 import Web3
+
 from fetcher.balances import BalancesService
 from fetcher.blocks import BlocksService
 from fetcher.blocks.block import Block
@@ -80,6 +82,13 @@ class DataCore:
         """
 
         return datetime.fromtimestamp(self.to_timestamp)
+
+    @cached_property
+    def w3(self) -> Web3:
+        """
+        An instance of :class:`web3.Web3`
+        """
+        return self._blocks_service._w3  # pylint: disable=protected-access
 
     def _resolve_timepoints(self, timepoints: List[int | datetime]) -> List[Block]:
         resolved_dates = []
