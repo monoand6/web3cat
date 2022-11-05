@@ -286,7 +286,7 @@ class ChainlinkData(DataCore):
 
     def prices(
         self, timepoints: List[int | datetime], token0: str, token1: str
-    ) -> List[np.float64]:
+    ) -> pl.DataFrame:
         """
         Chainlink prices for pair of tokens.
         The token0 = "WETH", token1 = "USDC" would mean the regular WETH/USDC.

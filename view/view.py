@@ -11,9 +11,15 @@ from bokeh.models import (
 from bokeh.plotting import figure
 from bokeh.palettes import Category10
 import numpy as np
+from web3.constants import ADDRESS_ZERO
 
-from fetcher.erc20_metas import ERC20MetasService
-from view.wireframes import Wireframe, BalanceWireframe, TotalSupplyWireframe
+from fetcher.erc20_metas import ERC20MetasService, ERC20Meta
+from view.wireframes import (
+    Wireframe,
+    BalanceWireframe,
+    TotalSupplyWireframe,
+    ChainlinkPricesWireframe,
+)
 
 
 class View:
@@ -94,6 +100,33 @@ class View:
         )
         args["token"] = self._erc20_metas_service.get(args["token"])
         self._wireframes.append(TotalSupplyWireframe(**args))
+        return self
+
+    def chainlink_prices(
+        self,
+        token: str | None = None,
+        token_base: str | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        numpoints: int | None = None,
+    ):
+        args = self._build_wireframe_args(
+            {
+                "token": token,
+                "token_base": token_base,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
+        )
+        for name in ["token", "token_base"]:
+            if args[name].upper() == "USD":
+                args[name] = ERC20Meta(1, ADDRESS_ZERO, "USD", "USD", 6, None)
+            else:
+                args[name] = self._erc20_metas_service.get(args[name])
+        args["token0"] = args.pop("token")
+        args["token1"] = args.pop("token_base")
+        self._wireframes.append(ChainlinkPricesWireframe(**args))
         return self
 
     def balance(
