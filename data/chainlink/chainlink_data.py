@@ -28,17 +28,6 @@ class ChainlinkUSDData(DataCore):
     See :mod:`data.chainlink` for examples.
     """
 
-    UPDATE_SCHEMA = {
-        "timestamp": pl.UInt64,
-        "date": pl.Datetime,
-        "block_number": pl.UInt64,
-        "transaction_hash": pl.Utf8,
-        "log_index": pl.UInt64,
-        "round": pl.UInt64,
-        "updated_at": pl.UInt64,
-        "price": pl.Float64,
-    }
-
     _token: str
 
     def __init__(
@@ -88,7 +77,7 @@ class ChainlinkUSDData(DataCore):
             abi = json.load(f)
         oracle_address = self._calls_service.get_call(
             self.oracle_proxy_contract.functions.aggregator(),
-            self.to_block,
+            self.to_block_number,
         ).response
         return self.w3.eth.contract(
             address=self.w3.toChecksumAddress(oracle_address),
@@ -103,7 +92,7 @@ class ChainlinkUSDData(DataCore):
         return int(
             self._calls_service.get_call(
                 self.oracle_proxy_contract.functions.decimals(),
-                self.to_block,
+                self.to_block_number,
             ).response
         )
 
@@ -114,7 +103,7 @@ class ChainlinkUSDData(DataCore):
         """
         price = self._calls_service.get_call(
             self.oracle_aggregator_contract.functions.latestRoundData(),
-            self.from_block,
+            self.from_block_number,
         ).response[1]
         return price / 10**self.oracle_decimals
 
@@ -136,10 +125,10 @@ class ChainlinkUSDData(DataCore):
         """
 
         blocks = self._resolve_timepoints(sorted(timepoints))
-        updates = self.updates[["timestamp", "price"]].to_dicts()
+        updates = self.updates[["block_number", "price"]].to_dicts()
         i = 0
         price_list = []
-        while blocks[i].number < updates[0]["block_number"]:
+        while len(updates) > 0 and blocks[i].number < updates[0]["block_number"]:
             price_list.append(self.initial_price)
             i += 1
             if i == len(blocks):
@@ -191,7 +180,16 @@ class ChainlinkUSDData(DataCore):
         factor = 10**self.oracle_decimals
         return pl.DataFrame(
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
-            ChainlinkUSDData.UPDATE_SCHEMA,
+            {
+                "timestamp": pl.UInt64,
+                "date": pl.Datetime,
+                "block_number": pl.UInt64,
+                "transaction_hash": pl.Utf8,
+                "log_index": pl.UInt64,
+                "round": pl.UInt64,
+                "updated_at": pl.UInt64,
+                "price": pl.Float64,
+            },
         ).sort(pl.col("timestamp"))
 
     def _event_to_row(self, ev: Event, ts: int, val_factor: int) -> Dict[str, Any]:

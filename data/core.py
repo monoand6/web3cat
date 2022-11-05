@@ -88,7 +88,7 @@ class DataCore:
         """
         An instance of :class:`web3.Web3`
         """
-        return self._blocks_service._w3  # pylint: disable=protected-access
+        return self._blocks_service.w3  # pylint: disable=protected-access
 
     def _resolve_timepoints(self, timepoints: List[int | datetime]) -> List[Block]:
         resolved_dates = []
