@@ -12,10 +12,7 @@ from web3.constants import ADDRESS_ZERO
 from web3 import Web3
 from data.core import DataCore
 
-from fetcher.erc20_metas import ERC20MetasService
-from fetcher.events import EventsService, Event
-from fetcher.blocks import BlocksService
-from fetcher.calls import CallsService
+from fetcher.events import Event
 from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
@@ -46,10 +43,6 @@ class ERC20Data(DataCore):
 
     _token: str
     _address_filter: List[str]
-    _erc20_metas_service: ERC20MetasService
-    _events_service: EventsService
-    _blocks_service: BlocksService
-    _calls_service: CallsService
 
     _meta: ERC20Meta | None
     _transfers: pl.DataFrame | None

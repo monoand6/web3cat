@@ -72,7 +72,7 @@ class BalanceWireframe(TimeseriesWireframe):
 
     @cached_property
     def data_key(self) -> str:
-        return self.token.symbol.upper()
+        return f"erc20_{self.token.symbol.upper()}"
 
     @property
     def y_axis(self) -> str:

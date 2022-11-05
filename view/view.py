@@ -19,6 +19,7 @@ from view.wireframes import (
     BalanceWireframe,
     TotalSupplyWireframe,
     ChainlinkPricesWireframe,
+    EthBalanceWireframe,
 )
 
 
@@ -131,7 +132,7 @@ class View:
 
     def balance(
         self,
-        address: str | None = None,
+        address: str | List[str] | None = None,
         token: str | None = None,
         start: int | datetime | None = None,
         end: int | datetime | None = None,
@@ -146,8 +147,16 @@ class View:
                 "numpoints": numpoints,
             }
         )
-        args["token"] = self._erc20_metas_service.get(args["token"])
-        self._wireframes.append(BalanceWireframe(**args))
+        if isinstance(args["address"], str):
+            args["address"] = [args["address"]]
+        for addr in args["address"]:
+            args_item = {**args, "address": addr}
+            if args_item["token"].upper() == "ETH":
+                args_item.pop("token")
+                self._wireframes.append(EthBalanceWireframe(**args_item))
+            else:
+                args_item["token"] = self._erc20_metas_service.get(args_item["token"])
+                self._wireframes.append(BalanceWireframe(**args_item))
         return self
 
     def show(self):
