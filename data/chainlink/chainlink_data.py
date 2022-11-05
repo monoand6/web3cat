@@ -298,7 +298,8 @@ class ChainlinkData(DataCore):
             addresses: The list of addresses
             timepoints: A list of timepoints (see :class:`ERC20Data`).
 
-        Returns a Dataframe with fields
+        Returns:
+            A Dataframe with fields
 
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | Field                | Type                       | Description                                                                  |

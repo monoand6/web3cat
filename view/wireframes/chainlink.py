@@ -27,7 +27,7 @@ class ChainlinkPricesWireframe(TimeseriesWireframe):
 
     @property
     def y_axis(self) -> str:
-        return f"({self.token0.symbol.upper()} / {self.token1.symbol.upper()}) price"
+        return f"{self.token0.symbol.upper()} / {self.token1.symbol.upper()} price"
 
     def build_data(
         self, default_data: ChainlinkData | None, **core_args
