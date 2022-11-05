@@ -112,7 +112,7 @@ def print_progress(
     global LAST_PERCENT
 
     # Avoid too much output
-    if iteration > 0 and iteration / total - LAST_PERCENT < 0.01:
+    if iteration != total and iteration > 0 and iteration / total - LAST_PERCENT < 0.01:
         return
 
     LAST_PERCENT = iteration / total
