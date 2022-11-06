@@ -31,11 +31,42 @@ class DataCore:
     def __init__(self, start: int | datetime, end: int | datetime, **kwargs):
         self.start = start
         self.end = end
-        self._balances_service = BalancesService.create(**kwargs)
-        self._blocks_service = BlocksService.create(**kwargs)
-        self._calls_service = CallsService.create(**kwargs)
-        self._erc20_metas_service = ERC20MetasService.create(**kwargs)
-        self._events_service = EventsService.create(**kwargs)
+        service_args = {
+            k: kwargs.pop(k)
+            for k in [
+                "balances_service",
+                "blocks_service",
+                "calls_service",
+                "erc20_metas_service",
+                "events_service",
+            ]
+            if k in kwargs
+        }
+
+        if "balances_service" in service_args:
+            self._balances_service = service_args["balances_service"]
+        else:
+            self._balances_service = BalancesService.create(**kwargs)
+
+        if "blocks_service" in service_args:
+            self._blocks_service = service_args["blocks_service"]
+        else:
+            self._blocks_service = BlocksService.create(**kwargs)
+
+        if "calls_service" in service_args:
+            self._calls_service = service_args["calls_service"]
+        else:
+            self._calls_service = CallsService.create(**kwargs)
+
+        if "erc20_metas_service" in service_args:
+            self._erc20_metas_service = service_args["erc20_metas_service"]
+        else:
+            self._erc20_metas_service = ERC20MetasService.create(**kwargs)
+
+        if "events_service" in service_args:
+            self._events_service = service_args["events_service"]
+        else:
+            self._events_service = EventsService.create(**kwargs)
 
     @cached_property
     def from_block_number(self) -> int:

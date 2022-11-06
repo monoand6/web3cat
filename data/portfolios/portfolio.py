@@ -48,17 +48,25 @@ class PortfolioData(DataCore):
         self._addresses = [addr.lower() for addr in addresses]
         self._numpoints = numpoints
 
+        services = {
+            "blocks_service": self._blocks_service,
+            "balances_service": self._balances_service,
+            "calls_service": self._calls_service,
+            "erc20_metas_service": self._erc20_metas_service,
+            "events_service": self._events_service,
+        }
+
         self._erc20_datas = [
-            ERC20Data(token, addresses, start, end, **kwargs)
+            ERC20Data(token, addresses, start, end, **services, **kwargs)
             for token in tokens
             if token.upper() != "ETH"
         ]
         self._chainlink_data = ChainlinkData(
-            list(set(tokens + base_tokens)), start, end, **kwargs
+            list(set(tokens + base_tokens)), start, end, **services, **kwargs
         )
         self._ether_data = None
         if "ETH" in [t.upper() for t in tokens]:
-            self._ether_data = EtherData(start, end, **kwargs)
+            self._ether_data = EtherData(start, end, **services, **kwargs)
 
     @cached_property
     def tokens(self):
