@@ -334,13 +334,13 @@ class ChainlinkData(DataCore):
         out = [
             {
                 "timestamp": b.timestamp,
-                "block_number": b.number,
                 "date": datetime.fromtimestamp(b.timestamp),
+                "block_number": b.number,
                 "price": p,
             }
             for b, p in zip(blocks, prices)
         ]
-        return pl.DataFrame(
+        df = pl.DataFrame(
             out,
             {
                 "timestamp": pl.UInt64,
@@ -349,3 +349,4 @@ class ChainlinkData(DataCore):
                 "price": pl.Float64,
             },
         )
+        return df
