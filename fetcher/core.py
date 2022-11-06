@@ -81,8 +81,7 @@ class Core:
     """
 
     #: An https Ethereum RPC endpoint uri.
-    #: Can be ``None`` if :class:`web3.Web3` is injected directly.
-    rpc: str | None
+    _rpc: str | None
     #: OS path to the cache database.
     #: Can be ``None`` if :class:`sqlite3.Connection` is injected directly.
     cache: str | None
@@ -96,7 +95,7 @@ class Core:
         w3: Web3 | None = None,
         conn: Connection | None = None,
     ):
-        self.rpc = rpc
+        self._rpc = rpc
         self.cache_path = cache_path
         self._block_grid_step = block_grid_step
         self._w3 = w3
@@ -126,15 +125,23 @@ class Core:
         return chain_id_cache[self.rpc]
 
     @cached_property
+    def rpc(self) -> str:
+        """
+        Ethereum RPC endpoint.
+
+        Note:
+            Can be ``None`` if :class:`web3.Web3` is injected directly.
+        """
+
+        return self._rpc or os.environ.get("WEB3_PROVIDER_URI")
+
+    @cached_property
     def w3(self) -> Web3:
         """
         :class:`web3.Web3` instance for working with Ethereum RPC
         """
         if not self._w3 is None:
             return self._w3
-
-        if self.rpc is None:
-            self.rpc = os.environ.get("WEB3_PROVIDER_URI")
 
         if self.rpc is None:
             raise ValueError(

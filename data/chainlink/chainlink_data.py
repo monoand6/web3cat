@@ -57,7 +57,7 @@ class ChainlinkUSDData(DataCore):
         if oracle_address is None:
             raise LookupError(
                 f"Chainlink oracle for token `{self.meta.symbol.lower()}` "
-                f"on chain with id `{self._events_service.chain_id}` is not found"
+                f"on chain with id `{self._blocks_service.chain_id}` is not found"
             )
 
         return self.w3.eth.contract(
@@ -205,7 +205,7 @@ class ChainlinkUSDData(DataCore):
         }
 
     def _resolve_chainlink_address(self, token: str) -> str | None:
-        cid = str(self._events_service.chain_id)
+        cid = str(self._blocks_service.chain_id)
         if not cid in self.index:
             return None
         oracles = self.index[cid]
