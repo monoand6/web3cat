@@ -74,6 +74,39 @@ class PortfolioData(DataCore):
         if "ETH" in [t.upper() for t in tokens]:
             self._ether_data = EtherData(start, end, **services, **kwargs)
 
+    def add_address(self, address: str | List[str]):
+        """
+        Add address to a portfolio.
+
+        Arguments:
+            address: an address or a list of addresses
+        """
+        if isinstance(address, str):
+            address = [address]
+        self._addresses += [a.lower() for a in address]
+
+    def add_token(self, token: str | List[str]):
+        """
+        Add token to a portfolio.
+
+        Arguments:
+            token: a token or a list of tokens
+        """
+        if isinstance(token, str):
+            token = [token]
+        self._tokens += token
+
+    def add_base_token(self, base_token: str | List[str]):
+        """
+        Add token to a portfolio.
+
+        Arguments:
+            base_token: a base token or a list of base tokens
+        """
+        if isinstance(base_token, str):
+            base_token = [base_token]
+        self._base_tokens += base_token
+
     @cached_property
     def tokens(self) -> List[ERC20Meta]:
         """
@@ -168,8 +201,8 @@ class PortfolioData(DataCore):
         data = self.balances_and_prices.with_column(
             (
                 pl.col(self.tokens[0].symbol.upper())
-                / pl.col(
-                    f"{base_token.symbol.upper()} / {self.tokens[0].symbol.upper()}"
+                * pl.col(
+                    f"{self.tokens[0].symbol.upper()} / {base_token.symbol.upper()}"
                 )
             ).alias(f"{self.tokens[0].symbol.upper()} ({base_token.symbol.upper()})")
         )
@@ -177,7 +210,7 @@ class PortfolioData(DataCore):
             data = data.with_column(
                 (
                     pl.col(token.symbol.upper())
-                    / pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
+                    * pl.col(f"{token.symbol.upper()} / {base_token.symbol.upper()}")
                 ).alias(f"{token.symbol.upper()} ({base_token.symbol.upper()})")
             )
         column_names = ["timestamp", "date", "block_number"]
@@ -245,7 +278,7 @@ class PortfolioData(DataCore):
         if not self._ether_data is None:
             balances = self._ether_data.balances(self._addresses, block_numbers)[
                 ["block_number", "address", "balance"]
-            ].rename({"balance": "eth"})
+            ].rename({"balance": "ETH"})
             data = data.join(balances, on=["block_number", "address"], how="left")
 
         for token in self.tokens:
@@ -265,8 +298,8 @@ class PortfolioData(DataCore):
         data = data.with_column(
             (
                 pl.col(self.tokens[0].symbol.upper())
-                / pl.col(
-                    f"{base_token.symbol.upper()} / {self.tokens[0].symbol.upper()}"
+                * pl.col(
+                    f"{self.tokens[0].symbol.upper()} / {base_token.symbol.upper()}"
                 )
             ).alias(name)
         )
@@ -275,7 +308,7 @@ class PortfolioData(DataCore):
                 (
                     pl.col(name)
                     + pl.col(token.symbol.upper())
-                    / pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
+                    * pl.col(f"{token.symbol.upper()} / {base_token.symbol.upper()}")
                 ).alias(name)
             )
         return data
