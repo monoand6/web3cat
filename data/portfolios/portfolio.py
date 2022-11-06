@@ -1,6 +1,7 @@
+# pylint: disable=line-too-long
+
 from __future__ import annotations
 from functools import cached_property
-import time
 from typing import List
 from datetime import datetime
 from web3.constants import ADDRESS_ZERO
@@ -16,6 +17,13 @@ class PortfolioData(DataCore):
     """
     Portfolio data (a group of tokens for a group of addresses)
 
+    Arguments:
+        tokens: A list of tokens to track
+        base_tokens: A list of tokens for aggregation by price
+        addresses: A list of addresses to track
+        start: start of the data
+        end: endof the data
+        numpoints: number of points between ``start`` and ``end``
     """
 
     _tokens: List[str]
@@ -40,8 +48,6 @@ class PortfolioData(DataCore):
         super().__init__(start, end, **kwargs)
         if len(tokens) == 0:
             raise ValueError("Tokens list cannot be empty")
-        if len(base_tokens) == 0:
-            raise ValueError("Base tokens list cannot be empty")
 
         self._tokens = tokens
         self._base_tokens = base_tokens
@@ -69,16 +75,47 @@ class PortfolioData(DataCore):
             self._ether_data = EtherData(start, end, **services, **kwargs)
 
     @cached_property
-    def tokens(self):
+    def tokens(self) -> List[ERC20Meta]:
+        """
+        Tracked tokens metas.
+        """
         return [self._get_meta(token) for token in self._tokens]
 
     @cached_property
-    def base_tokens(self):
+    def base_tokens(self) -> List[ERC20Meta]:
+        """
+        Base tokens metas.
+        """
         return [self._get_meta(token) for token in self._base_tokens]
 
     def breakdown_by_address(self, base_token: str) -> pl.DataFrame:
+        """
+        Breakdown of token holdings by the owner address.
+
+        Arguments:
+            base_token: token for denomination of holdings
+
+        Returns:
+            A Dataframe with fields:
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :class:`int`               | Number of the block                                                          |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``<address N>``      | :attr:`numpy.float64`      | Balance of the address in ``base_token``                                     |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``total``            | :attr:`numpy.float64`      | Total portfolio balance in ``base_token``                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+
+
+        """
         base_token = self._erc20_metas_service.get(base_token)
-        data = self._with_total_in(self.data, base_token)[
+        data = self._with_total_in(self.balances_and_prices, base_token)[
             [
                 "timestamp",
                 "date",
@@ -104,8 +141,31 @@ class PortfolioData(DataCore):
         return out
 
     def breakdown_by_token(self, base_token: str) -> pl.DataFrame:
+        """
+        Breakdown of token holdings by the owner address.
+
+        Arguments:
+            base_token: token for denomination of holdings
+
+        Returns:
+            A Dataframe with fields:
+
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                          | Type                       | Description                                                                  |
+        +================================+============================+==============================================================================+
+        | ``timestamp``                  | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``                       | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``               | :class:`int`               | Number of the block                                                          |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``<token> (<base_token>)``     | :attr:`numpy.float64`      | Value of token in ``base_token``                                             |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``total``                      | :attr:`numpy.float64`      | Total portfolio balance in ``base_token``                                    |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        """
         base_token = self._erc20_metas_service.get(base_token)
-        data = self.data.with_column(
+        data = self.balances_and_prices.with_column(
             (
                 pl.col(self.tokens[0].symbol.upper())
                 / pl.col(
@@ -146,7 +206,29 @@ class PortfolioData(DataCore):
         return data
 
     @cached_property
-    def data(self) -> pl.DataFrame:
+    def balances_and_prices(self) -> pl.DataFrame:
+        """
+        Balances and prices data.
+
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                          | Type                       | Description                                                                  |
+        +================================+============================+==============================================================================+
+        | ``timestamp``                  | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``                       | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``               | :class:`int`               | Number of the block                                                          |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``address``                    | :class:`str`               | Address of tokens owner                                                      |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``<token>``                    | :attr:`numpy.float64`      | Value of token in ``base_token``                                             |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``<token> / <base_token>``     | :attr:`numpy.float64`      | Price of token in terms of base token                                        |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``total``                      | :attr:`numpy.float64`      | Total portfolio balance in ``base_token``                                    |
+        +--------------------------------+----------------------------+------------------------------------------------------------------------------+
+
+        """
         step = int((self.to_block_number - self.from_block_number) / self._numpoints)
         block_numbers = list(range(self.from_block_number, self.to_block_number, step))
         data = (
