@@ -104,33 +104,45 @@ class PortfolioData(DataCore):
         return out
 
     def breakdown_by_token(self, base_token: str) -> pl.DataFrame:
-        base_token = base_token.lower()
+        base_token = self._erc20_metas_service.get(base_token)
         data = self.data.with_column(
             (
-                pl.col(self._tokens[0])
-                * pl.col(f"{self._tokens[0]} / usd")
-                / pl.col(f"{base_token} / usd (base)")
-            ).alias(f"{self._tokens[0]}")
+                pl.col(self.tokens[0].symbol.upper())
+                / pl.col(
+                    f"{base_token.symbol.upper()} / {self.tokens[0].symbol.upper()}"
+                )
+            ).alias(f"{self.tokens[0].symbol.upper()} ({base_token.symbol.upper()})")
         )
-        for token in self._tokens[1:]:
+        for token in self.tokens[1:]:
             data = data.with_column(
                 (
-                    pl.col(token)
-                    * pl.col(f"{token} / usd")
-                    / pl.col(f"{base_token} / usd (base)")
-                ).alias(f"{token}")
+                    pl.col(token.symbol.upper())
+                    / pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
+                ).alias(f"{token.symbol.upper()} ({base_token.symbol.upper()})")
             )
-        column_names = ["timestamp", "date"]
-        column_names += [pl.col(f"{t}") for t in self._tokens]
-        agg_column_names = [pl.col(f"{t}").sum() for t in self._tokens]
+        column_names = ["timestamp", "date", "block_number"]
+        agg_column_names = [
+            pl.col(f"{t.symbol.upper()} ({base_token.symbol.upper()})").sum()
+            for t in self.tokens
+        ]
+        column_names += agg_column_names
         data = (
-            data.groupby(["timestamp", "date"])
+            data.groupby(["timestamp", "date", "block_number"])
             .agg(agg_column_names)
             .sort(["timestamp"])
         )
-        data = data.with_column(pl.col(f"{self._tokens[0]}").alias("total"))
-        for t in self._tokens[1:]:
-            data = data.with_column((pl.col("total") + pl.col(f"{t}")).alias("total"))
+        data = data.with_column(
+            pl.col(
+                f"{self.tokens[0].symbol.upper()} ({base_token.symbol.upper()})"
+            ).alias("total")
+        )
+        for t in self.tokens[1:]:
+            data = data.with_column(
+                (
+                    pl.col("total")
+                    + pl.col(f"{t.symbol.upper()} ({base_token.symbol.upper()})")
+                ).alias("total")
+            )
         return data
 
     @cached_property
@@ -164,14 +176,14 @@ class PortfolioData(DataCore):
                 )
                 data = data.join(prices, on=["block_number"], how="left")
 
-        return data
+        return data.sort("block_number")
 
     def _with_total_in(self, data: pl.DataFrame, base_token: ERC20Meta) -> pl.DataFrame:
         name = f"total {base_token.symbol.upper()}"
         data = data.with_column(
             (
                 pl.col(self.tokens[0].symbol.upper())
-                * pl.col(
+                / pl.col(
                     f"{base_token.symbol.upper()} / {self.tokens[0].symbol.upper()}"
                 )
             ).alias(name)
@@ -181,7 +193,7 @@ class PortfolioData(DataCore):
                 (
                     pl.col(name)
                     + pl.col(token.symbol.upper())
-                    * pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
+                    / pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
                 ).alias(name)
             )
         return data
