@@ -77,17 +77,27 @@ class PortfolioData(DataCore):
         return [self._get_meta(token) for token in self._base_tokens]
 
     def breakdown_by_address(self, base_token: str) -> pl.DataFrame:
-        base_token = base_token.lower()
+        base_token = self._erc20_metas_service.get(base_token)
         data = self._with_total_in(self.data, base_token)[
-            ["timestamp", "date", "address", f"total {base_token}"]
+            [
+                "timestamp",
+                "date",
+                "block_number",
+                "address",
+                f"total {base_token.symbol.upper()}",
+            ]
         ]
         dfs = data.partition_by("address", True)
         addr = dfs[0]["address"][0]
-        out = dfs[0].rename({f"total {base_token}": addr})[["timestamp", "date", addr]]
+        out = dfs[0].rename({f"total {base_token.symbol.upper()}": addr})[
+            ["timestamp", "date", "block_number", addr]
+        ]
         for df in dfs[1:]:
             addr = df["address"][0]
-            df = df.rename({f"total {base_token}": addr})[["timestamp", addr]]
-            out = out.join(df, on="timestamp", how="left")
+            df = df.rename({f"total {base_token.symbol.upper()}": addr})[
+                ["block_number", addr]
+            ]
+            out = out.join(df, on="block_number", how="left")
         out = out.with_column(pl.col(self._addresses[0]).alias("total"))
         for addr in self._addresses[1:]:
             out = out.with_column(pl.col("total") + pl.col(addr).alias("total"))
@@ -156,22 +166,22 @@ class PortfolioData(DataCore):
 
         return data
 
-    def _with_total_in(self, data: pl.DataFrame, base_token: str) -> pl.DataFrame:
-        name = f"total {base_token}"
+    def _with_total_in(self, data: pl.DataFrame, base_token: ERC20Meta) -> pl.DataFrame:
+        name = f"total {base_token.symbol.upper()}"
         data = data.with_column(
             (
-                pl.col(self._tokens[0])
-                * pl.col(f"{self._tokens[0]} / usd")
-                / pl.col(f"{base_token} / usd (base)")
+                pl.col(self.tokens[0].symbol.upper())
+                * pl.col(
+                    f"{base_token.symbol.upper()} / {self.tokens[0].symbol.upper()}"
+                )
             ).alias(name)
         )
-        for token in self._tokens[1:]:
+        for token in self.tokens[1:]:
             data = data.with_column(
                 (
                     pl.col(name)
-                    + pl.col(token)
-                    * pl.col(f"{token} / usd")
-                    / pl.col(f"{base_token} / usd (base)")
+                    + pl.col(token.symbol.upper())
+                    * pl.col(f"{base_token.symbol.upper()} / {token.symbol.upper()}")
                 ).alias(name)
             )
         return data
