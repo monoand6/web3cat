@@ -85,6 +85,38 @@ class PortfolioByAddressWireframe(PortfolioWireframe):
         }
         return fig.varea_stack(**args)
 
+
+class PortfolioByTokenWireframe(PortfolioWireframe):
+    def y(self, data: PortfolioData) -> Dict[str, List[np.float64]]:
+        series_dict = data.breakdown_by_token(self.base_token.symbol.upper()).to_dict()
+        exclude = ["timestamp", "date", "block_number"]
+        return {k: v.to_list() for k, v in series_dict.items() if not k in exclude}
+
+    def plot(
+        self, fig: Figure, x: List[datetime], y: Dict[str, List[np.float64]], **kwargs
+    ) -> GlyphRenderer:
+        y = {**y}
+        y.pop("total")
+
+        colors = Category20[20] * (1 + len(y.keys()) // len(Category20[20]))
+        colors = colors[: len(y.keys())]
+        y["date"] = x
+        stackers = [
+            f"{meta.symbol.upper()} ({self.base_token.symbol.upper()})"
+            for meta in self.tokens
+        ]
+
+        args = {
+            "stackers": stackers,
+            "x": "date",
+            "legend_label": stackers,
+            "source": y,
+            "alpha": 0.8,
+            **kwargs,
+            "color": colors,
+        }
+        return fig.varea_stack(**args)
+
     # def plot(
     #     self, fig: Figure, x: List[datetime], y: List[List[np.float64]], **kwargs
     # ) -> GlyphRenderer:

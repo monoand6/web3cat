@@ -21,6 +21,7 @@ from view.wireframes import (
     ChainlinkPricesWireframe,
     EthBalanceWireframe,
     PortfolioByAddressWireframe,
+    PortfolioByTokenWireframe,
 )
 
 
@@ -160,7 +161,7 @@ class View:
                 self._wireframes.append(BalanceWireframe(**args_item))
         return self
 
-    def portfolio(
+    def portfolio_by_address(
         self,
         tokens: List[str] | None = None,
         base_token: str | None = None,
@@ -187,6 +188,36 @@ class View:
         args["addresses"] = addresses
 
         self._wireframes.append(PortfolioByAddressWireframe(**args))
+
+        return self
+
+    def portfolio_by_token(
+        self,
+        tokens: List[str] | None = None,
+        base_token: str | None = None,
+        addresses: List[str] | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        numpoints: int | None = None,
+    ):
+        args = self._build_wireframe_args(
+            {
+                "tokens": tokens,
+                "base_token": base_token,
+                "addresses": addresses,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
+        )
+        token_metas = [self._erc20_metas_service.get(token) for token in args["tokens"]]
+        base_token_meta = self._erc20_metas_service.get(args["base_token"])
+        addresses = [a.lower() for a in (args["addresses"] or [])]
+        args["tokens"] = token_metas
+        args["base_token"] = base_token_meta
+        args["addresses"] = addresses
+
+        self._wireframes.append(PortfolioByTokenWireframe(**args))
 
         return self
 
