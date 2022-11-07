@@ -20,6 +20,7 @@ from view.wireframes import (
     TotalSupplyWireframe,
     ChainlinkPricesWireframe,
     EthBalanceWireframe,
+    PortfolioByAddressWireframe,
 )
 
 
@@ -159,13 +160,53 @@ class View:
                 self._wireframes.append(BalanceWireframe(**args_item))
         return self
 
+    def portfolio(
+        self,
+        tokens: List[str] | None = None,
+        base_token: str | None = None,
+        addresses: List[str] | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        numpoints: int | None = None,
+    ):
+        args = self._build_wireframe_args(
+            {
+                "tokens": tokens,
+                "base_token": base_token,
+                "addresses": addresses,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
+        )
+        token_metas = [self._erc20_metas_service.get(token) for token in args["tokens"]]
+        base_token_meta = self._erc20_metas_service.get(args["base_token"])
+        addresses = [a.lower() for a in (args["addresses"] or [])]
+        args["tokens"] = token_metas
+        args["base_token"] = base_token_meta
+        args["addresses"] = addresses
+
+        self._wireframes.append(PortfolioByAddressWireframe(**args))
+
+        return self
+
     def show(self):
         self._build_data()
         for wf in self._wireframes:
             data = self._datas[wf.data_key]
             x = wf.x(data)
             y = wf.y(data)
-            self._update_axes(self.figure, min(y), max(y), wf)
+            if isinstance(y, dict):
+                for y_sub in y.values():
+                    self._update_axes(self.figure, min(y_sub), max(y_sub), wf)
+            else:
+                if len(y) > 0:
+                    if isinstance(y[0], list):
+                        for y_sub in y:
+                            self._update_axes(self.figure, min(y_sub), max(y_sub), wf)
+                    else:
+                        self._update_axes(self.figure, min(y), max(y), wf)
+
             self._glyphs.append(
                 wf.plot(
                     self.figure, x, y, color=self._get_color(), y_range_name=wf.y_axis
