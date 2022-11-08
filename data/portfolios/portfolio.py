@@ -233,7 +233,9 @@ class PortfolioData(DataCore):
             (self.to_block_number - self.from_block_number) / (self._numpoints - 1)
         )
         block_numbers = list(range(self.from_block_number, self.to_block_number, step))
-        block_numbers.append(self.to_block_number)
+        if block_numbers[-1] != self.to_block_number:
+            block_numbers.append(self.to_block_number)
+
         data = (
             self._erc20_datas[0]
             .balances(self._addresses, block_numbers)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from functools import cached_property
 from typing import Any, Dict, List
@@ -26,6 +27,15 @@ from view.wireframes import (
 
 
 class View:
+    """
+    Visualization of the blockchain data
+
+    Arguments:
+        **defaults: default values for all methods called
+        **fig_args: the arguments for the :class:`bokeh.plotting.Figure`
+        **core_args: the arguments for the :class:`fetcher.core.Core`
+    """
+
     _wireframes: List[Wireframe]
     _core_args: Dict[str, Any]
     _fig_args: Dict[str, Any]
@@ -73,10 +83,16 @@ class View:
         self._defaults = {"numpoints": 100, **kwargs}
 
     def get_data(self, index: int) -> Any:
+        """
+        Get the underlying data.
+        """
         return self._datas[self._wireframes[index].data_key]
 
     @cached_property
-    def figure(self):
+    def figure(self) -> Figure:
+        """
+        :class:`bokeh.plotting.Figure` for the view.
+        """
         return figure(
             toolbar_location="above",
             tools="pan,wheel_zoom,hover,reset,save",
@@ -92,7 +108,16 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
-    ):
+    ) -> View:
+        """
+        Historical total supply of the ERC20 tokens
+
+        Args:
+            token: ERC20 token
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
         args = self._build_wireframe_args(
             {
                 "token": token,
@@ -113,6 +138,16 @@ class View:
         end: int | datetime | None = None,
         numpoints: int | None = None,
     ):
+        """
+        Chainlink prices.
+
+        Args:
+            token: Numerator in the price
+            token_base: Denominator in the price
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
         args = self._build_wireframe_args(
             {
                 "token": token,
@@ -140,6 +175,16 @@ class View:
         end: int | datetime | None = None,
         numpoints: int | None = None,
     ):
+        """
+        Balances of ERC20 token.
+
+        Args:
+            address: an address or the list of addresses
+            token: ERC20 token
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
         args = self._build_wireframe_args(
             {
                 "token": token,
@@ -169,7 +214,21 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
-    ):
+    ) -> View:
+        """
+        Portfolio of ERC20 tokens, breakdown by address.
+
+        Note:
+            It can be called only once per the :class:`View`
+
+        Args:
+            tokens: a list of token holding that needs to be analyzed
+            base_token: all values will be aggregated in this token
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
+
         args = self._build_wireframe_args(
             {
                 "tokens": tokens,
@@ -200,6 +259,20 @@ class View:
         end: int | datetime | None = None,
         numpoints: int | None = None,
     ):
+        """
+        Portfolio of ERC20 tokens, breakdown by token.
+
+        Note:
+            It can be called only once per the :class:`View`
+
+        Args:
+            tokens: a list of token holding that needs to be analyzed
+            base_token: all values will be aggregated in this token
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
+
         args = self._build_wireframe_args(
             {
                 "tokens": tokens,
@@ -222,6 +295,9 @@ class View:
         return self
 
     def show(self):
+        """
+        Fetch the data and output the figure.
+        """
         self._build_data()
         for wf in self._wireframes:
             data = self._datas[wf.data_key]
