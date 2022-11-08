@@ -11,43 +11,29 @@ Using :class:`ERC20Data` you can:
 
 Examples:
 
-    **1. Get volumes breakdown by the wallet for 1 day**
-
-
     .. code::
 
-        rpc = "https://eth-mainnet.g.alchemy.com/v2/<your_key>"
-        data = ERC20Data.create("DAI", datetime(2022, 9, 1), datetime(2022, 9, 2), rpc=rpc)
-        data.volumes
-    
-    **2. Get balance timeseries of a 0.01% DAI-USDC pool**
+        from datetime import datetime
+        from data import ERC20Data
 
-    .. code::
+        dates = [datetime(2021, 6, 1), datetime(2021, 7, 1), datetime(2021, 8, 1), datetime(2021, 9, 1)]
+        addresses = ["0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"]
+        erc20_data = ERC20Data("Dai", addresses, min(dates), max(dates))
 
-        rpc = "https://eth-mainnet.g.alchemy.com/v2/<your_key>"
-        pool = "0x5777d92f208679db4b9778590fa3cab3ac9e2168"
-        data = ERC20Data.create("DAI", datetime(2022, 6, 1), datetime(2022, 9, 1), address_filter=[pool], rpc=rpc)
-        data.balances(pool_address, [datetime(2022, 6, 1), datetime(2022, 7, 1), datetime(2022, 8, 1), datetime(2022, 9, 1)])
+        # All erc20 transfers for addresses
+        erc20_data.transfers
 
-        
-    
-    **3. Get all transactions for a wallet**
+        # All erc20 mints and burns
+        erc20_data.emission
 
-    .. code::
+        # All token volumes by address
+        erc20_data.volume
 
-        import polars as pl
-        rpc = "https://eth-mainnet.g.alchemy.com/v2/<your_key>"
-        wallet = "0x5777d92f208679db4b9778590fa3cab3ac9e2168"
-        wallets = [wallet, "0x50379f632ca68d36e50cfbc8f78fe16bd1499d1e", "0xfdc0569229a0647ce7db39657543ce23bc970c0b"]
+        # Historical total supply
+        erc20_data.total_supply(dates)
 
-        # Only fetch data for 3 specific wallets 
-        # DAI data for all wallets for 3 months would be huge
-        # It will take considerable time to download it
-        data = ERC20Data.create("DAI", datetime(2022, 6, 1), datetime(2022, 9, 1), address_filter=wallets, rpc=rpc)
-
-        # Filter fetched data only for one wallet 
-        # Data is already fetched -> it's in-memory operation using polars
-        data.transfers.filter((pl.col("from") == wallet) | (pl.col("to") == wallet))
+        # Histrorical balances for address
+        erc20_data.balances(addresses, dates)
 
 """
 

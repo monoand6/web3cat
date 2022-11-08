@@ -1,5 +1,3 @@
-# pylint: disable=line-too-long
-
 """
 Module for fetching and caching contract calls.
 

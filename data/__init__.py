@@ -1,4 +1,3 @@
-# pylint: disable=line-too-long
 """
 Module for working with web3 datasets.
 

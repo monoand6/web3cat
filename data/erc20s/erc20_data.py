@@ -1,5 +1,3 @@
-# pylint: disable=line-too-long
-
 from __future__ import annotations
 from functools import cached_property
 from typing import Any, Dict, List
@@ -18,7 +16,7 @@ from fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 class ERC20Data(DataCore):
     """
-    Datasets for an ERC20 token.
+    Datasets for ERC20 token.
 
     Args:
         token: Token name or address
@@ -292,7 +290,7 @@ class ERC20Data(DataCore):
                 "address": pl.Utf8,
                 "balance": pl.Float64,
             },
-        )
+        ).sort("block_number")
 
     def _accrued_balances(
         self, address: str, blocks: List[int], events: pl.DataFrame
