@@ -230,7 +230,7 @@ class ERC20Data(DataCore):
 
         Args:
             addresses: The list of addresses
-            timepoints: A list of timepoints (see :class:`ERC20Data`).
+            timepoints: A list of timepoints
 
         Returns a Dataframe with fields
 
