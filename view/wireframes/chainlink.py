@@ -44,7 +44,7 @@ class ChainlinkPricesWireframe(TimeseriesWireframe):
         return default_data
 
     def y(self, data: ChainlinkData) -> List[np.float64]:
-        return data.prices(self.x(data), self.token0.address, self.token1.address)[
+        return data.prices(self.token0.address, self.token1.address, self.x(data))[
             "price"
         ].to_list()
 

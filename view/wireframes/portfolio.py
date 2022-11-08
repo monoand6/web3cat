@@ -116,24 +116,3 @@ class PortfolioByTokenWireframe(PortfolioWireframe):
             "color": colors,
         }
         return fig.varea_stack(**args)
-
-    # def plot(
-    #     self, fig: Figure, x: List[datetime], y: List[List[np.float64]], **kwargs
-    # ) -> GlyphRenderer:
-    #     colors = Category20[20] * (1 + len(y) // len(Category20[20]))
-    #     colors = colors[: len(y)]
-    #     stackers = [
-    #         f"{meta.symbol.upper()} ({self.base_token.symbol.upper()})"
-    #         for meta in self.tokens
-    #     ]
-    #     source = {name: y[name] for name in stackers}
-
-    #     return fig.varea_stack(
-    #         stackers=stackers,
-    #         x="date",
-    #         color=colors,
-    #         legend_label=[f"{meta.symbol.upper()}" for meta in self.tokens],
-    #         source=source,
-    #         alpha=0.8,
-    #         **kwargs,
-    #     )

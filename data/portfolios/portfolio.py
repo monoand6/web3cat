@@ -47,7 +47,9 @@ class PortfolioData(DataCore):
         if len(tokens) == 0:
             raise ValueError("Tokens list cannot be empty")
 
-        self._tokens = tokens
+        self._tokens = [token for token in tokens if token.upper() != "ETH"]
+        if len(self._tokens) != tokens:
+            self._tokens.append("ETH")
         self._base_tokens = base_tokens
         self._addresses = [addr.lower() for addr in addresses]
         self._numpoints = numpoints
@@ -71,39 +73,6 @@ class PortfolioData(DataCore):
         self._ether_data = None
         if "ETH" in [t.upper() for t in tokens]:
             self._ether_data = EtherData(start, end, **services, **kwargs)
-
-    def add_address(self, address: str | List[str]):
-        """
-        Add address to a portfolio.
-
-        Arguments:
-            address: an address or a list of addresses
-        """
-        if isinstance(address, str):
-            address = [address]
-        self._addresses += [a.lower() for a in address]
-
-    def add_token(self, token: str | List[str]):
-        """
-        Add token to a portfolio.
-
-        Arguments:
-            token: a token or a list of tokens
-        """
-        if isinstance(token, str):
-            token = [token]
-        self._tokens += token
-
-    def add_base_token(self, base_token: str | List[str]):
-        """
-        Add token to a portfolio.
-
-        Arguments:
-            base_token: a base token or a list of base tokens
-        """
-        if isinstance(base_token, str):
-            base_token = [base_token]
-        self._base_tokens += base_token
 
     @cached_property
     def tokens(self) -> List[ERC20Meta]:
@@ -260,8 +229,11 @@ class PortfolioData(DataCore):
         +--------------------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
-        step = int((self.to_block_number - self.from_block_number) / self._numpoints)
+        step = int(
+            (self.to_block_number - self.from_block_number) / (self._numpoints - 1)
+        )
         block_numbers = list(range(self.from_block_number, self.to_block_number, step))
+        block_numbers.append(self.to_block_number)
         data = (
             self._erc20_datas[0]
             .balances(self._addresses, block_numbers)
@@ -273,6 +245,7 @@ class PortfolioData(DataCore):
                 ["block_number", "address", "balance"]
             ].rename({"balance": self._tokens[i]})
             data = data.join(balances, on=["block_number", "address"], how="left")
+
         if not self._ether_data is None:
             balances = self._ether_data.balances(self._addresses, block_numbers)[
                 ["block_number", "address", "balance"]
@@ -282,7 +255,7 @@ class PortfolioData(DataCore):
         for token in self.tokens:
             for base_token in self.base_tokens:
                 prices = self._chainlink_data.prices(
-                    block_numbers, token.symbol.upper(), base_token.symbol.upper()
+                    token.symbol.upper(), base_token.symbol.upper(), block_numbers
                 )
                 prices = prices[["block_number", "price"]].rename(
                     {"price": f"{token.symbol.upper()} / {base_token.symbol.upper()}"}
