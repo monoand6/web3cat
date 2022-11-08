@@ -20,14 +20,6 @@ class ERC20Data(DataCore):
     """
     Datasets for an ERC20 token.
 
-    Note:
-        Throughout the docs a notion of ``timepoint`` is used.
-        ``timepoint`` is either block number or Unix timestamp or datetime.
-
-    Note:
-        All values in the datasets are in natural units. For example ETHs,
-        not WEIs.
-
     Args:
         token: Token name or address
         address_filter: Limit token transfer data only to these addresses.

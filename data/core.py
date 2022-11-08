@@ -1,3 +1,7 @@
+"""
+Base classes for data classes
+"""
+
 from datetime import datetime
 from functools import cached_property
 import time

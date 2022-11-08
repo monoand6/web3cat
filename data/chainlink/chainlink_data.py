@@ -229,6 +229,16 @@ class ChainlinkUSDData(DataCore):
 
 
 class ChainlinkData(DataCore):
+    """
+    Chainlink price feed for tokens.
+
+    Arguments:
+        tokens: a list of ERC20 tokens
+        start: start of a dataset
+        end: end of a dataset
+        kwargs: arguments for fetchers, see :class:`fetcher.core.Core`
+    """
+
     _datas: Dict[str, ChainlinkUSDData]
     _kwargs: Dict[str, Any]
 
