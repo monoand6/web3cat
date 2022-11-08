@@ -12,7 +12,7 @@ Examples:
         addresses = ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", "0xf977814e90da44bfa03b6295a0616a897441acec"]
         ether_data = EtherData(min(dates), max(dates))
 
-        # Histrorical Ether balances for addresses
+        # Historical Ether balances for addresses
         ether_data.balances(addresses, dates)
 
 """

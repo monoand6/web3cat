@@ -32,7 +32,7 @@ Examples:
         # Historical total supply
         erc20_data.total_supply(dates)
 
-        # Histrorical balances for addresses
+        # Historical balances for addresses
         erc20_data.balances(addresses, dates)
 
 """

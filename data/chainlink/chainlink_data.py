@@ -19,12 +19,6 @@ RESOLVER_MAPPING = {"weth": "eth", "wbtc": "btc"}
 class ChainlinkUSDData(DataCore):
     """
     Chainlink data for a specific token.
-
-    When the instance of the class is created, no data is
-    fetched. The class has lazy properties like :attr:`updates`
-    that are fetched only when accessed.
-
-    See :mod:`data.chainlink` for examples.
     """
 
     _token: str
@@ -107,7 +101,7 @@ class ChainlinkUSDData(DataCore):
         return price / 10**self.oracle_decimals
 
     @cached_property
-    def index(self):
+    def index(self) -> Dict[str, Any]:
         """
         Oracles index
         """
@@ -294,18 +288,19 @@ class ChainlinkData(DataCore):
         return self._datas[meta.address]
 
     def prices(
-        self, timepoints: List[int | datetime], token0: str, token1: str
+        self, token0: str, token1: str, timepoints: List[int | datetime]
     ) -> pl.DataFrame:
         """
         Chainlink prices for pair of tokens.
-        The token0 = "WETH", token1 = "USDC" would mean the regular WETH/USDC.
+        The token0 = "WETH", token1 = "USDC" would mean the regular WETH/USDC
         (that is how much dollars we give for 1 ETH)
 
         Dataframe with balances for addresses over time.
 
         Args:
-            addresses: The list of addresses
-            timepoints: A list of timepoints (see :class:`ERC20Data`).
+            token0: The first token
+            token1: The second token
+            timepoints: A list of timepoints (see :class:`ERC20Data`)
 
         Returns:
             A Dataframe with fields
@@ -319,7 +314,7 @@ class ChainlinkData(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``block_number``     | :class:`int`               | Number of the block                                                          |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``balance``          | :attr:`numpy.float64`      | Balance of an address at the time                                            |
+        | ``price``            | :attr:`numpy.float64`      | Relative price                                                               |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
