@@ -14,7 +14,7 @@ Examples:
     .. code::
 
         from datetime import datetime
-        from data import ERC20Data
+        from web3cat.data import ERC20Data
 
         dates = [datetime(2021, 6, 1), datetime(2021, 7, 1), datetime(2021, 8, 1), datetime(2021, 9, 1)]
         addresses = ["0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"]
