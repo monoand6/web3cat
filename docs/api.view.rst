@@ -1,8 +1,8 @@
 view
 ====
 
-.. automodule:: view
+.. automodule:: web3cat.view
 	:members:
    
-.. autoclass:: view.View
+.. autoclass:: web3cat.view.View
 	:members:

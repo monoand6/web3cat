@@ -1,7 +1,7 @@
 data
 ====
 
-.. automodule:: data
+.. automodule:: web3cat.data
 	:members:
 
 .. toctree::

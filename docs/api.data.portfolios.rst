@@ -1,6 +1,6 @@
 data.portfolios
 ---------------
 
-.. automodule:: data.portfolios
+.. automodule:: web3cat.data.portfolios
 
 .. autoclass:: PortfolioData

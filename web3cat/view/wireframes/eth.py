@@ -1,4 +1,4 @@
-from web3cat.dataclasses import dataclass
+from dataclasses import dataclass
 from typing import List
 from functools import cached_property
 from datetime import datetime

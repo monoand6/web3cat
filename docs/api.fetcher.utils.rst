@@ -1,6 +1,6 @@
 fetcher.utils
 ----------------
 
-.. automodule:: fetcher.utils
+.. automodule:: web3cat.fetcher.utils
     :members:
 

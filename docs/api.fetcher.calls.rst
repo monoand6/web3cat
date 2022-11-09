@@ -1,8 +1,8 @@
 fetcher.calls
 -------------
 
-.. automodule:: fetcher.calls
+.. automodule:: web3cat.fetcher.calls
 
-.. autoclass:: fetcher.calls.CallsService
-.. autoclass:: fetcher.calls.Call
-.. autoclass:: fetcher.calls.CallsRepo
+.. autoclass:: web3cat.fetcher.calls.CallsService
+.. autoclass:: web3cat.fetcher.calls.Call
+.. autoclass:: web3cat.fetcher.calls.CallsRepo

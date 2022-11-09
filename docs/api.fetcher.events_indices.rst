@@ -1,9 +1,9 @@
 fetcher.events_indices
 ----------------------
 
-.. automodule:: fetcher.events_indices
+.. automodule:: web3cat.fetcher.events_indices
 
-.. autodata:: fetcher.events_indices.constants.BLOCKS_PER_BIT
+.. autodata:: web3cat.fetcher.events_indices.constants.BLOCKS_PER_BIT
     
 .. autoclass:: BitArray
     :members:

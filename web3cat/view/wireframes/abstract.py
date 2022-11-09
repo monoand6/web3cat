@@ -1,5 +1,5 @@
 from typing import List, Any
-from web3cat.dataclasses import dataclass
+from dataclasses import dataclass
 from bokeh.plotting import Figure
 from datetime import datetime
 from bokeh.models import GlyphRenderer

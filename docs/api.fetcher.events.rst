@@ -1,8 +1,8 @@
 fetcher.events
 --------------
 
-.. automodule:: fetcher.events
+.. automodule:: web3cat.fetcher.events
 
-.. autoclass:: fetcher.events.EventsService
-.. autoclass:: fetcher.events.Event
-.. autoclass:: fetcher.events.EventsRepo
+.. autoclass:: web3cat.fetcher.events.EventsService
+.. autoclass:: web3cat.fetcher.events.Event
+.. autoclass:: web3cat.fetcher.events.EventsRepo

@@ -1,7 +1,7 @@
 fetcher
 =======
 
-.. automodule:: fetcher
+.. automodule:: web3cat.fetcher
 	:members:
 
 .. toctree::
