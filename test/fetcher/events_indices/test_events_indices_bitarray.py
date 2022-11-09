@@ -2,7 +2,7 @@ from typing import List
 import pytest
 from hypothesis import given
 from hypothesis.strategies import lists, integers, tuples
-from fetcher.events_indices.bitarray import BitArray
+from web3cat.fetcher.events_indices.bitarray import BitArray
 
 
 @given(lists(integers(0, 1000), min_size=1, max_size=100))

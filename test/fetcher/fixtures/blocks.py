@@ -1,7 +1,7 @@
 import pytest
 from fixtures.general import Web3
-from fetcher.blocks.service import BlocksService
-from fetcher.blocks.repo import BlocksRepo
+from web3cat.fetcher.blocks.service import BlocksService
+from web3cat.fetcher.blocks.repo import BlocksRepo
 
 
 @pytest.fixture

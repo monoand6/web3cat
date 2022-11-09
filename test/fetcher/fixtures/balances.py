@@ -1,12 +1,12 @@
 from sqlite3 import Connection
 from typing import Dict
 import pytest
-from fetcher.balances.service import BalancesService
+from web3cat.fetcher.balances.service import BalancesService
 
 from fixtures.general import Web3
 
-from fetcher.balances.repo import BalancesRepo
-from fetcher.balances.balance import Balance
+from web3cat.fetcher.balances.repo import BalancesRepo
+from web3cat.fetcher.balances.balance import Balance
 from web3 import Web3
 
 

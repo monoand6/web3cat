@@ -1,5 +1,5 @@
 import re
-from fetcher.calls import Call
+from web3cat.fetcher.calls import Call
 from sqlite3 import Connection
 from typing import Any, Dict, List
 import os
@@ -8,8 +8,8 @@ import pytest
 from web3.auto import w3
 from web3.contract import Contract
 
-from fetcher.calls.repo import CallsRepo
-from fetcher.calls.service import CallsService
+from web3cat.fetcher.calls.repo import CallsRepo
+from web3cat.fetcher.calls.service import CallsService
 from fixtures.general import Web3Mock
 from web3 import Web3
 

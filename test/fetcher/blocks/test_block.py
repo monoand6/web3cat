@@ -1,6 +1,6 @@
 from hypothesis import given
 from blocks.strategies import block
-from fetcher.blocks.block import Block
+from web3cat.fetcher.blocks.block import Block
 
 
 @given(block())

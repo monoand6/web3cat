@@ -1,8 +1,8 @@
 from hypothesis import given, settings, HealthCheck
 
 from calls.strategies import call
-from fetcher.calls.repo import CallsRepo
-from fetcher.calls.call import Call
+from web3cat.fetcher.calls.repo import CallsRepo
+from web3cat.fetcher.calls.call import Call
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

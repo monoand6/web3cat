@@ -1,7 +1,7 @@
 from sqlite3 import Connection
 import pytest
 
-from fetcher.events_indices.repo import EventsIndicesRepo
+from web3cat.fetcher.events_indices.repo import EventsIndicesRepo
 from web3 import Web3
 
 

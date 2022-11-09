@@ -1,6 +1,6 @@
 from hypothesis import given
 from balances.strategies import balance
-from fetcher.balances.balance import Balance
+from web3cat.fetcher.balances.balance import Balance
 
 
 @given(balance())

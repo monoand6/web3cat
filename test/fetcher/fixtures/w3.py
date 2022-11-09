@@ -7,9 +7,9 @@ import pytest
 from web3 import Web3
 from web3.contract import Contract
 from web3.auto import w3 as w3auto
-from fetcher.calls.call import Call
+from web3cat.fetcher.calls.call import Call
 
-from fetcher.events.event import Event
+from web3cat.fetcher.events.event import Event
 from web3.exceptions import BlockNotFound
 from eth_typing.encoding import HexStr
 

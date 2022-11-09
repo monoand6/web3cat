@@ -7,7 +7,7 @@ from hypothesis.strategies import (
     SearchStrategy,
     just,
 )
-from fetcher.erc20_metas.erc20_meta import ERC20Meta
+from web3cat.fetcher.erc20_metas.erc20_meta import ERC20Meta
 
 
 def erc20_meta() -> SearchStrategy[ERC20Meta]:

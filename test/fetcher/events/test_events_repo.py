@@ -1,8 +1,8 @@
 from hypothesis import given, settings, HealthCheck
 
 from events.strategies import event
-from fetcher.events.repo import EventsRepo
-from fetcher.events.event import Event
+from web3cat.fetcher.events.repo import EventsRepo
+from web3cat.fetcher.events.event import Event
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

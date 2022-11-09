@@ -1,9 +1,9 @@
 from typing import Any, Dict, Tuple
 from hypothesis import given
-from fetcher.events_indices.index import EventsIndex
-from fetcher.events_indices.index_data import EventsIndexData
+from web3cat.fetcher.events_indices.index import EventsIndex
+from web3cat.fetcher.events_indices.index_data import EventsIndexData
 
-from fetcher.events_indices.repo import EventsIndicesRepo, is_softer_filter_than
+from web3cat.fetcher.events_indices.repo import EventsIndicesRepo, is_softer_filter_than
 from events_indices.strategies import args_subset_and_superset
 
 

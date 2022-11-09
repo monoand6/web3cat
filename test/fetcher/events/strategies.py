@@ -7,7 +7,7 @@ from hypothesis.strategies import (
     SearchStrategy,
     just,
 )
-from fetcher.events.event import Event
+from web3cat.fetcher.events.event import Event
 
 
 def event() -> SearchStrategy[Event]:

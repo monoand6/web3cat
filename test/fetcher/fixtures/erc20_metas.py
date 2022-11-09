@@ -1,7 +1,7 @@
 from sqlite3 import Connection
 import pytest
 
-from fetcher.erc20_metas.repo import ERC20MetasRepo
+from web3cat.fetcher.erc20_metas.repo import ERC20MetasRepo
 from web3 import Web3
 
 

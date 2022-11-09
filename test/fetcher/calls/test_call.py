@@ -1,6 +1,6 @@
 from hypothesis import given
 from calls.strategies import call
-from fetcher.calls.call import Call
+from web3cat.fetcher.calls.call import Call
 
 
 @given(call())

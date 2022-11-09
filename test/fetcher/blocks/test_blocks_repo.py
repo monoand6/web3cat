@@ -5,8 +5,8 @@ sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 
 # from conftest import blocks_repo, db
-from fetcher.blocks.repo import BlocksRepo
-from fetcher.blocks.block import Block
+from web3cat.fetcher.blocks.repo import BlocksRepo
+from web3cat.fetcher.blocks.block import Block
 
 
 def test_get_block_after_timestamp(blocks_repo: BlocksRepo):

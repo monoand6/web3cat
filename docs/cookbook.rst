@@ -65,7 +65,7 @@ ERC20 total_supply and price history
 
 .. code::
 
-    from view import View
+    from web3cat.view import View
     from datetime import datetime
 
     # visualization
@@ -81,7 +81,7 @@ ERC20 total_supply and price history
 
     # data
 
-    from data import ChainlinkData
+    from web3cat.data import ChainlinkData
 
     dates = [datetime(2022, 6, 1), datetime(2022, 6, 8), datetime(2022, 6, 15), datetime(2022, 6, 22), datetime(2022, 7, 1)]
     d = ChainlinkData(tokens = ["WETH", "USDC"], start=datetime(2022, 6, 1), end = datetime(2022, 7, 1))
@@ -94,7 +94,7 @@ ERC20 and ETH balance history
 
 .. code::
 
-    from view import View
+    from web3cat.view import View
     from datetime import datetime
 
     # visualization
@@ -113,7 +113,7 @@ ERC20 and ETH balance history
 
 .. code::
 
-    from data import ERC20Data, EtherData
+    from web3cat.data import ERC20Data, EtherData
 
     addresses = [
         "0x78605Df79524164911C144801f41e9811B7DB73D",
@@ -135,7 +135,7 @@ Portfolio data breakdown by tokens
 
 .. code::
 
-    from view import View
+    from web3cat.view import View
     from datetime import datetime
 
     # visualization
@@ -162,7 +162,7 @@ Portfolio data breakdown by tokens
 
 .. code::
 
-    from data import PortfolioData
+    from web3cat.data import PortfolioData
 
     d = PortfolioData(
         tokens=tokens, 
@@ -181,7 +181,7 @@ Portfolio data breakdown by addresses
 
 .. code::
 
-    from view import View
+    from web3cat.view import View
     from datetime import datetime
 
     # visualization
@@ -208,7 +208,7 @@ Portfolio data breakdown by addresses
 
 .. code::
 
-    from data import PortfolioData
+    from web3cat.data import PortfolioData
 
     d = PortfolioData(
         tokens=tokens, 

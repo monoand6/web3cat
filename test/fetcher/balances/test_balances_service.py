@@ -3,8 +3,8 @@ from random import shuffle
 from typing import List
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import permutations
-from fetcher.balances.service import BalancesService
-from fetcher.events_indices.constants import BLOCKS_PER_BIT
+from web3cat.fetcher.balances.service import BalancesService
+from web3cat.fetcher.events_indices.constants import BLOCKS_PER_BIT
 from web3 import Web3
 
 BALANCES_START_BLOCK = 15632000

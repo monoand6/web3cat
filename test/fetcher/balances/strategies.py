@@ -7,7 +7,7 @@ from hypothesis.strategies import (
     SearchStrategy,
     just,
 )
-from fetcher.balances.balance import Balance
+from web3cat.fetcher.balances.balance import Balance
 
 
 def balance() -> SearchStrategy[Balance]:

@@ -2,8 +2,8 @@ from random import shuffle
 from typing import List
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import integers, lists
-from fetcher.events.service import EventsService
-from fetcher.events_indices.constants import BLOCKS_PER_BIT
+from web3cat.fetcher.events.service import EventsService
+from web3cat.fetcher.events_indices.constants import BLOCKS_PER_BIT
 from web3 import Web3
 
 EVENTS_START_BLOCK = 15627000

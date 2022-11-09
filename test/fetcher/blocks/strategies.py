@@ -1,6 +1,6 @@
 from string import ascii_letters
 from hypothesis.strategies import integers, text, dictionaries, builds, SearchStrategy
-from fetcher.blocks.block import Block
+from web3cat.fetcher.blocks.block import Block
 
 
 def block() -> SearchStrategy[Block]:

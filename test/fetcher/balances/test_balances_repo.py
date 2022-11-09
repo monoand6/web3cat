@@ -1,8 +1,8 @@
 from hypothesis import given, settings, HealthCheck
 
 from balances.strategies import balance
-from fetcher.balances.repo import BalancesRepo
-from fetcher.balances.balance import Balance
+from web3cat.fetcher.balances.repo import BalancesRepo
+from web3cat.fetcher.balances.balance import Balance
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])

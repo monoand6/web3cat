@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Mono6 <monowhile6@gmail.com>"]
 license = "MIT"
-readme = "README.md"
+readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = "^3.10"

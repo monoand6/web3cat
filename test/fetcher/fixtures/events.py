@@ -1,5 +1,5 @@
-from fetcher.blocks.service import BlocksService
-from fetcher.events import Event
+from web3cat.fetcher.blocks.service import BlocksService
+from web3cat.fetcher.events import Event
 from sqlite3 import Connection
 from typing import Any, Dict, List
 import os
@@ -7,9 +7,9 @@ import json
 import pytest
 from web3 import Web3
 
-from fetcher.events.repo import EventsRepo
-from fetcher.events.service import EventsService
-from fetcher.events_indices.repo import EventsIndicesRepo
+from web3cat.fetcher.events.repo import EventsRepo
+from web3cat.fetcher.events.service import EventsService
+from web3cat.fetcher.events_indices.repo import EventsIndicesRepo
 
 
 class Web3EventFilterMock:

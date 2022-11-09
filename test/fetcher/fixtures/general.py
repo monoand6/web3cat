@@ -5,7 +5,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 
-from fetcher.core import Core, connection_from_path
+from web3cat.fetcher.core import Core, connection_from_path
 
 import pytest
 from web3 import Web3

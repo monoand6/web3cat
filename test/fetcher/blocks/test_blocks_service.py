@@ -2,13 +2,13 @@ import sys
 import os
 from typing import List
 
-from fetcher.blocks.repo import BlocksRepo
+from web3cat.fetcher.blocks.repo import BlocksRepo
 
 sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 import pytest
 from fixtures.general import rpc
-from fetcher.blocks.service import BlocksService
+from web3cat.fetcher.blocks.service import BlocksService
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import integers, lists
 from web3 import Web3

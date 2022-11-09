@@ -1,4 +1,4 @@
-from fetcher.events_indices.index_data import EventsIndexData
+from web3cat.fetcher.events_indices.index_data import EventsIndexData
 
 
 def test_events_index_data_to_dict():

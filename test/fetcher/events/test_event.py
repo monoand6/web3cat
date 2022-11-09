@@ -1,6 +1,6 @@
 from hypothesis import given
 from events.strategies import event
-from fetcher.events.event import Event
+from web3cat.fetcher.events.event import Event
 
 
 @given(event())

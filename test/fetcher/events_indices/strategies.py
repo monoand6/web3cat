@@ -1,7 +1,7 @@
 from string import ascii_letters, printable
 from typing import Any, Dict, Tuple
 from hypothesis.strategies import composite, integers, text, lists, one_of
-from fetcher.events_indices.index import EventsIndexData, EventsIndex
+from web3cat.fetcher.events_indices.index import EventsIndexData, EventsIndex
 
 
 @composite
