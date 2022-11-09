@@ -4,6 +4,8 @@ Welcome to Web3cat!
     :target: https://web3cat.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+
+
 .. image:: /docs/images/web3cat.png
     :width: 180
 
