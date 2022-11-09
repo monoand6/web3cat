@@ -1,3 +1,4 @@
+.DS_Store
 .vscode
 poetry.lock
 cache.sqlite3

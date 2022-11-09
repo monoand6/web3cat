@@ -1,12 +1,12 @@
 """
 Visualization for blockchain data.
 
-The workflow for the visualization is:
+The workflow for the visualization:
 
     1. Fetch the data using classes from :mod:`data`
     2. Visualize the data using `bokeh <https://bokeh.org>`_ lib
 
-All the data is cached and can be accessed from the :class:`View`
+All data is cached and can be accessed from the :class:`View`
 
 Examples:
 
@@ -99,8 +99,13 @@ Examples:
     .. image:: images/view5.png
     .. image:: images/view6.png
 
+    **Example 6**
+    
+    .. code::
 
+        v6.get_data(0).breakdown_by_token("USDC")
 
+    .. image:: images/view7.png
 """
 
 from view.view import View
