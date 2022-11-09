@@ -133,7 +133,7 @@ class View:
     def chainlink_prices(
         self,
         token: str | None = None,
-        token_base: str | None = None,
+        base_token: str | None = None,
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
@@ -143,7 +143,7 @@ class View:
 
         Args:
             token: Numerator in the price
-            token_base: Denominator in the price
+            base_token: Denominator in the price
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
@@ -151,19 +151,19 @@ class View:
         args = self._build_wireframe_args(
             {
                 "token": token,
-                "token_base": token_base,
+                "base_token": base_token,
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
             }
         )
-        for name in ["token", "token_base"]:
+        for name in ["token", "base_token"]:
             if args[name].upper() == "USD":
                 args[name] = ERC20Meta(1, ADDRESS_ZERO, "USD", "USD", 6, None)
             else:
                 args[name] = self._erc20_metas_service.get(args[name])
         args["token0"] = args.pop("token")
-        args["token1"] = args.pop("token_base")
+        args["token1"] = args.pop("base_token")
         self._wireframes.append(ChainlinkPricesWireframe(**args))
         return self
 

@@ -49,7 +49,7 @@ Examples:
 
         v3 = View(token="WBTC", start=datetime(2022, 6, 1), end = datetime(2022, 10, 30)) \
             .total_supply() \
-            .chainlink_prices(token_base = "USDC")
+            .chainlink_prices(base_token = "USDC")
         v3.show()
 
     .. image:: images/view3.png
