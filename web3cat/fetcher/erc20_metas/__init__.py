@@ -2,7 +2,7 @@
 Module for fetching and caching ERC20 tokens metadata 
 (name, symbol, decimals).
 
-The main class of this module is :class:`ERC20MetaService`.
+The main class of this module is :class:`ERC20MetasService`.
 It fetches token metadata from the preloaded cache or directly
 from the blockchain.
 
