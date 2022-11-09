@@ -88,3 +88,136 @@ ERC20 total_supply and price history
     d.prices("WETH", "USDC", dates)    
 
 .. image:: images/getting_started3_2.png
+
+ERC20 and ETH balance history
+-----------------------------
+
+.. code::
+
+    from view import View
+    from datetime import datetime
+
+    # visualization
+
+    addresses = [
+        "0x78605Df79524164911C144801f41e9811B7DB73D",
+        "0xBF72Da2Bd84c5170618Fbe5914B0ECA9638d5eb5",
+    ]
+
+    v = View(start=datetime(2022, 6, 1), end = datetime(2022, 7, 1)) \
+        .balance(token = "WBTC", address = addresses) \
+        .balance(token = "ETH", address = addresses)
+    v.show()
+
+.. image:: images/getting_started4.png
+
+.. code::
+
+    from data import ERC20Data, EtherData
+
+    addresses = [
+        "0x78605Df79524164911C144801f41e9811B7DB73D",
+        "0xBF72Da2Bd84c5170618Fbe5914B0ECA9638d5eb5",
+    ]
+
+    dates = [datetime(2022, 6, 1), datetime(2022, 6, 8), datetime(2022, 6, 15), datetime(2022, 6, 22), datetime(2022, 7, 1)]
+    e_data = EtherData(start = datetime(2022, 6, 1), end = datetime(2022, 7, 1))
+    u_data = ERC20Data(token="WBTC", address_filter=addresses, start = datetime(2022, 6, 1), end = datetime(2022, 7, 1))
+
+    print(e_data.balances(addresses, dates))
+    print(u_data.balances(addresses, dates))
+
+.. image:: images/getting_started4_2.png
+.. image:: images/getting_started4_3.png
+
+Portfolio data breakdown by tokens
+----------------------------------
+
+.. code::
+
+    from view import View
+    from datetime import datetime
+
+    # visualization
+
+    addresses = [
+        "0x78605Df79524164911C144801f41e9811B7DB73D",
+        "0xBF72Da2Bd84c5170618Fbe5914B0ECA9638d5eb5",
+        "0x8EB8a3b98659Cce290402893d0123abb75E3ab28"
+    ]
+    tokens = ["USDC", "WETH", "ETH", "WBTC"]
+    base_tokens = ["USDC", "WETH"]
+
+    v = View().portfolio_by_token(
+        addresses = addresses, 
+        tokens = tokens, 
+        base_token = "USDC", 
+        start=datetime(2022, 6, 1), 
+        end=datetime(2022, 7, 1), 
+        numpoints=10
+    )
+    v.show()
+
+.. image:: images/getting_started5.png
+
+.. code::
+
+    from data import PortfolioData
+
+    d = PortfolioData(
+        tokens=tokens, 
+        base_tokens=base_tokens, 
+        addresses=addresses, 
+        start=datetime(2022, 6, 1), 
+        end=datetime(2022, 7, 1), 
+        numpoints=10
+    )
+    d.breakdown_by_token("USDC")
+
+.. image:: images/getting_started5_2.png
+
+Portfolio data breakdown by addresses
+-------------------------------------
+
+.. code::
+
+    from view import View
+    from datetime import datetime
+
+    # visualization
+
+    addresses = [
+        "0x78605Df79524164911C144801f41e9811B7DB73D",
+        "0xBF72Da2Bd84c5170618Fbe5914B0ECA9638d5eb5",
+        "0x8EB8a3b98659Cce290402893d0123abb75E3ab28"
+    ]
+    tokens = ["USDC", "WETH", "ETH", "WBTC"]
+    base_tokens = ["USDC", "WETH"]
+
+    v = View().portfolio_by_address(
+        addresses = addresses, 
+        tokens = tokens, 
+        base_token = "USDC", 
+        start=datetime(2022, 6, 1), 
+        end=datetime(2022, 7, 1), 
+        numpoints=10
+    )
+    v.show()
+
+.. image:: images/getting_started6.png
+
+.. code::
+
+    from data import PortfolioData
+
+    d = PortfolioData(
+        tokens=tokens, 
+        base_tokens=base_tokens, 
+        addresses=addresses, 
+        start=datetime(2022, 6, 1), 
+        end=datetime(2022, 7, 1), 
+        numpoints=10
+    )
+    d.breakdown_by_address("USDC")
+
+.. image:: images/getting_started6_2.png

@@ -342,7 +342,10 @@ class View:
         maxy *= 1.05
         y_axis = wf.y_axis
         formatter = BasicTickFormatter()
-        order = int(np.log((miny + maxy) / 2) / np.log(10))
+        if (miny + maxy) / 2 <= 0:
+            order = 0
+        else:
+            order = int(np.log((miny + maxy) / 2) / np.log(10))
         if order <= 0:
             zeroes = -order + 2
         if order > 0:
