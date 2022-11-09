@@ -212,7 +212,7 @@ def _init_db(conn: Connection):
     # Events table
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS events
-            (chain_id integer, block_number integer, transaction_hash text, 
+            (chain_id integer, block_number integer, transaction_hash text,
             log_index integer, address text, event text, args text)"""
     )
     cursor.execute(
