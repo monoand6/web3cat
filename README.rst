@@ -1,7 +1,7 @@
 Welcome to Web3cat
 ==================
 
-.. image:: /images/web3cat.png
+.. image:: /docs/images/web3cat.png
     :width: 180
 
 **Meow, fellow researcher!**
@@ -22,6 +22,6 @@ Design philoshophy
 
 Quick demo
 ----------
-.. image:: /images/web3cat_demo.gif
+.. image:: /docs/images/web3cat_demo.gif
 
 
