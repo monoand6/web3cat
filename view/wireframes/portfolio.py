@@ -32,6 +32,9 @@ class PortfolioWireframe(TimeseriesWireframe):
     def y_axis(self) -> str:
         return f"Balance ({self.base_token.symbol.upper()})"
 
+    def x(self, data: PortfolioData) -> List[datetime]:
+        return sorted(list(set(data.balances_and_prices["date"].to_list())))
+
     def build_data(
         self, default_data: PortfolioData | None, **core_args
     ) -> PortfolioData:
