@@ -1,5 +1,8 @@
-Welcome to Web3cat
-==================
+Welcome to Web3cat!
+===================
+.. image:: https://readthedocs.org/projects/web3cat/badge/?version=latest
+    :target: https://web3cat.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: /docs/images/web3cat.png
     :width: 180
