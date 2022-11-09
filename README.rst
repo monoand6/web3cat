@@ -8,16 +8,16 @@ Welcome to Web3cat
 
 Web3cat is a framework for fetching and analyzing blockchain data.
 
-Currently it supports only EVM chains: `Ethereum <https://ethereum.org>`_,
+Currently, it supports only EVM chains: `Ethereum <https://ethereum.org>`_,
 `Polygon <https://polygon.technology>`_, `BNB <https://www.bnbchain.org>`_, etc.
 
-Design philoshophy
-------------------
+Design philosophy
+-----------------
 
-#. Visualize the data with mimimum code
-#. Free for downloading, saving and analyzing the data however you want
-#. Cache the data to avoid refetching anything at all
-#. Fully decentralized, that is depending only on the blockchain RPC
+#. Visualize the data with minimum code
+#. Free for downloading, saving, and analyzing the data however you want
+#. Cache the data to avoid re-fetching anything at all
+#. Fully decentralized, that is, depending only on the blockchain RPC
 
 
 Quick demo
@@ -34,7 +34,7 @@ Getting started
 
     pip install web3cat
 
-2. Setup your archive node rpc. The easiest and free way is to use
+2. Set up your archive node rpc. The easiest (and also free) way is to use
    `Alchemy <https://alchemy.com>`_.
 
 3. Set initial configuration
@@ -84,4 +84,4 @@ Uniswap, Liquity, Aave, Compound, Frax, etc.
 Contributing
 ------------
 
-So far no bureaucracy here, open issues, make pull requests, have fun!
+So far no bureaucracy here, open issues, make pull requests, and have fun!

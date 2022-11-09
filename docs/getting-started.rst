@@ -7,7 +7,7 @@ Getting started
 
     pip install web3cat
 
-2. Setup your archive node rpc. The easiest and free way is to use
+2. Set up your archive node rpc. The easiest (and also free) way is to use
    `Alchemy <https://alchemy.com>`_.
 
 3. Set initial configuration
