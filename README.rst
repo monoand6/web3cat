@@ -84,5 +84,4 @@ Uniswap, Liquity, Aave, Compound, Frax, etc.
 Contributing
 ------------
 
-So far no bureaucracy here, open issues, make pull requests, anyone is
-welcome!
+So far no bureaucracy here, open issues, make pull requests, have fun!
