@@ -94,7 +94,14 @@ class BalancesService(Core):
             key = f"{bal.address}|{bal.block_number}"
             cached_balances_idx[key] = bal
 
-        num_fetch = len(addresses) * len(blocks) - len(cached_balances)
+        cached_num = 0
+        for addr in addresses:
+            for block in blocks:
+                key = f"{addr}|{block}"
+                if key in cached_balances_idx:
+                    cached_num += 1
+
+        num_fetch = len(addresses) * len(blocks) - cached_num
         out = []
         i = 0
         for addr in addresses:
