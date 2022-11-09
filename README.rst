@@ -74,3 +74,15 @@ Getting started
         v.get_data(0).transfers[["date", "block_number", "from", "to", "value"]]
 
     .. image:: docs/images/view_getting_started1.png
+
+Roadmap
+-------
+
+Use framework base layers to add analytics for protocols like
+Uniswap, Liquity, Aave, Compound, Frax, etc.
+
+Contributing
+------------
+
+So far no bureaucracy here, open issues, make pull requests, anyone is
+welcome!
