@@ -8,10 +8,7 @@ readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-web3 = "^5.30.0"
-# This is a temporary dependency fix for web3, as 3.20.2 doesn't work on M1
-# After this is fixed, remove this dependency
-protobuf = "3.20.1" 
+web3 = "^5.31.1"
 polars = "^0.14.18"
 numpy = "^1.23.3"
 bokeh = "^2.4.3"

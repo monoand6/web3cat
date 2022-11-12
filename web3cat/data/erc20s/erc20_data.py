@@ -1,17 +1,18 @@
 from __future__ import annotations
+
+from datetime import datetime
 from functools import cached_property
 from typing import Any, Dict, List
-from datetime import datetime
 
 import numpy as np
 import polars as pl
-from web3.contract import Contract
-from web3.constants import ADDRESS_ZERO
 from web3 import Web3
-from web3cat.data.core import DataCore
+from web3.constants import ADDRESS_ZERO
+from web3.contract import Contract
 
-from web3cat.fetcher.events import Event
+from web3cat.data.core import DataCore
 from web3cat.fetcher.erc20_metas.erc20_meta import ERC20Meta
+from web3cat.fetcher.events import Event
 
 
 class ERC20Data(DataCore):
