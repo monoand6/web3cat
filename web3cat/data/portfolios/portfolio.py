@@ -88,6 +88,52 @@ class PortfolioData(DataCore):
         """
         return [self._get_meta(token) for token in self._base_tokens]
 
+    def balances(self, base_token: str) -> pl.DataFrame:
+        """
+        Breakdown of a specific token holdings by the owner address.
+
+        Note:
+            Unlike :meth:`breakdown_by_address` it doesn't convert
+            other tokens. For example, with ``basetoken='USDC'`` ETH
+            holdings will be just ignored.
+
+        Arguments:
+            base_token: token for holdings
+
+        Returns:
+            A Dataframe with fields:
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :class:`int`               | Number of the block                                                          |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``<address N>``      | :attr:`numpy.float64`      | Balance of the address of ``base_token``                                     |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``total``            | :attr:`numpy.float64`      | Total portfolio balance of ``base_token``                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+
+        """
+
+        base_token = self._erc20_metas_service.get(base_token)
+        dfs = self.balances_and_prices.partition_by("address", True)
+        addr = dfs[0]["address"][0]
+        out = dfs[0].rename({base_token.symbol.upper(): addr})[
+            ["timestamp", "date", "block_number", addr]
+        ]
+        for df in dfs[1:]:
+            addr = df["address"][0]
+            df = df.rename({base_token.symbol.upper(): addr})[["block_number", addr]]
+            out = out.join(df, on="block_number", how="left")
+        out = out.with_column(pl.col(self._addresses[0]).alias("total"))
+        for addr in self._addresses[1:]:
+            out = out.with_column(pl.col("total") + pl.col(addr).alias("total"))
+        return out
+
     def breakdown_by_address(self, base_token: str) -> pl.DataFrame:
         """
         Breakdown of token holdings by the owner address.
