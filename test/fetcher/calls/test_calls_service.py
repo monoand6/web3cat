@@ -11,7 +11,7 @@ CALLS_START_BLOCK = 15632000
 CALLS_END_BLOCK = 15642000
 
 
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=500)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], deadline=None)
 @given(blocks=permutations(range(CALLS_START_BLOCK, CALLS_END_BLOCK, 50)))
 def test_calls_service_basic_cache(
     blocks: List[int], calls_service: CallsService, w3_mock: Web3
