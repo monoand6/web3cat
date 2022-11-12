@@ -227,7 +227,7 @@ class BlocksService(Core):
             print_progress(
                 len(grid_block_numbers_to_fecth),
                 len(grid_block_numbers_to_fecth),
-                f"Resolving {len(numbers)} block numbers",
+                f"Resolving {len(grid_block_numbers_to_fecth)} block numbers",
             )
 
         out = []
