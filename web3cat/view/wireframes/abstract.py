@@ -110,7 +110,7 @@ class TimeseriesWireframe(Wireframe):
         start = self._resolve_datetime(self.start)
         end = self._resolve_datetime(self.end)
         step = (end - start) // (self.numpoints - 1)
-        timestamps = [range(start, end, step)]
+        timestamps = [*range(start, end, step)]
         if timestamps[-1] != end:
             timestamps.append(end)
         dates = [datetime.fromtimestamp(t) for t in timestamps]

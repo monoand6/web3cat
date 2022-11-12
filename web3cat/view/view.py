@@ -23,6 +23,7 @@ from web3cat.view.wireframes import (
     EthBalanceWireframe,
     PortfolioByAddressWireframe,
     PortfolioByTokenWireframe,
+    PortfolioBalanceWireframe,
 )
 
 
@@ -291,6 +292,45 @@ class View:
         args["addresses"] = addresses
 
         self._wireframes.append(PortfolioByTokenWireframe(**args))
+
+        return self
+
+    def portfolio_balance(
+        self,
+        base_token: str | None = None,
+        addresses: List[str] | None = None,
+        start: int | datetime | None = None,
+        end: int | datetime | None = None,
+        numpoints: int | None = None,
+    ) -> View:
+        """
+        Portfolio of one specific ERC20 token, breakdown by address.
+
+        Note:
+            It can be called only once per the :class:`View`
+
+        Args:
+            base_token: a token tracked for balances
+            start: start timepoint
+            end: end timepoint
+            numpoints: number of points in between
+        """
+
+        args = self._build_wireframe_args(
+            {
+                "base_token": base_token,
+                "addresses": addresses,
+                "start": start,
+                "end": end,
+                "numpoints": numpoints,
+            }
+        )
+        base_token_meta = self._erc20_metas_service.get(args["base_token"])
+        addresses = [a.lower() for a in (args["addresses"] or [])]
+        args["base_token"] = base_token_meta
+        args["addresses"] = addresses
+
+        self._wireframes.append(PortfolioBalanceWireframe(**args))
 
         return self
 

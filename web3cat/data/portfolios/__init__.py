@@ -37,6 +37,9 @@ Examples:
 
         # Balance and price data
         portfolio_data.balances_and_prices
+
+        # Balances of a one specific token
+        portfolio_data.balances("USDC")
 """
 
 from web3cat.data.portfolios.portfolio import PortfolioData

@@ -80,7 +80,7 @@ class BalancesService(Core):
             A list of :class:`Balance` for addresses and blocks.
             The size of a list = ``len(addresses) * len(blocks)``
         """
-        addresses = {[addr.lower() for addr in addresses]}
+        addresses = {addr.lower() for addr in addresses}
         blocks = set(blocks)
         total_number = len(addresses) * len(blocks)
         if total_number == 0:

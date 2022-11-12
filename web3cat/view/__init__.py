@@ -96,8 +96,18 @@ Examples:
         )
         v6.show()
 
+        v7 = View().portfolio_balance(
+            addresses = addresses,
+            base_token = "USDC",
+            start=datetime(2022, 10, 1),
+            end=datetime(2022, 10, 30),
+            numpoints=100
+        )
+        v7.show()
+
     .. image:: images/view5.png
     .. image:: images/view6.png
+    .. image:: images/view8.png
 
     **Example 6**
 
