@@ -36,7 +36,7 @@ jobs:
         run: pip install poetry
 
       - name: Install Dependencies using Poetry
-        run: poetry install --with dev
+        run: poetry install --with dev,test
 
       - name: Lints
         run: |
