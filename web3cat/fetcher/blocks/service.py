@@ -300,8 +300,7 @@ class BlocksService(Core):
         nxt = self._synthesize_block(left_block, right_block, number + 1)
         if nxt.timestamp > timestamp:
             return prev
-        else:
-            return nxt
+        return nxt
 
     def _snap_to_grid(
         self, block_number: int, direction=Literal["left"] | Literal["right"]

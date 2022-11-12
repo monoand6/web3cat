@@ -166,10 +166,7 @@ class ChainlinkUSDData(DataCore):
         block_numbers = [e.block_number for e in events]
         blocks = self._blocks_service.get_blocks(block_numbers)
         timestamps = [b.timestamp for b in blocks]
-        ts_index = {
-            block_number: timestamp
-            for block_number, timestamp in zip(block_numbers, timestamps)
-        }
+        ts_index = dict(zip(block_numbers, timestamps))
         factor = 10**self.oracle_decimals
         return pl.DataFrame(
             [self._event_to_row(e, ts_index[e.block_number], factor) for e in events],
@@ -204,8 +201,7 @@ class ChainlinkUSDData(DataCore):
         oracles = self.index[cid]
         if token in oracles:
             return oracles[token]["address"]
-        if token in RESOLVER_MAPPING:
-            token = RESOLVER_MAPPING[token]
+        token = RESOLVER_MAPPING.get(token, token)
         if not token in oracles:
             return None
         return oracles[token]["address"]

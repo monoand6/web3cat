@@ -33,7 +33,7 @@ Examples:
     .. image:: images/view1.png
 
     **Example 2**
-    
+
     .. code::
 
         v2 = View(start=datetime(2022, 6, 1), end = datetime(2022, 10, 30)) \
@@ -44,7 +44,7 @@ Examples:
     .. image:: images/view2.png
 
     **Example 3**
-    
+
     .. code::
 
         v3 = View(token="WBTC", start=datetime(2022, 6, 1), end = datetime(2022, 10, 30)) \
@@ -55,7 +55,7 @@ Examples:
     .. image:: images/view3.png
 
     **Example 4**
-    
+
     .. code::
 
         v4 = View(token="ETH", start=datetime(2022, 6, 1), end = datetime(2022, 10, 30)) \
@@ -65,7 +65,7 @@ Examples:
     .. image:: images/view4.png
 
     **Example 5**
-    
+
     .. code::
 
         addresses = [
@@ -77,21 +77,21 @@ Examples:
         base_tokens = ["USDC", "WETH"]
 
         v5 = View().portfolio_by_token(
-            addresses = addresses, 
-            tokens = tokens, 
-            base_token = "USDC", 
-            start=datetime(2022, 10, 1), 
-            end=datetime(2022, 10, 30), 
+            addresses = addresses,
+            tokens = tokens,
+            base_token = "USDC",
+            start=datetime(2022, 10, 1),
+            end=datetime(2022, 10, 30),
             numpoints=100
         )
         v5.show()
 
         v6 = View().portfolio_by_address(
-            addresses = addresses, 
-            tokens = tokens, 
-            base_token = "USDC", 
-            start=datetime(2022, 10, 1), 
-            end=datetime(2022, 10, 30), 
+            addresses = addresses,
+            tokens = tokens,
+            base_token = "USDC",
+            start=datetime(2022, 10, 1),
+            end=datetime(2022, 10, 30),
             numpoints=100
         )
         v6.show()
@@ -100,7 +100,7 @@ Examples:
     .. image:: images/view6.png
 
     **Example 6**
-    
+
     .. code::
 
         v6.get_data(0).breakdown_by_token("USDC")

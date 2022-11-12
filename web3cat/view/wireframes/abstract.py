@@ -1,9 +1,9 @@
 from typing import List, Any
+from datetime import datetime
+import time
 from dataclasses import dataclass
 from bokeh.plotting import Figure
-from datetime import datetime
 from bokeh.models import GlyphRenderer
-import time
 
 
 @dataclass(frozen=True)
@@ -110,7 +110,7 @@ class TimeseriesWireframe(Wireframe):
         start = self._resolve_datetime(self.start)
         end = self._resolve_datetime(self.end)
         step = (end - start) // (self.numpoints - 1)
-        timestamps = [z for z in range(start, end, step)]
+        timestamps = [range(start, end, step)]
         if timestamps[-1] != end:
             timestamps.append(end)
         dates = [datetime.fromtimestamp(t) for t in timestamps]

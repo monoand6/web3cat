@@ -314,6 +314,7 @@ class EventsService(Core):
         write_index.data.set_range(from_block, latest_to_grid_block, True)
         self._events_indices_repo.save([write_index])
         self._events_indices_repo.conn.commit()
+        return events
 
     def _fetch_events_in_one_chunk(
         self,

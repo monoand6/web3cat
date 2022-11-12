@@ -1,5 +1,5 @@
 """
-Module for fetching and caching ERC20 tokens metadata 
+Module for fetching and caching ERC20 tokens metadata
 (name, symbol, decimals).
 
 The main class of this module is :class:`ERC20MetasService`.

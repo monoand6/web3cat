@@ -60,6 +60,10 @@ class PortfolioWireframe(TimeseriesWireframe):
 
 
 class PortfolioByAddressWireframe(PortfolioWireframe):
+    """
+    Portfolio by address
+    """
+
     def y(self, data: PortfolioData) -> Dict[str, List[np.float64]]:
         series_dict = data.breakdown_by_address(
             self.base_token.symbol.upper()
@@ -90,6 +94,10 @@ class PortfolioByAddressWireframe(PortfolioWireframe):
 
 
 class PortfolioByTokenWireframe(PortfolioWireframe):
+    """
+    Portfolio by token
+    """
+
     def y(self, data: PortfolioData) -> Dict[str, List[np.float64]]:
         series_dict = data.breakdown_by_token(self.base_token.symbol.upper()).to_dict()
         exclude = ["timestamp", "date", "block_number"]

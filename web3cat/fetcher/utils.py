@@ -27,7 +27,7 @@ class Web3JsonEncoder(json.JSONEncoder):
         Convert Web3 response to ``dict``
         """
         if isinstance(o, AttributeDict):
-            return {k: v for k, v in o.items()}
+            return dict(o.items())
         if isinstance(o, HexBytes):
             return HexStr(o.hex())
         if isinstance(o, (bytes, bytearray)):
