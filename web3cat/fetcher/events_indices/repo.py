@@ -106,9 +106,13 @@ class EventsIndicesRepo(Core):
         import sqlite3  # pylint: disable=import-outside-toplevel
 
         print(sqlite3.sqlite_version)
-        cursor.executemany(
+        statement = (
             "INSERT INTO events_indices VALUES (?,?,?,?,?) "
-            "ON CONFLICT DO UPDATE SET data = excluded.data",
+            "ON CONFLICT DO UPDATE SET data = excluded.data"
+        )
+        print(statement, rows)
+        cursor.executemany(
+            statement,
             rows,
         )
 
