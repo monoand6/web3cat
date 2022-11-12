@@ -103,6 +103,9 @@ class EventsIndicesRepo(Core):
         """
         cursor = self.conn.cursor()
         rows = [i.to_row() for i in indices]
+        import sqlite3
+
+        print(sqlite3.sqlite_version)
         cursor.executemany(
             "INSERT INTO events_indices VALUES (?,?,?,?,?) "
             "ON CONFLICT DO UPDATE SET data = excluded.data",
