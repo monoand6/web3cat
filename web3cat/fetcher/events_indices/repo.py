@@ -103,7 +103,7 @@ class EventsIndicesRepo(Core):
         """
         cursor = self.conn.cursor()
         rows = [i.to_row() for i in indices]
-        import sqlite3
+        import sqlite3  # pylint: disable=import-outside-toplevel
 
         print(sqlite3.sqlite_version)
         cursor.executemany(
