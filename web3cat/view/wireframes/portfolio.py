@@ -131,13 +131,14 @@ class PortfolioByTokenWireframe(PortfolioWireframe):
 
 class PortfolioBalanceWireframe(PortfolioWireframe):
     """
-    Portfolio token
+    Portfolio token balances
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, tokens=[kwargs["base_token"]])
+
     def y(self, data: PortfolioData) -> Dict[str, List[np.float64]]:
-        series_dict = data.breakdown_by_address(
-            self.base_token.symbol.upper()
-        ).to_dict()
+        series_dict = data.balances(self.base_token.symbol.upper()).to_dict()
         exclude = ["timestamp", "date", "block_number"]
         return {k: v.to_list() for k, v in series_dict.items() if not k in exclude}
 
