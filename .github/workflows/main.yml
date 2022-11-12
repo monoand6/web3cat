@@ -19,18 +19,24 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Cache Poetry cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+
+      - name: Cache Packages
+        id: package-cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.local
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/pyproject.toml') }}-${{ hashFiles('.github/workflows/*.yml') }}
+
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Cache poetry virtualenv
-        uses: actions/cache@v2
-        id: cache
-        with:
-          path: .venv
-          key: ${{ runner.os }}-python-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
-
       - name: Install Dependencies using Poetry
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.package-cache.outputs.cache-hit != 'true'
         run: poetry install --with dev
 
       - name: Lints
