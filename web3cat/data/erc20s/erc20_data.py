@@ -132,6 +132,8 @@ class ERC20Data(DataCore):
 
         if self.meta.symbol.upper() == "USDT":
             return self._fetch_usdt_emission()
+        if self.meta.symbol.upper() == "WETH":
+            return self._fetch_weth_emission()
         return self._fetch_transfers([ADDRESS_ZERO])
 
     @property
@@ -347,6 +349,33 @@ class ERC20Data(DataCore):
                 "from": owner,
                 "to": ADDRESS_ZERO,
                 "value": raw_event.args["amount"],
+            }
+            events.append(raw_event)
+        return self._transform_raw_events(events)
+
+    def _fetch_weth_emission(self) -> pl.DataFrame:
+        events = []
+        for raw_event in self._events_service.get_events(
+            self.contract.events.Deposit,
+            self.from_block_number,
+            self.to_block_number,
+        ):
+            raw_event.args = {
+                "from": ADDRESS_ZERO,
+                "to": raw_event.args["dst"],
+                "value": raw_event.args["wad"],
+            }
+            events.append(raw_event)
+
+        for raw_event in self._events_service.get_events(
+            self.contract.events.Withdrawal,
+            self.from_block_number,
+            self.to_block_number,
+        ):
+            raw_event.args = {
+                "from": raw_event.args["src"],
+                "to": ADDRESS_ZERO,
+                "value": raw_event.args["wad"],
             }
             events.append(raw_event)
         return self._transform_raw_events(events)
