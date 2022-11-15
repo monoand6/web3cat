@@ -19,7 +19,7 @@ ERC20 total_supply history
 
 .. image:: images/getting_started1.png
 
-.. code::    
+.. code::
 
     # data
     from web3cat.data import ERC20Data
@@ -46,10 +46,10 @@ ERC20 total_supply history for many tokens
 
 .. image:: images/getting_started2.png
 
-.. code::    
+.. code::
 
     # data
-        
+
     from web3cat.data import ERC20Data
     dates = [datetime(2022, 6, 1), datetime(2022, 6, 8), datetime(2022, 6, 15), datetime(2022, 6, 22), datetime(2022, 7, 1)]
     d_dai = ERC20Data(token="DAI", address_filter = [], start=datetime(2022, 6, 1), end = datetime(2022, 7, 1))
@@ -59,6 +59,23 @@ ERC20 total_supply history for many tokens
     print(d_usdc.total_supply(dates))
 
 .. image:: images/getting_started2_2.png
+
+Many charts on one axis
+-----------------------
+
+.. code::
+
+    from web3cat.view import View
+    from datetime import datetime
+
+    v = View(y_axis_name="Total supply (USD)", start=datetime(2022, 6, 1), end = datetime(2022, 7, 1)) \
+        .total_supply(token="DAI") \
+        .total_supply(token="USDC") \
+        .chainlink_prices(token="DAI", base_token = "USD", y_axis_name = "USD Price") \
+        .chainlink_prices(token="USDC", base_token = "USD", y_axis_name = "USD Price")
+    v.show()
+
+.. image:: images/getting_started2_3.png
 
 ERC20 total_supply and price history
 ------------------------------------
@@ -85,7 +102,7 @@ ERC20 total_supply and price history
 
     dates = [datetime(2022, 6, 1), datetime(2022, 6, 8), datetime(2022, 6, 15), datetime(2022, 6, 22), datetime(2022, 7, 1)]
     d = ChainlinkData(tokens = ["WETH", "USDC"], start=datetime(2022, 6, 1), end = datetime(2022, 7, 1))
-    d.prices("WETH", "USDC", dates)    
+    d.prices("WETH", "USDC", dates)
 
 .. image:: images/getting_started3_2.png
 
@@ -149,11 +166,11 @@ Portfolio data breakdown by tokens
     base_tokens = ["USDC", "WETH"]
 
     v = View().portfolio_by_token(
-        addresses = addresses, 
-        tokens = tokens, 
-        base_token = "USDC", 
-        start=datetime(2022, 6, 1), 
-        end=datetime(2022, 7, 1), 
+        addresses = addresses,
+        tokens = tokens,
+        base_token = "USDC",
+        start=datetime(2022, 6, 1),
+        end=datetime(2022, 7, 1),
         numpoints=10
     )
     v.show()
@@ -165,11 +182,11 @@ Portfolio data breakdown by tokens
     from web3cat.data import PortfolioData
 
     d = PortfolioData(
-        tokens=tokens, 
-        base_tokens=base_tokens, 
-        addresses=addresses, 
-        start=datetime(2022, 6, 1), 
-        end=datetime(2022, 7, 1), 
+        tokens=tokens,
+        base_tokens=base_tokens,
+        addresses=addresses,
+        start=datetime(2022, 6, 1),
+        end=datetime(2022, 7, 1),
         numpoints=10
     )
     d.breakdown_by_token("USDC")
@@ -195,11 +212,11 @@ Portfolio data breakdown by addresses
     base_tokens = ["USDC", "WETH"]
 
     v = View().portfolio_by_address(
-        addresses = addresses, 
-        tokens = tokens, 
-        base_token = "USDC", 
-        start=datetime(2022, 6, 1), 
-        end=datetime(2022, 7, 1), 
+        addresses = addresses,
+        tokens = tokens,
+        base_token = "USDC",
+        start=datetime(2022, 6, 1),
+        end=datetime(2022, 7, 1),
         numpoints=10
     )
     v.show()
@@ -211,11 +228,11 @@ Portfolio data breakdown by addresses
     from web3cat.data import PortfolioData
 
     d = PortfolioData(
-        tokens=tokens, 
-        base_tokens=base_tokens, 
-        addresses=addresses, 
-        start=datetime(2022, 6, 1), 
-        end=datetime(2022, 7, 1), 
+        tokens=tokens,
+        base_tokens=base_tokens,
+        addresses=addresses,
+        start=datetime(2022, 6, 1),
+        end=datetime(2022, 7, 1),
         numpoints=10
     )
     d.breakdown_by_address("USDC")

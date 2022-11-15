@@ -33,6 +33,8 @@ class View:
 
     Arguments:
         **defaults: default values for all methods called
+        **common_defaults: Common defaults for all graphs.
+                           Currently it's ``x_axis_name`` and ``y_axis_name``.
         **fig_args: the arguments for the :class:`bokeh.plotting.Figure`
         **core_args: the arguments for the :class:`fetcher.core.Core`
     """
@@ -97,7 +99,7 @@ class View:
         return figure(
             toolbar_location="above",
             tools="pan,wheel_zoom,hover,reset,save",
-            x_axis_type=self._wireframes[0].x_axis,
+            x_axis_type=self._wireframes[0].x_axis_name or self._wireframes[0].x_axis,
             height=400,
             width=int(400 * 2.3),
             **self._fig_args,
@@ -109,6 +111,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ) -> View:
         """
         Historical total supply of the ERC20 tokens
@@ -118,6 +121,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
         args = self._build_wireframe_args(
             {
@@ -125,6 +129,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         args["token"] = self._erc20_metas_service.get(args["token"])
@@ -138,6 +143,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ):
         """
         Chainlink prices.
@@ -148,6 +154,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
         args = self._build_wireframe_args(
             {
@@ -156,6 +163,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         for name in ["token", "base_token"]:
@@ -175,6 +183,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ):
         """
         Balances of ERC20 token.
@@ -185,6 +194,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
         args = self._build_wireframe_args(
             {
@@ -193,6 +203,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         if isinstance(args["address"], str):
@@ -215,6 +226,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ) -> View:
         """
         Portfolio of ERC20 tokens, breakdown by address.
@@ -228,6 +240,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
 
         args = self._build_wireframe_args(
@@ -238,6 +251,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         token_metas = [self._erc20_metas_service.get(token) for token in args["tokens"]]
@@ -259,6 +273,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ):
         """
         Portfolio of ERC20 tokens, breakdown by token.
@@ -272,6 +287,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
 
         args = self._build_wireframe_args(
@@ -282,6 +298,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         token_metas = [self._erc20_metas_service.get(token) for token in args["tokens"]]
@@ -302,6 +319,7 @@ class View:
         start: int | datetime | None = None,
         end: int | datetime | None = None,
         numpoints: int | None = None,
+        **kwargs,
     ) -> View:
         """
         Portfolio of one specific ERC20 token, breakdown by address.
@@ -314,6 +332,7 @@ class View:
             start: start timepoint
             end: end timepoint
             numpoints: number of points in between
+            kwargs: common_defaults, see :class:`View`
         """
 
         args = self._build_wireframe_args(
@@ -323,6 +342,7 @@ class View:
                 "start": start,
                 "end": end,
                 "numpoints": numpoints,
+                **kwargs,
             }
         )
         base_token_meta = self._erc20_metas_service.get(args["base_token"])
@@ -356,7 +376,11 @@ class View:
 
             self._glyphs.append(
                 wf.plot(
-                    self.figure, x, y, color=self._get_color(), y_range_name=wf.y_axis
+                    self.figure,
+                    x,
+                    y,
+                    color=self._get_color(),
+                    y_range_name=wf.y_axis_name or wf.y_axis,
                 )
             )
         show(self.figure)
@@ -367,9 +391,10 @@ class View:
             self._datas[wf.data_key] = wf.build_data(data, **self._core_args)
 
     def _build_wireframe_args(self, args: Dict[str, Any]):
+        args_filter = {*args.keys(), "x_axis_name", "y_axis_name"}
         clean_args = {k: v for k, v in args.items() if not v is None}
         merged = {**self._defaults, **clean_args}
-        return {k: v for k, v in merged.items() if k in args}
+        return {k: v for k, v in merged.items() if k in args_filter}
 
     def _get_color(self):
         color = self._colors[len(self._glyphs) % len(self._colors)]
@@ -380,7 +405,7 @@ class View:
     ) -> Dict[str, Any]:
         miny /= 1.05
         maxy *= 1.05
-        y_axis = wf.y_axis
+        y_axis = wf.y_axis_name or wf.y_axis
         formatter = BasicTickFormatter()
         if (miny + maxy) / 2 <= 0:
             order = 0
@@ -402,7 +427,7 @@ class View:
         needs_y_axis_add = not y_axis in fig.extra_y_ranges
         old_range = fig.extra_y_ranges.get(y_axis, Range1d(miny, maxy))
         new_range = Range1d(min(miny, old_range.start), max(maxy, old_range.end))
-        fig.extra_y_ranges[wf.y_axis] = new_range
+        fig.extra_y_ranges[y_axis] = new_range
 
         if needs_y_axis_init:
             fig.yaxis[0].y_range_name = y_axis

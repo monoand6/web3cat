@@ -6,7 +6,7 @@ from bokeh.plotting import Figure
 from bokeh.models import GlyphRenderer
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Wireframe:
     """
     Base class for all wireframes. Wireframe is a set of arguments
@@ -16,6 +16,8 @@ class Wireframe:
     """
 
     numpoints: int
+    x_axis_name: str | None = None
+    y_axis_name: str | None = None
 
     @property
     def data_key(self):

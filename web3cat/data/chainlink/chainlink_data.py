@@ -6,6 +6,7 @@ import time
 from typing import Any, Dict, List
 from datetime import datetime
 import polars as pl
+from web3.constants import ADDRESS_ZERO
 from web3.contract import Contract
 import numpy as np
 
@@ -259,6 +260,8 @@ class ChainlinkData(DataCore):
             start: start of the data
             end: end of the data
         """
+        if token == ADDRESS_ZERO or token.upper() == "USD":
+            return
         meta = self._erc20_metas_service.get(token)
         if proxy is None:
             self._datas[meta.address] = ChainlinkUSDData(
@@ -278,6 +281,7 @@ class ChainlinkData(DataCore):
         Returns:
             Chainlink USD data for token
         """
+
         meta = self._erc20_metas_service.get(token)
         if not meta.address in self._datas:
             self.add_token(token)
@@ -315,12 +319,15 @@ class ChainlinkData(DataCore):
 
         """
         blocks = self._resolve_timepoints(timepoints)
-        if token0.upper() == "USD" and token1.upper() == "USD":
+        token0_is_usd = token0.upper() == "USD" or token0 == ADDRESS_ZERO
+        token1_is_usd = token1.upper() == "USD" or token1 == ADDRESS_ZERO
+
+        if token0_is_usd and token1_is_usd:
             prices = [1.0] * len(timepoints)
-        elif token0.upper() == "USD":
+        elif token0_is_usd:
             data = self.get_data(token1)
             prices = [1.0 / p for p in data.prices(timepoints)["price"]]
-        elif token1.upper() == "USD":
+        elif token1_is_usd:
             data = self.get_data(token0)
             prices = data.prices(timepoints)["price"]
         else:
