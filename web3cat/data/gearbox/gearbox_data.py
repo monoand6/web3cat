@@ -55,7 +55,7 @@ class GearboxData(DataCore):
                 "For gearbox Mainnet RPC is required (chain_id = 1), got chain_id = {self.blocks_service.chain_id}"
             )
 
-    def health_factor(
+    def credit_account_data(
         self,
         borrower_address: str,
         token: str,
@@ -79,9 +79,11 @@ class GearboxData(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``block_number``     | :class:`int`               | Number of the block                                                          |
+        | ``block_number``     | :attr:`numpy.int64`        | Number of the block                                                          |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``transaction_hash`` | :class:`str`               | Hash of the liquidation tx                                                   |
+        | ``tvl``              | :attr:`numpy.float64`      | Position Total value                                                         |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``health_factor``    | :attr:`numpy.float64`      | Position Health factor                                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
@@ -108,22 +110,27 @@ class GearboxData(DataCore):
                         "timestamp": b.timestamp,
                         "date": datetime.fromtimestamp(b.timestamp),
                         "block_number": b.number,
+                        "tvl": 0,
                         "health_factor": 0,
                     }
                 )
                 continue
-            resp = self._calls_service.get_call(
-                facade.functions.calcCreditAccountHealthFactor(
-                    self.w3.toChecksumAddress(acc)
-                ),
-                b.number,
+            resps = self._calls_service.get_calls(
+                [
+                    facade.functions.calcCreditAccountHealthFactor(
+                        self.w3.toChecksumAddress(acc)
+                    ),
+                    facade.functions.calcTotalValue(self.w3.toChecksumAddress(acc)),
+                ],
+                [b.number],
             )
             out.append(
                 {
                     "timestamp": b.timestamp,
                     "date": datetime.fromtimestamp(b.timestamp),
                     "block_number": b.number,
-                    "health_factor": resp.response / 10**4,
+                    "tvl": resps[1].response[0] / 10**token_meta.decimals,
+                    "health_factor": resps[0].response / 10**4,
                 }
             )
         return pl.DataFrame(
@@ -132,6 +139,7 @@ class GearboxData(DataCore):
                 "timestamp": pl.UInt64,
                 "date": pl.Datetime,
                 "block_number": pl.UInt64,
+                "tvl": pl.Float64,
                 "health_factor": pl.Float64,
             },
         ).sort("block_number")
