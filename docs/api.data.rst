@@ -12,5 +12,6 @@ data
    api.data.ether
    api.data.erc20s
    api.data.portfolios
+   api.data.gearbox
    api.data.core
-   
+

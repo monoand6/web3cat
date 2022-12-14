@@ -40,6 +40,14 @@ POOLS = [
 
 
 class GearboxData(DataCore):
+    """
+    Data for the gearbox protocol
+
+    Args:
+        start: Starting timepoint
+        end: Ending timepoint
+    """
+
     def __init__(self, start: int | datetime, end: int | datetime, **kwargs):
         super().__init__(start, end, **kwargs)
         if self._blocks_service.chain_id != 1:
@@ -53,6 +61,30 @@ class GearboxData(DataCore):
         token: str,
         timepoints: List[int | datetime],
     ) -> pl.DataFrame:
+        """
+        Health factor for borrower in a credit pool specified by token.
+
+        Args:
+            borrower_address: address of the borrower
+            token: token that determines the credit pool
+            timepoints: a list of timepoints
+
+        Returns:
+            A dataframe with fields
+
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | Field                | Type                       | Description                                                                  |
+        +======================+============================+==============================================================================+
+        | ``timestamp``        | :attr:`numpy.int64`        | Timestamp for the snapshot of the balance                                    |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``date``             | :class:`datetime.datetime` | Date for the timestamp                                                       |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``block_number``     | :class:`int`               | Number of the block                                                          |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``transaction_hash`` | :class:`str`               | Hash of the liquidation tx                                                   |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+
+        """
         token_meta = self._erc20_metas_service.get(token)
         pool = self._get_pool(token_meta.symbol)
         manager = self._credit_manager(pool["manager"])
@@ -120,15 +152,15 @@ class GearboxData(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``transaction_hash`` | :class:`str`               | Hash of the liquidation tx                                                   |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``token``            | :attr:`str`                | Name of the token for the Gearbox pool                                       |
+        | ``token``            | :class:`str`               | Name of the token for the Gearbox pool                                       |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``borrower``         | :attr:`str`                | Address of the liquidated borrower                                           |
+        | ``borrower``         | :class:`str`               | Address of the liquidated borrower                                           |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``liquidator``       | :attr:`str` .              | Address of the liquidator                                                    |
+        | ``liquidator``       | :class:`str`               | Address of the liquidator                                                    |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``to``               | :attr:`str` .              | Address of the liquidation funds receiver                                    |
+        | ``to``               | :class:`str`               | Address of the liquidation funds receiver                                    |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
-        | ``remaining_funds``  | :attr:`numpy.float64`      | Amount of remaining funds (wei)                                              |
+        | ``remaining_funds``  | :attr:`numpy.float64`      | Amount of remaining funds                                                    |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
