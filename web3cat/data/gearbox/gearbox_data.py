@@ -11,6 +11,8 @@ from web3.constants import ADDRESS_ZERO
 from web3cat.data.core import DataCore
 
 DATA_COMPRESSOR = "0x0a2CA503153Cd5CB2892a0928ac0F71F49a3c194"
+ACCOUNT_FACTORY = "0x444cd42baeddeb707eed823f7177b9abcc779c04"
+ACCOUNT_FACTORY_DEPLOY_BLOCK = 13810899
 
 
 class GearboxData(DataCore):
@@ -191,6 +193,33 @@ class GearboxData(DataCore):
             },
         ).sort("block_number")
 
+    def credit_accounts(self, timepoint: int | datetime) -> List[str]:
+        """
+        A list of all credit accounts for a specific timepoint
+
+        Args:
+            timepoint: a timepoint to fetch credit accounts for
+        """
+        block = self._resolve_timepoints([timepoint])[0]
+        tail = self._calls_service.get_call(
+            self._account_factory.functions.tail(), block.number
+        ).response.lower()
+        head = self._calls_service.get_call(
+            self._account_factory.functions.head(), block.number
+        ).response.lower()
+        out = [head]
+        while True:
+            acc = self._calls_service.get_call(
+                self._account_factory.functions.getNext(
+                    self.w3.toChecksumAddress(out[-1])
+                ),
+                block.number,
+            ).response.lower()
+            out.append(acc)
+            if acc == tail:
+                break
+        return out
+
     def _get_pool(self, token: str) -> Dict[str, Any] | None:
         for pool in self.pools:
             if pool["token"].symbol.lower() == token.lower():
@@ -245,6 +274,19 @@ class GearboxData(DataCore):
                 }
             )
         return out
+
+    @cached_property
+    def _account_factory(self) -> Contract:
+        current_folder = os.path.realpath(os.path.dirname(__file__))
+        abi = None
+        with open(
+            f"{current_folder}/abi/account_factory_abi.json", "r", encoding="utf-8"
+        ) as f:
+            abi = json.load(f)
+        return self.w3.eth.contract(
+            address=self.w3.toChecksumAddress(ACCOUNT_FACTORY),
+            abi=abi,
+        )
 
     @cached_property
     def _data_compressor(self) -> Contract:
