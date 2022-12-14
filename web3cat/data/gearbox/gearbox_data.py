@@ -10,33 +10,7 @@ from web3.constants import ADDRESS_ZERO
 
 from web3cat.data.core import DataCore
 
-POOLS = [
-    {
-        "token": "dai",
-        "facade": "0xf6f4F24ae50206A07B8B32629AeB6cb1837d854F",
-        "manager": "0x672461Bfc20DD783444a830Ad4c38b345aB6E2f7",
-    },
-    {
-        "token": "usdc",
-        "facade": "0x61fbb350e39cc7bF22C01A469cf03085774184aa",
-        "manager": "0x95357303f995e184A7998dA6C6eA35cC728A1900",
-    },
-    {
-        "token": "weth",
-        "facade": "0xC59135f449bb623501145443c70A30eE648Fa304",
-        "manager": "0x5887ad4Cb2352E7F01527035fAa3AE0Ef2cE2b9B",
-    },
-    {
-        "token": "wbtc",
-        "facade": "0xAfae62D1b38d635a3089A36B27f3c1Acc4fa3243",
-        "manager": "0xc62BF8a7889AdF1c5Dc4665486c7683ae6E74e0F",
-    },
-    {
-        "token": "wsteth",
-        "facade": "0x04d692bCB03D4b410CBB5Bf09967eB3ce8D12546",
-        "manager": "0xe0bCE4460795281d39c91da9B0275BcA968293de",
-    },
-]
+DATA_COMPRESSOR = "0x0a2CA503153Cd5CB2892a0928ac0F71F49a3c194"
 
 
 class GearboxData(DataCore):
@@ -173,8 +147,8 @@ class GearboxData(DataCore):
 
         """
         events = []
-        for pool in POOLS:
-            token = self._erc20_metas_service.get(pool["token"])
+        for pool in self.pools:
+            token = pool["token"]
             facade = self._credit_facade(pool["facade"])
             pool_events = self._events_service.get_events(
                 facade.events.LiquidateCreditAccount,
@@ -218,8 +192,8 @@ class GearboxData(DataCore):
         ).sort("block_number")
 
     def _get_pool(self, token: str) -> Dict[str, Any] | None:
-        for pool in POOLS:
-            if pool["token"].lower() == token.lower():
+        for pool in self.pools:
+            if pool["token"].symbol.lower() == token.lower():
                 return pool
         return None
 
@@ -239,6 +213,50 @@ class GearboxData(DataCore):
         return self.w3.eth.contract(
             address=self.w3.toChecksumAddress(address),
             abi=self._credit_manager_abi,
+        )
+
+    @cached_property
+    def pools(self) -> List[Dict[str, Any]]:
+        """
+        Gearbox pools data.
+        """
+        credit_manager_data = self._calls_service.get_call(
+            self._data_compressor.functions.getCreditManagersList(),
+            self.to_block_number,
+        )
+        out = []
+        for entry in credit_manager_data.response:
+            if entry[14] == ADDRESS_ZERO:
+                # skip v1
+                continue
+            out.append(
+                {
+                    "token": self._erc20_metas_service.get(entry[1]),
+                    "manager": entry[0],
+                    "facade": entry[14],
+                    "configurator": entry[15],
+                    "pool": entry[2],
+                    "borrow_rate": entry[5] / 10**27,
+                    "fee_interest": entry[21] / 10**4,
+                    "fee_liquidation": entry[22] / 10**4,
+                    "liquidation_discount": entry[23] / 10**4,
+                    "fee_liquidation_expired": entry[24] / 10**4,
+                    "liquidation_discount_expired": entry[25] / 10**4,
+                }
+            )
+        return out
+
+    @cached_property
+    def _data_compressor(self) -> Contract:
+        current_folder = os.path.realpath(os.path.dirname(__file__))
+        abi = None
+        with open(
+            f"{current_folder}/abi/data_compressor_abi.json", "r", encoding="utf-8"
+        ) as f:
+            abi = json.load(f)
+        return self.w3.eth.contract(
+            address=self.w3.toChecksumAddress(DATA_COMPRESSOR),
+            abi=abi,
         )
 
     @cached_property
