@@ -102,7 +102,7 @@ class CallsService(Core):
         self,
         calls: List[ContractFunction],
         block_numbers: List[int],
-    ) -> Call:
+    ) -> List[Call]:
         """
         Make a list of contract calls specified by parameters.
 

@@ -33,8 +33,7 @@ class GearboxData(DataCore):
 
     def credit_account_data(
         self,
-        borrower_address: str,
-        token: str,
+        credit_accounts: List[str],
         timepoints: List[int | datetime],
     ) -> pl.DataFrame:
         """
@@ -63,50 +62,66 @@ class GearboxData(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
 
         """
-        token_meta = self._erc20_metas_service.get(token)
-        pool = self._get_pool(token_meta.symbol)
-        manager = self._credit_manager(pool["manager"])
-        facade = self._credit_facade(pool["facade"])
         blocks = self._resolve_timepoints(timepoints)
-        account_addresses = self._calls_service.get_calls(
-            [
-                manager.functions.creditAccounts(
-                    self.w3.toChecksumAddress(borrower_address)
-                )
-            ],
-            [b.number for b in blocks],
+        blocks_idx = {b.number: b for b in blocks}
+        cm_calls = [
+            self._credit_account(acc).functions.creditManager()
+            for acc in credit_accounts
+        ]
+
+        cm_resps = self._calls_service.get_calls(
+            cm_calls,
+            [self.to_block_number],
         )
-        account_addresses = [acc.response for acc in account_addresses]
+        pools = [self._get_pool_by_credit_manager(cm.response) for cm in cm_resps]
+        credit_accounts_v1 = set()
+        for pool, ca in zip(pools, credit_accounts):
+            if pool is None:
+                credit_accounts_v1.add(ca)
+        credit_accounts = [ca for ca in credit_accounts if not ca in credit_accounts_v1]
+        pools = [p for p in pools if not p is None]
+        pools_facade_idx = {
+            pool["facade"].lower(): {"pool": pool, "credit_account": credit_accounts[i]}
+            for i, pool in enumerate(pools)
+        }
 
         out = []
-        for acc, b in zip(account_addresses, blocks):
-            if acc == ADDRESS_ZERO:
-                out.append(
-                    {
-                        "timestamp": b.timestamp,
-                        "date": datetime.fromtimestamp(b.timestamp),
-                        "block_number": b.number,
-                        "tvl": 0,
-                        "health_factor": 0,
-                    }
-                )
-                continue
-            resps = self._calls_service.get_calls(
-                [
-                    facade.functions.calcCreditAccountHealthFactor(
-                        self.w3.toChecksumAddress(acc)
-                    ),
-                    facade.functions.calcTotalValue(self.w3.toChecksumAddress(acc)),
-                ],
-                [b.number],
+        hf_calls = [
+            self._credit_facade(pool["facade"]).functions.calcCreditAccountHealthFactor(
+                self.w3.toChecksumAddress(acc)
             )
+            for pool, acc in zip(pools, credit_accounts)
+        ]
+        tvl_calls = [
+            self._credit_facade(pool["facade"]).functions.calcTotalValue(
+                self.w3.toChecksumAddress(acc)
+            )
+            for pool, acc in zip(pools, credit_accounts)
+        ]
+
+        hf_resps = self._calls_service.get_calls(
+            hf_calls,
+            [b.number for b in blocks],
+        )
+        tvl_resps = self._calls_service.get_calls(
+            tvl_calls,
+            [b.number for b in blocks],
+        )
+
+        out = []
+        for hf, tvl in zip(hf_resps, tvl_resps):
+            block = blocks_idx[hf.block_number]
+            pool = pools_facade_idx[hf.address.lower()]["pool"]
+            credit_account = pools_facade_idx[hf.address.lower()]["credit_account"]
             out.append(
                 {
-                    "timestamp": b.timestamp,
-                    "date": datetime.fromtimestamp(b.timestamp),
-                    "block_number": b.number,
-                    "tvl": resps[1].response[0] / 10**token_meta.decimals,
-                    "health_factor": resps[0].response / 10**4,
+                    "timestamp": block.timestamp,
+                    "date": datetime.fromtimestamp(block.timestamp),
+                    "block_number": block.number,
+                    "credit_account": credit_account,
+                    "token": pool["token"].symbol.lower(),
+                    "tvl": tvl.response[0] / 10 ** pool["token"].decimals,
+                    "health_factor": hf.response / 10**4,
                 }
             )
         return pl.DataFrame(
@@ -115,6 +130,8 @@ class GearboxData(DataCore):
                 "timestamp": pl.UInt64,
                 "date": pl.Datetime,
                 "block_number": pl.UInt64,
+                "credit_account": pl.Utf8,
+                "token": pl.Utf8,
                 "tvl": pl.Float64,
                 "health_factor": pl.Float64,
             },
@@ -193,36 +210,49 @@ class GearboxData(DataCore):
             },
         ).sort("block_number")
 
-    def credit_accounts(self, timepoint: int | datetime) -> List[str]:
+    def credit_accounts(self, timepoint: int | datetime = None) -> List[str]:
         """
-        A list of all credit accounts for a specific timepoint
+        A list of all credit accounts for a specific timepoint (incl v1)
 
         Args:
             timepoint: a timepoint to fetch credit accounts for
         """
-        block = self._resolve_timepoints([timepoint])[0]
-        tail = self._calls_service.get_call(
-            self._account_factory.functions.tail(), block.number
-        ).response.lower()
-        head = self._calls_service.get_call(
-            self._account_factory.functions.head(), block.number
-        ).response.lower()
-        out = [head]
-        while True:
-            acc = self._calls_service.get_call(
-                self._account_factory.functions.getNext(
-                    self.w3.toChecksumAddress(out[-1])
-                ),
-                block.number,
-            ).response.lower()
-            out.append(acc)
-            if acc == tail:
-                break
-        return out
+        if timepoint is None:
+            timepoint = self.to_block_number
+        to_block = self._resolve_timepoints([timepoint])[0]
+        from_block = self._blocks_service.get_blocks([ACCOUNT_FACTORY_DEPLOY_BLOCK])[0]
+        initializations = self._events_service.get_events(
+            self._account_factory.events.InitializeCreditAccount,
+            from_block.number,
+            to_block.number,
+        )
+        returns = self._events_service.get_events(
+            self._account_factory.events.ReturnCreditAccount,
+            from_block.number,
+            to_block.number,
+        )
 
-    def _get_pool(self, token: str) -> Dict[str, Any] | None:
+        events = [
+            {"kind": "mint", "block": e.block_number, "address": e.args["account"]}
+            for e in initializations
+        ]
+        events += [
+            {"kind": "burn", "block": e.block_number, "address": e.args["account"]}
+            for e in returns
+        ]
+
+        events = sorted(events, key=lambda x: x["block"])
+        out = set()
+        for e in events:
+            if e["kind"] == "mint":
+                out.add(e["address"].lower())
+            else:
+                out.remove(e["address"].lower())
+        return sorted(list(out))
+
+    def _get_pool_by_credit_manager(self, credit_manager: str) -> Dict[str, Any] | None:
         for pool in self.pools:
-            if pool["token"].symbol.lower() == token.lower():
+            if pool["manager"].lower() == credit_manager.lower():
                 return pool
         return None
 
