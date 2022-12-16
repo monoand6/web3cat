@@ -35,6 +35,8 @@ Params:
 | block_grid_step | WEB3_BLOCK_GRID_STEP | 1000                                   | Minimum gap between fetched blocks      |
 |                 |                      |                                        | (see :class:`fetcher.core.Core`)        |
 +-----------------+----------------------+----------------------------------------+-----------------------------------------+
+|                 | WEB3_DISABLE_STDOUT  |                                        | If set (1, or ``true``) - no std output |
++-----------------+----------------------+----------------------------------------+-----------------------------------------+
 | w3              |                      | Instantiated from ``rpc`` param        | Instance of :class:`web3.Web3`          |
 +-----------------+----------------------+----------------------------------------+-----------------------------------------+
 | conn            |                      | Instantiated from ``cache_path`` param | Instance of :class:`sqlite3.Connection` |
@@ -82,9 +84,9 @@ Caching
 All fetched data is logically cached inside the sqlite3 database.
 The caching techiques is intelligent and allows to fetch additional
 data in increments and not refecth anything at all.
-For example, if you fetched ERC20 ``Transfer`` events from block 
-10_000 to block 20_000, then a subsequent request from 
-block 15_000 to block 21_000 will return 15_000 - 20_000 from cache 
+For example, if you fetched ERC20 ``Transfer`` events from block
+10_000 to block 20_000, then a subsequent request from
+block 15_000 to block 21_000 will return 15_000 - 20_000 from cache
 and fetch only 20_000 - 21_000 from web3 and save to cache.
 A subsequent request for blocks 15_000 - 21_000 will read
 everything from cache.

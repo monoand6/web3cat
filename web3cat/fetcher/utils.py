@@ -11,6 +11,7 @@ from web3.datastructures import AttributeDict
 from web3.contract import ContractFunction, get_abi_input_types
 from web3.auto import w3
 from eth_utils import function_abi_to_4byte_selector
+import os
 
 
 class Web3JsonEncoder(json.JSONEncoder):
@@ -108,6 +109,10 @@ def print_progress(
         decimals: positive number of decimals in percent complete
         bar_length: character length of bar
     """
+    enabled = os.environ.get("WEB3_DISABLE_STDOUT")
+    if not enabled is None:
+        return
+
     global LAST_PROGRESS_BAR_LENGTH
     global LAST_PERCENT
 
