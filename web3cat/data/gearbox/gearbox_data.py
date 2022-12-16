@@ -56,6 +56,12 @@ class GearboxData(DataCore):
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``block_number``     | :attr:`numpy.int64`        | Number of the block                                                          |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``token``            | :class:`str`               | Pool token name                                                              |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``facade``           | :class:`str`               | Address of the credit facade                                                 |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
+        | ``manager``          | :class:`str`               | Address of the credit manager                                                |
+        +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``tvl``              | :attr:`numpy.float64`      | Position Total value                                                         |
         +----------------------+----------------------------+------------------------------------------------------------------------------+
         | ``health_factor``    | :attr:`numpy.float64`      | Position Health factor                                                       |
@@ -120,6 +126,8 @@ class GearboxData(DataCore):
                     "block_number": block.number,
                     "credit_account": credit_account,
                     "token": pool["token"].symbol.lower(),
+                    "facade": pools_facade_idx[hf.address.lower()]["pool"]["facade"],
+                    "manager": pools_facade_idx[hf.address.lower()]["pool"]["manager"],
                     "tvl": tvl.response[0] / 10 ** pool["token"].decimals,
                     "health_factor": hf.response / 10**4,
                 }
@@ -132,6 +140,8 @@ class GearboxData(DataCore):
                 "block_number": pl.UInt64,
                 "credit_account": pl.Utf8,
                 "token": pl.Utf8,
+                "facade": pl.Utf8,
+                "manager": pl.Utf8,
                 "tvl": pl.Float64,
                 "health_factor": pl.Float64,
             },
