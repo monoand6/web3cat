@@ -261,7 +261,7 @@ class ERC20Data(DataCore):
                     "Please add them when initializing ERC20Data."
                 )
         initial_balance_calls = [
-            self.contract.functions.balanceOf(Web3.toChecksumAddress(addr))
+            self.contract.functions.balanceOf(Web3.to_checksum_address(addr))
             for addr in addresses
         ]
         initial_balances = self._calls_service.get_calls(

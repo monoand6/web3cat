@@ -94,13 +94,13 @@ class GearboxData(DataCore):
         out = []
         hf_calls = [
             self._credit_facade(pool["facade"]).functions.calcCreditAccountHealthFactor(
-                self.w3.toChecksumAddress(acc)
+                self.w3.to_checksum_address(acc)
             )
             for pool, acc in zip(pools, credit_accounts)
         ]
         tvl_calls = [
             self._credit_facade(pool["facade"]).functions.calcTotalValue(
-                self.w3.toChecksumAddress(acc)
+                self.w3.to_checksum_address(acc)
             )
             for pool, acc in zip(pools, credit_accounts)
         ]
@@ -268,19 +268,19 @@ class GearboxData(DataCore):
 
     def _credit_account(self, address: str) -> Contract:
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(address),
+            address=self.w3.to_checksum_address(address),
             abi=self._credit_account_abi,
         )
 
     def _credit_facade(self, address: str) -> Contract:
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(address),
+            address=self.w3.to_checksum_address(address),
             abi=self._credit_facade_abi,
         )
 
     def _credit_manager(self, address: str) -> Contract:
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(address),
+            address=self.w3.to_checksum_address(address),
             abi=self._credit_manager_abi,
         )
 
@@ -324,7 +324,7 @@ class GearboxData(DataCore):
         ) as f:
             abi = json.load(f)
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(ACCOUNT_FACTORY),
+            address=self.w3.to_checksum_address(ACCOUNT_FACTORY),
             abi=abi,
         )
 
@@ -337,7 +337,7 @@ class GearboxData(DataCore):
         ) as f:
             abi = json.load(f)
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(DATA_COMPRESSOR),
+            address=self.w3.to_checksum_address(DATA_COMPRESSOR),
             abi=abi,
         )
 

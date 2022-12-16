@@ -323,7 +323,7 @@ class EventsService(Core):
         to_block: int,
         argument_filters: Dict[str, Any] | None,
     ) -> List[Event]:
-        event_filter = event.createFilter(
+        event_filter = event.create_filter(
             fromBlock=from_block,
             toBlock=to_block - 1,
             argument_filters=argument_filters,

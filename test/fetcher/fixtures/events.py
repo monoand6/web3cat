@@ -36,7 +36,7 @@ class Web3ContractEventMock:
         self.address = "0x6b175474e89094c44da98b954eedeac495271d0f"
         self.event_name = "Transfer"
 
-    def createFilter(
+    def create_filter(
         self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
     ) -> Web3EventFilterMock:
         events = [

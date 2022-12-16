@@ -157,7 +157,7 @@ class BalancesService(Core):
         resp = json.loads(
             json_response(
                 self.w3.eth.get_balance(
-                    self.w3.toChecksumAddress(address), block_identifier=block_number
+                    self.w3.to_checksum_address(address), block_identifier=block_number
                 )
             )
         )

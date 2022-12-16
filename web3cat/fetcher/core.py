@@ -150,7 +150,12 @@ class Core:
             )
 
         if not self.rpc in web3_cache:
-            web3_cache[self.rpc] = Web3(Web3.HTTPProvider(self.rpc))
+            provider = None
+            if self.rpc.lower().startswith("http"):
+                provider = Web3.HTTPProvider(self.rpc)
+            else:
+                provider = Web3.WebsocketProvider(self.rpc, websocket_timeout=60)
+            web3_cache[self.rpc] = Web3(provider)
 
         return web3_cache[self.rpc]
 

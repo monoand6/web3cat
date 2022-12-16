@@ -98,7 +98,7 @@ class ERC20MetasService(Core):
             cached_token = self._erc20_metas_repo.find(token)
         if cached_token:
             contract: Contract = self.w3.eth.contract(
-                address=self.w3.toChecksumAddress(cached_token.address),
+                address=self.w3.to_checksum_address(cached_token.address),
                 abi=self._erc20_abi,
             )
             cached_token.contract = contract
@@ -106,7 +106,7 @@ class ERC20MetasService(Core):
         if not token.startswith("0x"):
             raise ValueError(f"Could not find token `{token}`")
         contract: Contract = self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(token), abi=self._erc20_abi
+            address=self.w3.to_checksum_address(token), abi=self._erc20_abi
         )
         decimals = contract.functions.decimals().call()
         name = contract.functions.name().call()

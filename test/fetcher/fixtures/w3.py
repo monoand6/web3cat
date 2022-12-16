@@ -72,7 +72,7 @@ class Web3Mock:
 
         return self._calls[self.max_bn_call].response
 
-    def createFilter(
+    def create_filter(
         self, fromBlock: int, toBlock: int, argument_filters: Dict[str, Any] | None
     ) -> Web3EventFilterMock:
         events = [
@@ -116,8 +116,8 @@ class Web3Mock:
     def _address_offset(self, address: str) -> int:
         return int(address[2:], 16) % 1000
 
-    def toChecksumAddress(self, addr: str) -> str:
-        return Web3.toChecksumAddress(addr)
+    def to_checksum_address(self, addr: str) -> str:
+        return Web3.to_checksum_address(addr)
 
     @property
     def eth(self):

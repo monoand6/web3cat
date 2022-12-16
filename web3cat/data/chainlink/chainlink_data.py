@@ -55,7 +55,7 @@ class ChainlinkUSDData(DataCore):
             )
 
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(oracle_address), abi=abi
+            address=self.w3.to_checksum_address(oracle_address), abi=abi
         )
 
     @cached_property
@@ -74,7 +74,7 @@ class ChainlinkUSDData(DataCore):
             self.to_block_number,
         ).response
         return self.w3.eth.contract(
-            address=self.w3.toChecksumAddress(oracle_address),
+            address=self.w3.to_checksum_address(oracle_address),
             abi=abi,
         )
 

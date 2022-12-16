@@ -77,5 +77,5 @@ class Web3Mock:
     def endpoint_uri(self):
         return "http://localhost:3333"
 
-    def toChecksumAddress(self, addr: str):
-        return Web3.toChecksumAddress(addr)
+    def to_checksum_address(self, addr: str):
+        return Web3.to_checksum_address(addr)
