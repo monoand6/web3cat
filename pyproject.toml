@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "web3cat"
-version = "0.1.5"
+version = "0.1.6"
 description = "Data visualization for EVM-based blockchains"
 authors = ["Mono6 <monowhile6@gmail.com>"]
 license = "MIT"
