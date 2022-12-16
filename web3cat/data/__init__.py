@@ -20,6 +20,7 @@ from web3cat.data.erc20s import ERC20Data
 from web3cat.data.chainlink.chainlink_data import ChainlinkUSDData, ChainlinkData
 from web3cat.data.ethers import EtherData
 from web3cat.data.portfolios import PortfolioData
+from web3cat.data.gearbox import GearboxData
 
 
 pl.Config.set_fmt_str_lengths(44)
