@@ -8,7 +8,8 @@ import json
 from hexbytes import HexBytes
 from eth_typing.encoding import HexStr
 from web3.datastructures import AttributeDict
-from web3.contract import ContractFunction, get_abi_input_types
+from web3._utils.abi import get_abi_input_types
+from web3.contract.contract import ContractFunction
 from web3.auto import w3
 from eth_utils import function_abi_to_4byte_selector
 import os

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, List, Tuple
-from web3.contract import ContractEvent
+from web3.contract.contract import ContractEvent
 from requests.exceptions import ReadTimeout
 
 from web3cat.fetcher.core import Core

@@ -8,7 +8,7 @@ readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-web3 = "^6.0.0-beta.8"
+web3 = "^6.0.0"
 polars = "^0.14.18"
 numpy = "^1.23.3"
 bokeh = "^2.4.3"

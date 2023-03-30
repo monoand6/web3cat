@@ -2,7 +2,7 @@ from __future__ import annotations
 from itertools import product
 import json
 from typing import List
-from web3.contract import ContractFunction
+from web3.contract.contract import ContractFunction
 from web3cat.fetcher.calls.call import Call
 
 from web3cat.fetcher.core import Core
