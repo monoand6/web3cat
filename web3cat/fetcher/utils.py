@@ -3,6 +3,7 @@ Utility functions.
 """
 
 import sys
+import os
 from typing import Any, Dict, Union
 import json
 from hexbytes import HexBytes
@@ -12,7 +13,6 @@ from web3._utils.abi import get_abi_input_types
 from web3.contract.contract import ContractFunction
 from web3.auto import w3
 from eth_utils import function_abi_to_4byte_selector
-import os
 
 
 class Web3JsonEncoder(json.JSONEncoder):
